@@ -5,6 +5,7 @@ import numpy as np
 from HOTS.Tools import EuclidianNorm, NormalizedNorm, BattachaNorm, Norm
 from HOTS.Tools import GenerateHistogram
 
+
 class Classifier(object):
     '''
     class made to classify events:
@@ -16,13 +17,14 @@ class Classifier(object):
         + GroundTruth : (<np.array>) vector of string of size (nb_of_testing_sample,1) describing the testing set.
             It has to be in the same order than event_test. It will be used as a groundthruth to calculate accuracy
     '''
+
     def __init__(self, event_train, event_test, TrainingLabel, GroundTruth):
         self.event_train = event_train
         self.event_test = event_test
         self.TrainingLabel = TrainingLabel
         self.GroundTruth = GroundTruth
 
-    def Accuracy(self,list_of_classified):
+    def Accuracy(self, list_of_classified):
         '''
         method to classify using histogram distance between prototypes and :
         INPUT :
@@ -35,12 +37,14 @@ class Classifier(object):
 
         nb_sample = list_of_classified[0].shape[0]
         list_of_accuracy = list()
-        for idx,each_norm in enumerate(list_of_classified):
-            list_of_accuracy.append((np.sum(list_of_classified[idx]==self.GroundTruth)/nb_sample))
+        for idx, each_norm in enumerate(list_of_classified):
+            list_of_accuracy.append(
+                (np.sum(list_of_classified[idx] == self.GroundTruth)/nb_sample))
 
         return list_of_accuracy
 
-    def HistogramDistance(self,methods=['euclidian','normalized','battacha'], to_print=False):#(histo_to_classify,proto_histo,proto_label_list=None):
+    # (histo_to_classify,proto_histo,proto_label_list=None):
+    def HistogramDistance(self, methods=['euclidian', 'normalized', 'battacha'], to_print=False):
         '''
         method to classify using histogram distance between prototypes and :
         INPUT :
@@ -58,22 +62,23 @@ class Classifier(object):
         prediction = list()
         allmethod = list()
         for each_method in methods:
-            output = np.zeros((histo_test.shape[0],1)).astype(np.str_)
-            for idx,each_histo in enumerate(histo_test):
+            output = np.zeros((histo_test.shape[0], 1)).astype(np.str_)
+            for idx, each_histo in enumerate(histo_test):
 
-                distance = Norm(each_histo,histo_train,each_method)
+                distance = Norm(each_histo, histo_train, each_method)
                 min_dist = np.argmin(distance)
-                output[idx,0] = self.TrainingLabel[min_dist][0]
+                output[idx, 0] = self.TrainingLabel[min_dist][0]
 
             prediction.append(output)
             allmethod.append(each_method)
         accu = self.Accuracy(prediction)
-        if to_print==True:
-            to_write=''
-            for each_accu, each_method in zip(accu,allmethod):
-                #print(each_accu))
-                #print(type(each_method))
-                to_write = str(each_method) + ':' + str(each_accu*100) + '% ### '+ to_write
+        if to_print == True:
+            to_write = ''
+            for each_accu, each_method in zip(accu, allmethod):
+                # print(each_accu))
+                # print(type(each_method))
+                to_write = str(each_method) + ':' + \
+                    str(each_accu*100) + '% ### ' + to_write
             print(to_write)
 
         return prediction, accu, allmethod

@@ -3,6 +3,7 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS"
 import numpy as np
 import time
 
+
 class STS(object):
     '''
     Object with spatiotemporal Surface and methods to generate them
@@ -16,8 +17,8 @@ class STS(object):
         + verbose : (<int>) control the verbosity
     '''
 
-    def __init__(self, tau, R , initial_time=100, sigma=None, verbose=0):
-        self.verbose=verbose
+    def __init__(self, tau, R, initial_time=100, sigma=None, verbose=0):
+        self.verbose = verbose
         self.tau = tau
         self.R = R
 
@@ -32,9 +33,9 @@ class STS(object):
         if sigma is None:
             self.mask_circular = np.ones_like(self.radius)
         else:
-            self.mask_circular = np.exp(- .5 * self.radius**2 / self.R **2 / sigma**2 )
-        #self.mask_circular = self.mask_circular.reshape((1, self.mask.shape[0]self.mask.shape[1]))
-
+            self.mask_circular = np.exp(- .5 *
+                                        self.radius**2 / self.R ** 2 / sigma**2)
+        # self.mask_circular = self.mask_circular.reshape((1, self.mask.shape[0]self.mask.shape[1]))
 
     def create(self, event, stop=None, kernel='exponential'):
         '''
@@ -52,23 +53,28 @@ class STS(object):
 
         self.width = event.ImageSize[0] + 2*self.R
         self.height = event.ImageSize[1] + 2*self.R
-        self.ListOfTimeMatrix = np.zeros((self.nb_polarities, self.width,self.height))-self.initial_time
-        self.BinaryMask = np.zeros((self.nb_polarities, self.width,self.height))
+        self.ListOfTimeMatrix = np.zeros(
+            (self.nb_polarities, self.width, self.height))-self.initial_time
+        self.BinaryMask = np.zeros(
+            (self.nb_polarities, self.width, self.height))
 
-        if stop is not None :
+        if stop is not None:
             self.Surface = np.zeros((stop+1, self.nb_polarities * self.area))
-        else :
-            self.Surface = np.zeros((event.address.shape[0], self.nb_polarities * self.area))
+        else:
+            self.Surface = np.zeros(
+                (event.address.shape[0], self.nb_polarities * self.area))
         timer = time.time()
-        idx=0
-        t_previous=0
-        for idx_event, [addr,t,pol] in enumerate(zip(event.address,event.time,event.polarity)):
-            if t<t_previous:
-                self.ListOfTimeMatrix = np.zeros((self.nb_polarities, self.width, self.height)) - self.initial_time
+        idx = 0
+        t_previous = 0
+        for idx_event, [addr, t, pol] in enumerate(zip(event.address, event.time, event.polarity)):
+            if t < t_previous:
+                self.ListOfTimeMatrix = np.zeros(
+                    (self.nb_polarities, self.width, self.height)) - self.initial_time
             x, y = addr + self.R
 
             self.ListOfTimeMatrix[pol, x, y] = t
-            self.LocalTimeDiff = t - self.ListOfTimeMatrix[:,(x-self.R):(x+self.R+1),(y-self.R):(y+self.R+1)]
+            self.LocalTimeDiff = t - \
+                self.ListOfTimeMatrix[:, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]
 
             if kernel == 'exponential':
                 #SI = np.exp(-(t-self.LocalTimeMatrix)/self.tau).reshape((len(self.ListPolarities)* self.area))
@@ -77,21 +83,23 @@ class STS(object):
 
             elif kernel == 'linear':
                 mask = (self.LocalTimeDiff < self.tau)
-                SI = ((1-self.LocalTimeDiff/self.tau) * mask)*self.mask_circular
-                SI2 = SI.reshape((len(self.ListPolarities)* self.area))
-            else :
+                SI = ((1-self.LocalTimeDiff/self.tau)
+                      * mask)*self.mask_circular
+                SI2 = SI.reshape((len(self.ListPolarities) * self.area))
+            else:
                 print('error')
-            self.Surface[idx_event,:] = SI2#SI*self.mask
+            self.Surface[idx_event, :] = SI2  # SI*self.mask
             t_previous = t
             if idx_event == stop:
                 break
 
         tac = time.time()
         if self.verbose != 0:
-            print('Generation of SpatioTemporal Surface in ------ {0:.2f} s'.format((tac-timer)))
+            print(
+                'Generation of SpatioTemporal Surface in ------ {0:.2f} s'.format((tac-timer)))
         return self.Surface
 
-    def FilterRecent(self,event,threshold=0):
+    def FilterRecent(self, event, threshold=0):
         '''
         Method to filter the event. Only the event associated with a surface having enought recent event
             in the neighbourhood with be kept
@@ -103,14 +111,15 @@ class STS(object):
             + filt : (<np array>) bolean vector of size (nb_of_input event). A False is assocated with the
                 removed event and a True is assocated with kept event
         '''
-        #if self.verbose > 0:
+        # if self.verbose > 0:
         #    print('threshold', threshold)
         threshold = threshold*self.R
-        filt = np.sum(self.Surface, axis = 1) > threshold
+        filt = np.sum(self.Surface, axis=1) > threshold
         self.Surface = self.Surface[filt]
         event_output = event.filter(filt)
 
         return event_output, filt
+
 
 class STS2(object):
     '''
@@ -125,8 +134,8 @@ class STS2(object):
         + verbose : (<int>) control the verbosity
     '''
 
-    def __init__(self, tau, R , initial_time=0, sigma=None, verbose=0):
-        self.verbose=verbose
+    def __init__(self, tau, R, initial_time=0, sigma=None, verbose=0):
+        self.verbose = verbose
         self.tau = tau
         self.R = R
         self.nb_surface = 0
@@ -141,9 +150,9 @@ class STS2(object):
         if sigma is None:
             self.mask_circular = np.ones_like(self.radius)
         else:
-            self.mask_circular = np.exp(- .5 * self.radius**2 / self.R **2 / sigma**2 )
-        #self.mask_circular = self.mask_circular.reshape((1, self.mask.shape[0]self.mask.shape[1]))
-
+            self.mask_circular = np.exp(- .5 *
+                                        self.radius**2 / self.R ** 2 / sigma**2)
+        # self.mask_circular = self.mask_circular.reshape((1, self.mask.shape[0]self.mask.shape[1]))
 
     def create(self, event, stop=None, kernel='exponential'):
         '''
@@ -161,42 +170,49 @@ class STS2(object):
 
         self.width = event.ImageSize[0] + 2*self.R
         self.height = event.ImageSize[1] + 2*self.R
-        self.ListOfTimeMatrix = np.zeros((self.nb_polarities, self.width,self.height))-self.initial_time
-        self.BinaryMask = np.zeros((self.nb_polarities, self.width,self.height))
+        self.ListOfTimeMatrix = np.zeros(
+            (self.nb_polarities, self.width, self.height))-self.initial_time
+        self.BinaryMask = np.zeros(
+            (self.nb_polarities, self.width, self.height))
         self.valid = 0
         self.list_valid = list()
 
-        if stop is not None :
+        if stop is not None:
             self.Surface = np.zeros((stop+1, self.nb_polarities * self.area))
-        else :
-            self.Surface = np.zeros((event.address.shape[0], self.nb_polarities * self.area))
+        else:
+            self.Surface = np.zeros(
+                (event.address.shape[0], self.nb_polarities * self.area))
 
         timer = time.time()
-        idx=0
-        t_previous=0
-        for idx_event, [addr,t,pol] in enumerate(zip(event.address,event.time,event.polarity)):
-            if t<t_previous:
-                self.ListOfTimeMatrix = np.zeros((self.nb_polarities, self.width, self.height)) - self.initial_time
-                self.BinaryMask = np.zeros((self.nb_polarities, self.width,self.height))
+        idx = 0
+        t_previous = 0
+        for idx_event, [addr, t, pol] in enumerate(zip(event.address, event.time, event.polarity)):
+            if t < t_previous:
+                self.ListOfTimeMatrix = np.zeros(
+                    (self.nb_polarities, self.width, self.height)) - self.initial_time
+                self.BinaryMask = np.zeros(
+                    (self.nb_polarities, self.width, self.height))
 
             x, y = addr + self.R
             #idx_pola = self.ListPolarities.index(pol)
-            cond0 = (np.sum(self.BinaryMask[pol,(x-self.R):(x+self.R+1),(y-self.R):(y+self.R+1)]) > 9 \
-               and (t-np.max(self.ListOfTimeMatrix[:,(x-self.R):(x+self.R+1),(y-self.R):(y+self.R+1)]) > 1e-3))
+            cond0 = (np.sum(self.BinaryMask[pol, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]) > 9
+                     and (t-np.max(self.ListOfTimeMatrix[:, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]) > 1e-3))
 
-            cond1 = np.sum(self.BinaryMask[pol,(x-self.R):(x+self.R+1),(y-self.R):(y+self.R+1)]) > 9
+            cond1 = np.sum(
+                self.BinaryMask[pol, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]) > 9
 
-            if cond0 :
-                self.valid +=1
+            if cond0:
+                self.valid += 1
                 self.list_valid.append(idx_event)
 
             self.ListOfTimeMatrix[pol, x, y] = t
-            self.BinaryMask[pol,x,y] = 1
-            self.LocalBinaryMask = self.BinaryMask[:,(x-self.R):(x+self.R+1),(y-self.R):(y+self.R+1)]
-
+            self.BinaryMask[pol, x, y] = 1
+            self.LocalBinaryMask = self.BinaryMask[:,
+                                                   (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]
 
             #self.LocalTimeMatrix = self.ListOfTimeMatrix[:,(x-self.R):(x+self.R+1),(y-self.R):(y+self.R+1)]
-            self.LocalTimeDiff = t - self.ListOfTimeMatrix[:,(x-self.R):(x+self.R+1),(y-self.R):(y+self.R+1)]
+            self.LocalTimeDiff = t - \
+                self.ListOfTimeMatrix[:, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]
 
             if kernel == 'exponential':
                 #SI = np.exp(-(t-self.LocalTimeMatrix)/self.tau).reshape((len(self.ListPolarities)* self.area))
@@ -205,22 +221,25 @@ class STS2(object):
 
             elif kernel == 'linear':
                 mask = (self.LocalTimeDiff < self.tau)
-                SI = ((1-self.LocalTimeDiff/self.tau) * mask)*self.mask_circular
-                SI2 = SI.reshape((len(self.ListPolarities)* self.area))
-            else :
+                SI = ((1-self.LocalTimeDiff/self.tau)
+                      * mask)*self.mask_circular
+                SI2 = SI.reshape((len(self.ListPolarities) * self.area))
+            else:
                 print('error')
-            self.Surface[idx_event,:] = SI2#SI*self.mask
+            self.Surface[idx_event, :] = SI2  # SI*self.mask
             t_previous = t
             if idx_event == stop:
                 break
         self.test = idx_event
         tac = time.time()
         if self.verbose != 0:
-            print('Generation of SpatioTemporal Surface in ------ {0:.2f} s'.format((tac-timer)))
+            print(
+                'Generation of SpatioTemporal Surface in ------ {0:.2f} s'.format((tac-timer)))
         return self.Surface
 
+
 class Propagate(object):
-    def __init__(self, radius, tau, stop=None,recenter_Factor=1.5):
+    def __init__(self, radius, tau, stop=None, recenter_Factor=1.5):
         self.stop = stop
         self.r = radius
         self.recenter_Factor = recenter_Factor
@@ -228,44 +247,52 @@ class Propagate(object):
         self.tau = tau
 
     def SaveTCandSC(self, event, recenter=True):
-        self.TS_Mem = np.zeros((1, event.ImageSize[0],event.ImageSize[1]), dtype = np.int64) - 3*self.tau
+        self.TS_Mem = np.zeros(
+            (1, event.ImageSize[0], event.ImageSize[1]), dtype=np.int64) - 3*self.tau
         #print('init', self.TS_Mem.copy())
-        self.Spike_Mem = np.zeros((1, event.ImageSize[0],event.ImageSize[1]),dtype=bool)
-        for idx,each_polarity in enumerate(event.polarity):
-            x,y = event.address[0,idx],event.address[1,idx]
-            print('old x,y',x,y)
+        self.Spike_Mem = np.zeros(
+            (1, event.ImageSize[0], event.ImageSize[1]), dtype=bool)
+        for idx, each_polarity in enumerate(event.polarity):
+            x, y = event.address[0, idx], event.address[1, idx]
+            print('old x,y', x, y)
             t = event.time[idx]
-            self.TS_Mem[0,event.address[0,idx],event.address[1,idx]] = event.time[idx]
-            self.Spike_Mem[0,event.address[0,idx],event.address[1,idx]] = True
-            if recenter == True :
-                x_d , y_d = self.recenter(x,y,t,each_polarity)
-                print('new x,y',x ,y )
-            TC = t - self.TS_Mem[0, x_d - self.r:x_d+ self.r + 1, y_d - self.r:y_d + self.r + 1]
-            print('TC',TC)
-            SC = self.Spike_Mem[0, x_d - self.r:x_d + self.r + 1, y_d - self.r:y_d + self.r + 1]
-            print('SC',SC)
-            if idx==self.stop:
+            self.TS_Mem[0, event.address[0, idx],
+                        event.address[1, idx]] = event.time[idx]
+            self.Spike_Mem[0, event.address[0, idx],
+                           event.address[1, idx]] = True
+            if recenter == True:
+                x_d, y_d = self.recenter(x, y, t, each_polarity)
+                print('new x,y', x, y)
+            TC = t - self.TS_Mem[0, x_d - self.r:x_d +
+                                 self.r + 1, y_d - self.r:y_d + self.r + 1]
+            print('TC', TC)
+            SC = self.Spike_Mem[0, x_d - self.r:x_d +
+                                self.r + 1, y_d - self.r:y_d + self.r + 1]
+            print('SC', SC)
+            if idx == self.stop:
                 break
         return TC, SC
 
-    def recenter(self, x, y, t,p):
-        #print(self.TS_Mem)
+    def recenter(self, x, y, t, p):
+        # print(self.TS_Mem)
 
-        recenter_ROI_TC = t - self.TS_Mem[0, x - self.r_recenter:x + self.r_recenter + 1, y - self.r_recenter:y + self.r_recenter + 1]
+        recenter_ROI_TC = t - self.TS_Mem[0, x - self.r_recenter:x +
+                                          self.r_recenter + 1, y - self.r_recenter:y + self.r_recenter + 1]
 
         te = recenter_ROI_TC.copy()
-        print('ROI_TC',te)
+        print('ROI_TC', te)
         recenter_ROI_TC[recenter_ROI_TC < 3 * self.tau] = 1
         recenter_ROI_TC[recenter_ROI_TC > 1] = 0
 
-        recenter_ROI_SC = self.Spike_Mem[0, x - self.r_recenter:x + self.r_recenter + 1, y - self.r_recenter:y + self.r_recenter + 1]
+        recenter_ROI_SC = self.Spike_Mem[0, x - self.r_recenter:x +
+                                         self.r_recenter + 1, y - self.r_recenter:y + self.r_recenter + 1]
         recenter_ROI = recenter_ROI_TC
         #recenter_ROI = recenter_ROI_SC & recenter_ROI_TC
 
-        #print(recenter_ROI_TC)
+        # print(recenter_ROI_TC)
 
-        selonx = np.sum(recenter_ROI, axis = 0)
-        selony = np.sum(recenter_ROI, axis = 1)
+        selonx = np.sum(recenter_ROI, axis=0)
+        selony = np.sum(recenter_ROI, axis=1)
         steps = np.arange(- self.r_recenter, self.r_recenter + 1)
         dx = np.int(np.round(np.dot(steps, selonx) / np.sum(selonx)))
         dy = np.int(np.round(np.dot(steps, selony) / np.sum(selony)))

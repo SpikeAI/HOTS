@@ -9,7 +9,6 @@ from HOTS.KmeansCluster import Cluster
 import itertools
 
 
-
 class KmeansHomeo(Cluster):
     '''
     Clustering algorithm using homeostasis with histogram equalization
@@ -26,22 +25,23 @@ class KmeansHomeo(Cluster):
         + eta : (<float>) learning paramter for the prototype updates
         + eta_homeo : (<float>) learning parameter for the histogram equalization
     '''
-    def __init__(self,nb_cluster, to_record=False, verbose=0, nb_quant=100,
-                    C=6, Norm_Type='max',eta=0.000005, eta_homeo=0.0005, l0=0):
+
+    def __init__(self, nb_cluster, to_record=False, verbose=0, nb_quant=100,
+                 C=6, Norm_Type='max', eta=0.000005, eta_homeo=0.0005, l0=0):
         Cluster.__init__(self, nb_cluster, to_record, verbose)
         self.nb_quant = nb_quant
         self.C = C
         self.Norm_Type = Norm_Type
         self.do_sym = False
 
-        if eta is None :
+        if eta is None:
             self.eta = 0.000005
-        else :
+        else:
             self.eta = eta
 
         if eta_homeo is None:
             self.eta_homeo = 0.0005
-        else :
+        else:
             self.eta_homeo = eta_homeo
 
         self.verbose = verbose
@@ -61,16 +61,16 @@ class KmeansHomeo(Cluster):
                 representing the centers of clusters
         '''
 
-
         X = STS.Surface
-        if self.to_record == True :
+        if self.to_record == True:
             self.record_each = X.shape[0]//100
         n_samples, n_pixels = X.shape
         X_train = X.copy()
         norm = self.norm(X_train, Norm_Type=self.Norm_Type)
         X_train /= norm[:, np.newaxis]
-        prototype = X_train[:self.nb_cluster,:].copy()
-        self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[np.newaxis, :] * np.ones((self.nb_cluster, 1))
+        prototype = X_train[:self.nb_cluster, :].copy()
+        self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[
+            np.newaxis, :] * np.ones((self.nb_cluster, 1))
         n_batches = n_samples // batch_size
 
         np.random.shuffle(X_train)
@@ -86,7 +86,7 @@ class KmeansHomeo(Cluster):
 
             n_samples, n_pixels = this_X.shape
             #n_dictionary, n_pixels = dictionary.shape
-            sparse_code = np.zeros((n_samples,self.nb_cluster))
+            sparse_code = np.zeros((n_samples, self.nb_cluster))
 
             if not self.P_cum is None:
                 #nb_quant = P_cum.shape[1]
@@ -97,49 +97,54 @@ class KmeansHomeo(Cluster):
             for i_sample in range(n_samples):
                 c = corr[i_sample, :].copy()
                 #ind = np.argmax(c)
-                ind  = np.argmax(self.quantile(self.P_cum, self.rescaling(c), stick))
+                ind = np.argmax(self.quantile(
+                    self.P_cum, self.rescaling(c), stick))
                 sparse_code[i_sample, ind] = c[ind]
-                Si = this_X[i_sample,:]
-                Ck = prototype[ind,:]
+                Si = this_X[i_sample, :]
+                Ck = prototype[ind, :]
 
                 #alpha = 1/(1+pk)
-                beta = np.dot(Ck,Si)/(np.sqrt(np.dot(Si,Si))*np.sqrt(np.dot(Ck,Ck)))
-                prototype[ind,:] = Ck + beta * self.eta * (Si - Ck)
+                beta = np.dot(Ck, Si)/(np.sqrt(np.dot(Si, Si))
+                                       * np.sqrt(np.dot(Ck, Ck)))
+                prototype[ind, :] = Ck + beta * self.eta * (Si - Ck)
 
             norm = self.norm(prototype, Norm_Type=self.Norm_Type)
 
             prototype /= norm[:, np.newaxis]
 
             if self.verbose > 0 and ii % 5000 == 0:
-                print('{0} / {1}'.format(ii,n_iter))
+                print('{0} / {1}'.format(ii, n_iter))
 
             if self.to_record == True:
                 if ii % int(self.record_each) == 0:
                     from scipy.stats import kurtosis
-                    indx = np.random.permutation(X_train.shape[0])[:record_num_batches]
-                    polarity = self.code(X_train[indx, :],prototype,self.P_cum,sparse=True)
-                    error = np.linalg.norm(X_train[indx, :] - polarity @ prototype)/record_num_batches
-                    active_probe = np.sum(polarity>0,axis=0)
-                    record_one = pd.DataFrame([{'error':error,
-                                                'histo':active_probe,
+                    indx = np.random.permutation(X_train.shape[0])[
+                        :record_num_batches]
+                    polarity = self.code(
+                        X_train[indx, :], prototype, self.P_cum, sparse=True)
+                    error = np.linalg.norm(
+                        X_train[indx, :] - polarity @ prototype)/record_num_batches
+                    active_probe = np.sum(polarity > 0, axis=0)
+                    record_one = pd.DataFrame([{'error': error,
+                                                'histo': active_probe,
                                                 'var': np.var(active_probe)}],
-                                            index=[ii])
+                                              index=[ii])
                     self.record = pd.concat([self.record, record_one])
 
             self.P_cum = self.update_Pcum(self.P_cum, sparse_code)
         self.prototype = prototype
         return prototype
 
-    def norm(self, to_normalize,Norm_Type):
+    def norm(self, to_normalize, Norm_Type):
         if Norm_Type == 'standard':
             if to_normalize.ndim > 1:
-                norm = np.sqrt(np.sum(to_normalize**2,axis=1))
-            else :
+                norm = np.sqrt(np.sum(to_normalize**2, axis=1))
+            else:
                 norm = np.sqrt(np.sum(to_normalize**2))
         elif Norm_Type == 'max':
             if to_normalize.ndim > 1:
                 norm = np.amax(to_normalize, axis=1)
-            else :
+            else:
                 norm = np.amax(to_normalize)
 
         return norm
@@ -155,11 +160,10 @@ class KmeansHomeo(Cluster):
             + P_cum: (<np.array>) matrix of shape (n_samples, nb_quant) updated value
                 of the modulation function.
         '''
-        if self.eta_homeo>0.:
+        if self.eta_homeo > 0.:
             P_cum_ = self.get_Pcum(code)
             P_cum = (1 - self.eta_homeo)*P_cum + self.eta_homeo * P_cum_
         return P_cum
-
 
     def code(self, X, dictionary, P_cum, sparse=False):
         '''
@@ -183,21 +187,21 @@ class KmeansHomeo(Cluster):
         n_samples = X.shape[0]
         corr = X @ dictionary.T
         stick = np.arange(self.nb_cluster)*self.nb_quant
-        if sparse == False :
+        if sparse == False:
             polarity = np.zeros(n_samples).astype(int)
-        else :
-            polarity = np.zeros((n_samples,self.nb_cluster)).astype(int)
+        else:
+            polarity = np.zeros((n_samples, self.nb_cluster)).astype(int)
 
         for i_sample in range(n_samples):
             c = corr[i_sample, :].copy()
-            ind  = np.argmax(self.quantile(P_cum, self.rescaling(c), stick))
-            if sparse == False :
+            ind = np.argmax(self.quantile(P_cum, self.rescaling(c), stick))
+            if sparse == False:
                 polarity[i_sample] = ind
             else:
-                polarity[i_sample,ind] = 1
+                polarity[i_sample, ind] = 1
         return polarity
 
-    def get_Pcum(self,code):
+    def get_Pcum(self, code):
         '''
         calculate quantized histogram
         INPUT :
@@ -209,7 +213,8 @@ class KmeansHomeo(Cluster):
         n_samples = code.shape[0]
         P_cum = np.zeros((self.nb_cluster, self.nb_quant))
         for i in range(self.nb_cluster):
-            p, bins = np.histogram(self.rescaling(code[:, i]), bins=np.linspace(0., 1, self.nb_quant, endpoint=True), density=True)
+            p, bins = np.histogram(self.rescaling(code[:, i]), bins=np.linspace(
+                0., 1, self.nb_quant, endpoint=True), density=True)
             p /= p.sum()
             P_cum[i, :] = np.hstack((0, np.cumsum(p)))
         return P_cum
@@ -225,7 +230,7 @@ class KmeansHomeo(Cluster):
         if self.do_sym:
             return 1.-np.exp(-np.abs(code)/self.C)
         else:
-            return (1.-np.exp(-code/self.C))*(code>0)
+            return (1.-np.exp(-code/self.C))*(code > 0)
 
     def quantile(self, Pcum, p_c, stick):
         '''
@@ -238,7 +243,7 @@ class KmeansHomeo(Cluster):
         OUTPUT :
             + quantized value of the cumulative probability distribution
         '''
-        return Pcum.ravel()[(p_c*Pcum.shape[1] - (p_c==1)).astype(np.int) + stick]
+        return Pcum.ravel()[(p_c*Pcum.shape[1] - (p_c == 1)).astype(np.int) + stick]
 
 
 class KmeansWithoutHomeo(Cluster):
@@ -257,22 +262,23 @@ class KmeansWithoutHomeo(Cluster):
         + eta : (<float>) learning paramter for the prototype updates
         + eta_homeo : (<float>) learning parameter for the histogram equalization
     '''
-    def __init__(self,nb_cluster, to_record=False, verbose=0, nb_quant=100,
-                    C=6, Norm_Type='max',eta=0.000005, eta_homeo=0.0005):
+
+    def __init__(self, nb_cluster, to_record=False, verbose=0, nb_quant=100,
+                 C=6, Norm_Type='max', eta=0.000005, eta_homeo=0.0005):
         Cluster.__init__(self, nb_cluster, to_record, verbose)
         self.nb_quant = nb_quant
         self.C = C
         self.Norm_Type = Norm_Type
         self.do_sym = False
 
-        if eta is None :
+        if eta is None:
             self.eta = 0.000005
-        else :
+        else:
             self.eta = eta
 
         if eta_homeo is None:
             self.eta_homeo = 0.0005
-        else :
+        else:
             self.eta_homeo = eta_homeo
 
         self.verbose = verbose
@@ -292,16 +298,16 @@ class KmeansWithoutHomeo(Cluster):
                 representing the centers of clusters
         '''
 
-
         X = STS.Surface
-        if self.to_record == True :
+        if self.to_record == True:
             self.record_each = X.shape[0]//100
         n_samples, n_pixels = X.shape
         X_train = X.copy()
         norm = self.norm(X_train, Norm_Type=self.Norm_Type)
         X_train /= norm[:, np.newaxis]
-        prototype = X_train[:self.nb_cluster,:].copy()
-        self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[np.newaxis, :] * np.ones((self.nb_cluster, 1))
+        prototype = X_train[:self.nb_cluster, :].copy()
+        self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[
+            np.newaxis, :] * np.ones((self.nb_cluster, 1))
         n_batches = n_samples // batch_size
 
         np.random.shuffle(X_train)
@@ -317,7 +323,7 @@ class KmeansWithoutHomeo(Cluster):
 
             n_samples, n_pixels = this_X.shape
             #n_dictionary, n_pixels = dictionary.shape
-            sparse_code = np.zeros((n_samples,self.nb_cluster))
+            sparse_code = np.zeros((n_samples, self.nb_cluster))
 
             if not self.P_cum is None:
                 #nb_quant = P_cum.shape[1]
@@ -332,53 +338,58 @@ class KmeansWithoutHomeo(Cluster):
                 for j in range(self.nb_cluster):
 
                     #ind = np.argmax(c)
-                    ind  = np.argmax(c)
+                    ind = np.argmax(c)
                     c_ind = c[ind] / Xcorr[ind, ind]
                     sparse_code[i_sample, ind] += c_ind
-                    c -= c_ind * Xcorr[ind, :]#self.quantile(self.P_cum, self.rescaling(c), stick))
+                    # self.quantile(self.P_cum, self.rescaling(c), stick))
+                    c -= c_ind * Xcorr[ind, :]
                     #sparse_code[i_sample, ind] = c[ind]
-                Si = this_X[i_sample,:]
-                Ck = prototype[ind,:]
+                Si = this_X[i_sample, :]
+                Ck = prototype[ind, :]
 
                 #alpha = 1/(1+pk)
-                beta = np.dot(Ck,Si)/(np.sqrt(np.dot(Si,Si))*np.sqrt(np.dot(Ck,Ck)))
-                prototype[ind,:] = Ck + beta * self.eta * (Si - Ck)
+                beta = np.dot(Ck, Si)/(np.sqrt(np.dot(Si, Si))
+                                       * np.sqrt(np.dot(Ck, Ck)))
+                prototype[ind, :] = Ck + beta * self.eta * (Si - Ck)
 
             norm = self.norm(prototype, Norm_Type=self.Norm_Type)
 
             prototype /= norm[:, np.newaxis]
 
             if self.verbose > 0 and ii % 5000 == 0:
-                print('{0} / {1}'.format(ii,n_iter))
+                print('{0} / {1}'.format(ii, n_iter))
 
             if self.to_record == True:
                 if ii % int(self.record_each) == 0:
                     from scipy.stats import kurtosis
-                    indx = np.random.permutation(X_train.shape[0])[:record_num_batches]
+                    indx = np.random.permutation(X_train.shape[0])[
+                        :record_num_batches]
                     #polarity = self.code(X_train[indx, :],prototype,self.P_cum,sparse=True)
-                    polarity = self.code(X_train[indx, :],prototype,sparse=True)
-                    error = np.linalg.norm(X_train[indx, :] - polarity @ prototype)/record_num_batches
-                    active_probe = np.sum(polarity>0,axis=0)
-                    record_one = pd.DataFrame([{'error':error,
-                                                'histo':active_probe,
+                    polarity = self.code(
+                        X_train[indx, :], prototype, sparse=True)
+                    error = np.linalg.norm(
+                        X_train[indx, :] - polarity @ prototype)/record_num_batches
+                    active_probe = np.sum(polarity > 0, axis=0)
+                    record_one = pd.DataFrame([{'error': error,
+                                                'histo': active_probe,
                                                 'var': np.var(active_probe)}],
-                                            index=[ii])
+                                              index=[ii])
                     self.record = pd.concat([self.record, record_one])
 
             #self.P_cum = self.update_Pcum(self.P_cum, sparse_code)
         self.prototype = prototype
         return prototype
 
-    def norm(self, to_normalize,Norm_Type):
+    def norm(self, to_normalize, Norm_Type):
         if Norm_Type == 'standard':
             if to_normalize.ndim > 1:
-                norm = np.sqrt(np.sum(to_normalize**2,axis=1))
-            else :
+                norm = np.sqrt(np.sum(to_normalize**2, axis=1))
+            else:
                 norm = np.sqrt(np.sum(to_normalize**2))
         elif Norm_Type == 'max':
             if to_normalize.ndim > 1:
                 norm = np.amax(to_normalize, axis=1)
-            else :
+            else:
                 norm = np.amax(to_normalize)
 
         return norm
@@ -394,11 +405,10 @@ class KmeansWithoutHomeo(Cluster):
             + P_cum: (<np.array>) matrix of shape (n_samples, nb_quant) updated value
                 of the modulation function.
         '''
-        if self.eta_homeo>0.:
+        if self.eta_homeo > 0.:
             P_cum_ = self.get_Pcum(code)
             P_cum = (1 - self.eta_homeo)*P_cum + self.eta_homeo * P_cum_
         return P_cum
-
 
     def code(self, X, dictionary, sparse=False):
         '''
@@ -423,20 +433,19 @@ class KmeansWithoutHomeo(Cluster):
         Xcorr = (dictionary @ dictionary.T)
         corr = X @ dictionary.T
 
-
-        sparse_code = np.zeros((n_samples,self.nb_cluster))
+        sparse_code = np.zeros((n_samples, self.nb_cluster))
 
         for i_sample in range(n_samples):
             c = corr[i_sample, :].copy()
             for j in range(self.nb_cluster):
                 #ind = np.argmax(c)
-                ind  = np.argmax(c)
+                ind = np.argmax(c)
                 c_ind = c[ind] / Xcorr[ind, ind]
                 sparse_code[i_sample, ind] += c_ind
-                c -= c_ind * Xcorr[ind, :]#self.quantile(se
+                c -= c_ind * Xcorr[ind, :]  # self.quantile(se
         return sparse_code
 
-    def get_Pcum(self,code):
+    def get_Pcum(self, code):
         '''
         calculate quantized histogram
         INPUT :
@@ -448,7 +457,8 @@ class KmeansWithoutHomeo(Cluster):
         n_samples = code.shape[0]
         P_cum = np.zeros((self.nb_cluster, self.nb_quant))
         for i in range(self.nb_cluster):
-            p, bins = np.histogram(self.rescaling(code[:, i]), bins=np.linspace(0., 1, self.nb_quant, endpoint=True), density=True)
+            p, bins = np.histogram(self.rescaling(code[:, i]), bins=np.linspace(
+                0., 1, self.nb_quant, endpoint=True), density=True)
             p /= p.sum()
             P_cum[i, :] = np.hstack((0, np.cumsum(p)))
         return P_cum
@@ -464,7 +474,7 @@ class KmeansWithoutHomeo(Cluster):
         if self.do_sym:
             return 1.-np.exp(-np.abs(code)/self.C)
         else:
-            return (1.-np.exp(-code/self.C))*(code>0)
+            return (1.-np.exp(-code/self.C))*(code > 0)
 
     def quantile(self, Pcum, p_c, stick):
         '''
@@ -477,4 +487,4 @@ class KmeansWithoutHomeo(Cluster):
         OUTPUT :
             + quantized value of the cumulative probability distribution
         '''
-        return Pcum.ravel()[(p_c*Pcum.shape[1] - (p_c==1)).astype(np.int) + stick]
+        return Pcum.ravel()[(p_c*Pcum.shape[1] - (p_c == 1)).astype(np.int) + stick]

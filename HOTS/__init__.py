@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 ___author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS"
 __version__ = '2017-01-10'
 __licence__ = 'GPLv3'
-__all__ = ['STS.py']#, 'shl_tools', 'shl_learn', 'shl_encode']
+__all__ = ['STS.py']  # , 'shl_tools', 'shl_learn', 'shl_encode']
 
 """
 ========================================================

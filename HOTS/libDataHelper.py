@@ -10,6 +10,7 @@
 
 import numpy as np
 
+
 class db:
     filenames = []
     labelnames = []
@@ -30,8 +31,8 @@ class hots_network_settings:
     update_sec = 8
     n_dim = 2
     n_pol = 1
-    max_dim = np.empty(0, dtype = np.int16)
-    layers_specs = np.empty(0, dtype = layer_specs)
+    max_dim = np.empty(0, dtype=np.int16)
+    layers_specs = np.empty(0, dtype=layer_specs)
     fixed_centers_files = []
     data_file = 'none'
     db_file = 'none'
@@ -40,10 +41,10 @@ class hots_network_settings:
     save_prefix = ''
 
 
-def superReadDB(_filename, _dbpath = 'none'):
+def superReadDB(_filename, _dbpath='none'):
     dbspecs = db()
     needFirstLine = True
-    file = open(_filename,'r')
+    file = open(_filename, 'r')
     for line in file:
         if line[0] == '?' or line[0] == '%':
             # print('discard comment line')
@@ -66,7 +67,7 @@ def superReadDB(_filename, _dbpath = 'none'):
 
 
 def superLoadHOTSNetworkSettingsFromFile(_filename, _verbose):
-    file = open(_filename,'r')
+    file = open(_filename, 'r')
     specs = hots_network_settings()
     for line in file:
         if line[0] == '?' or line[0] == '%':
@@ -85,11 +86,12 @@ def superLoadHOTSNetworkSettingsFromFile(_filename, _verbose):
             elif split[0] == 'n_dim':
                 specs.n_dim = int(split[1])
             elif split[0] == 'max_dim':
-                specs.max_dim = np.zeros(len(split) - 1, dtype = np.int16)
+                specs.max_dim = np.zeros(len(split) - 1, dtype=np.int16)
                 for ii in np.arange(len(split) - 1):
                     specs.max_dim[ii] = int(split[ii+1])
             elif split[0] == 'layers':
-                specs.layers_specs = np.empty(len(split) - 1, dtype = layer_specs)
+                specs.layers_specs = np.empty(
+                    len(split) - 1, dtype=layer_specs)
                 for ii in np.arange(len(split) - 1):
                     l = split[ii+1].split('-')
                     ls = layer_specs()
@@ -112,14 +114,17 @@ def superLoadHOTSNetworkSettingsFromFile(_filename, _verbose):
                     specs.fixed_centers_files.append(split[ii+1].strip('\n'))
     if _verbose:
         print('------ Loaded settings ------')
-        print('Enable viewer: {0} (Port: {1}, update {2})'.format(specs.enableviewer, specs.tcp_port, specs.update_sec))
+        print('Enable viewer: {0} (Port: {1}, update {2})'.format(
+            specs.enableviewer, specs.tcp_port, specs.update_sec))
         print(' ')
         print('Number of polarities of the input: {0}'.format(specs.n_pol))
-        print('Number of dimensions and sizes: {0}, {1}'.format(specs.n_dim, specs.max_dim))
+        print('Number of dimensions and sizes: {0}, {1}'.format(
+            specs.n_dim, specs.max_dim))
         print('Number of layers: {0}'.format(specs.layers_specs.size))
         for l in specs.layers_specs:
             print('> {0}, {1}, {2}'.format(l.ncenters, l.tau, l.radius))
-        print('Number of fixed layers: {0}'.format(len(specs.fixed_centers_files)))
+        print('Number of fixed layers: {0}'.format(
+            len(specs.fixed_centers_files)))
         for l in specs.fixed_centers_files:
             print('> {0}'.format(l))
         print(' ')
