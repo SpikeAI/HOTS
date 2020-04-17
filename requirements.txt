@@ -1,0 +1,5 @@
+numpy
+numba
+panda
+matplotlib
+line_profiler
