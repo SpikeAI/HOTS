@@ -26,15 +26,13 @@ setup(
                'Operating System :: POSIX',
                'Topic :: Scientific/Engineering',
                'Topic :: Utilities',
-               'Programming Language :: Python :: 2',
-               'Programming Language :: Python :: 2.7',
                'Programming Language :: Python :: 3',
-               'Programming Language :: Python :: 3.6',
+               'Programming Language :: Python :: 3.7',
               ],
     extras_require={
                 'html' : [
                          'notebook',
                          'matplotlib'
-                         'jupyter>=1.0']
+                         'jupyter']
     },
 )
