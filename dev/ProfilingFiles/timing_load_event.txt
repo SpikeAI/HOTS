@@ -1,114 +1,122 @@
 Timer unit: 1e-06 s
 
-Total time: 0.225514 s
-File: /Users/boutin.v/Documents/HOTS/HOTS/Event.py
-Function: LoadFromMat at line 34
+Total time: 0.356263 s
+File: /Users/laurentperrinet/quantic/science/SpikeAI/HOTS/HOTS/Event.py
+Function: LoadFromMat at line 38
 
 Line #      Hits         Time  Per Hit   % Time  Line Contents
 ==============================================================
-    34                                               def LoadFromMat(self,path, image_number, verbose=0):
-    35                                                   '''
-    36                                                   Load Events from a .mat file. Only the events contained in ListPolarities are kept:
-    37                                                   INPUT
-    38                                                       + path : a string which is the path of the .mat file (ex : './data_cache/ExtractedStabilized.mat')
-    39                                                       + image_number : list with all the numbers of image to load
-    40                                                   '''
-    41         3       134553  44851.0     59.7          obj = scipy.io.loadmat(path)
-    42         3           14      4.7      0.0          ROI = obj['ROI'][0]
-    43                                           
-    44         3            7      2.3      0.0          if type(image_number) is int:
-    45                                                       image_number = [image_number]
-    46         3            4      1.3      0.0          elif type(image_number) is not list:
-    47                                                       raise TypeError('the type of argument image_number should be int or list')
-    48         3            3      1.0      0.0          if verbose>0:
-    49                                                       print("chargement des images {0}".format(image_number))
-    50         3            2      0.7      0.0          Total_size=0
-    51        84           82      1.0      0.0          for idx, each_image  in enumerate(image_number):
-    52        81          104      1.3      0.0              image = ROI[each_image][0,0]
-    53                                           
-    54        81          170      2.1      0.1              Total_size += image[1].shape[1]
-    55                                           
-    56         3        12339   4113.0      5.5          self.address = np.zeros((Total_size,2)).astype(int)
-    57         3          631    210.3      0.3          self.time = np.zeros((Total_size))
-    58         3         1484    494.7      0.7          self.polarity = np.zeros((Total_size))
-    59         3            4      1.3      0.0          first_idx = 0
+    38                                               def LoadFromMat(self, path, image_number, verbose=0):
+    39                                                   '''
+    40                                                   Load Events from a .mat file. Only the events contained in ListPolarities are kept:
+    41                                                   INPUT
+    42                                                       + path : a string which is the path of the .mat file (ex : './data_cache/ExtractedStabilized.mat')
+    43                                                       + image_number : list with all the numbers of image to load
+    44                                                   '''
+    45         3     195507.0  65169.0     54.9          obj = scipy.io.loadmat(path)
+    46         3         10.0      3.3      0.0          ROI = obj['ROI'][0]
+    47                                           
+    48         3          6.0      2.0      0.0          if type(image_number) is int:
+    49                                                       image_number = [image_number]
+    50         3          3.0      1.0      0.0          elif type(image_number) is not list:
+    51                                                       raise TypeError(
+    52                                                           'the type of argument image_number should be int or list')
+    53         3          3.0      1.0      0.0          if verbose > 0:
+    54                                                       print("chargement des images {0}".format(image_number))
+    55         3          3.0      1.0      0.0          Total_size = 0
+    56        84         76.0      0.9      0.0          for idx, each_image in enumerate(image_number):
+    57        81        104.0      1.3      0.0              image = ROI[each_image][0, 0]
+    58                                           
+    59        81        169.0      2.1      0.0              Total_size += image[1].shape[1]
     60                                           
-    61        84           97      1.2      0.0          for idx, each_image in enumerate(image_number):
-    62        81          132      1.6      0.1              image = ROI[each_image][0,0]
-    63        81          218      2.7      0.1              last_idx = first_idx + image[0].shape[1]
-    64        81         3370     41.6      1.5              self.address[first_idx:last_idx,0] = (image[1] - 1).astype(int)
-    65        81         2276     28.1      1.0              self.address[first_idx:last_idx,1] = (image[0] - 1).astype(int)
-    66        81         3071     37.9      1.4              self.time[first_idx:last_idx] = (image[3] * 1e-6)
-    67        81         2292     28.3      1.0              self.polarity[first_idx:last_idx] = image[2].astype(int)
-    68        81           85      1.0      0.0              first_idx = last_idx
-    69                                           
-    70         3         6672   2224.0      3.0          self.polarity[self.polarity.T==-1] = 0
-    71         3         4023   1341.0      1.8          self.polarity = self.polarity.astype(int)
-    72                                                   ## Filter only the wanted polarity
-    73         3        17362   5787.3      7.7          self.ListPolarities = np.unique(self.polarity)
-    74         3         2313    771.0      1.0          filt = np.in1d(self.polarity,np.array(self.ListPolarities))
-    75         3        34197  11399.0     15.2          self.filter(filt,mode='itself')
-    76         3            9      3.0      0.0          if self.OutOnePolarity == True :
-    77                                                       self.polarity = np.ones_like(self.polarity).astype(int)
-    78                                                       self.ListPolarities = [1]
+    61         3      19033.0   6344.3      5.3          self.address = np.zeros((Total_size, 2)).astype(int)
+    62         3       1136.0    378.7      0.3          self.time = np.zeros((Total_size))
+    63         3         50.0     16.7      0.0          self.polarity = np.zeros((Total_size))
+    64         3          3.0      1.0      0.0          first_idx = 0
+    65                                           
+    66        84        163.0      1.9      0.0          for idx, each_image in enumerate(image_number):
+    67        81        333.0      4.1      0.1              image = ROI[each_image][0, 0]
+    68        81        667.0      8.2      0.2              last_idx = first_idx + image[0].shape[1]
+    69        81      11015.0    136.0      3.1              self.address[first_idx:last_idx, 0] = (image[1] - 1).astype(int)
+    70        81       7438.0     91.8      2.1              self.address[first_idx:last_idx, 1] = (image[0] - 1).astype(int)
+    71        81       8930.0    110.2      2.5              self.time[first_idx:last_idx] = (image[3] * 1e-6)
+    72        81      10565.0    130.4      3.0              self.polarity[first_idx:last_idx] = image[2].astype(int)
+    73        81        166.0      2.0      0.0              first_idx = last_idx
+    74                                           
+    75         3      11668.0   3889.3      3.3          self.polarity[self.polarity.T == -1] = 0
+    76         3       6392.0   2130.7      1.8          self.polarity = self.polarity.astype(int)
+    77                                                   # Filter only the wanted polarity
+    78         3      25518.0   8506.0      7.2          self.ListPolarities = np.unique(self.polarity)
+    79         3       2755.0    918.3      0.8          filt = np.in1d(self.polarity, np.array(self.ListPolarities))
+    80         3      54540.0  18180.0     15.3          self.filter(filt, mode='itself')
+    81         3         10.0      3.3      0.0          if self.OutOnePolarity == True:
+    82                                                       self.polarity = np.zeros_like(self.polarity)
+    83                                                       self.ListPolarities = [0]
 
-Total time: 0.228874 s
-File: /Users/boutin.v/Documents/HOTS/HOTS/Event.py
-Function: SimpleAlphabet at line 190
+Total time: 0.372568 s
+File: /Users/laurentperrinet/quantic/science/SpikeAI/HOTS/HOTS/Event.py
+Function: SimpleAlphabet at line 195
 
 Line #      Hits         Time  Per Hit   % Time  Line Contents
 ==============================================================
-   190                                           def SimpleAlphabet(NbTrainingData,NbTestingData,Path=None,LabelPath=None, ClusteringData=None, OutOnePolarity = False, ListPolarities=None, verbose=0):
-   191                                               '''
-   192                                               Extract the Data from the SimpleAlphabet DataBase :
-   193                                               INPUT :
-   194                                                   + NbTrainingData : (int) Number of Training Data
-   195                                                   + NbTestingData : (int) Number of Testing Data
-   196                                                   + Path : (str) Path of the .mat file. If the path is None, the path is ../database/SimpleAlphabet/ExtractedStabilized.mat
-   197                                                   + LabelPath : (str) Path of the .pkl label path. If the path is None, the path is  ../database/SimpleAlphabet/alphabet_label.pkl
-   198                                                   + ClusteringData : (list) a list of int indicating the image used to train the cluster. If None, the image used to train the
-   199                                                       the cluster are the trainingData
-   200                                                   + OutOnePolarity : (bool), transform all polarities into 1 polarity
-   201                                                   + ListPolarities : (list), list of the polarity we want to keep
-   202                                               OUTPUT :
-   203                                                   + event_tr : (<object event>)
-   204                                                   + event_te : (<object event>)
-   205                                                   + event_cl : (<object event>)
-   206                                                   + label_tr :
-   207                                                   + label_te :
-   208                                               '''
-   209         1            4      4.0      0.0      if Path is None :
-   210                                                   Path = '../database/SimpleAlphabet/ExtractedStabilized.mat'
-   211                                           
-   212         1            1      1.0      0.0      if LabelPath is None :
-   213                                                   label_list=LoadObject('../database/SimpleAlphabet/alphabet_label.pkl')
-   214                                               else :
-   215         1          178    178.0      0.1          label_list=LoadObject(LabelPath)
+   195                                           def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, ClusteringData=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
+   196                                               '''
+   197                                               Extract the Data from the SimpleAlphabet DataBase :
+   198                                               INPUT :
+   199                                                   + NbTrainingData : (int) Number of Training Data
+   200                                                   + NbTestingData : (int) Number of Testing Data
+   201                                                   + Path : (str) Path of the .mat file. If the path is None, the path is ../database/SimpleAlphabet/ExtractedStabilized.mat
+   202                                                   + LabelPath : (str) Path of the .pkl label path. If the path is None, the path is  ../database/SimpleAlphabet/alphabet_label.pkl
+   203                                                   + ClusteringData : (list) a list of int indicating the image used to train the cluster. If None, the image used to train the
+   204                                                       the cluster are the trainingData
+   205                                                   + OutOnePolarity : (bool), transform all polarities into 1 polarity
+   206                                                   + ListPolarities : (list), list of the polarity we want to keep
+   207                                               OUTPUT :
+   208                                                   + event_tr : (<object event>)
+   209                                                   + event_te : (<object event>)
+   210                                                   + event_cl : (<object event>)
+   211                                                   + label_tr :
+   212                                                   + label_te :
+   213                                               '''
+   214         1          4.0      4.0      0.0      if Path is None:
+   215                                                   Path = '../database/SimpleAlphabet/ExtractedStabilized.mat'
    216                                           
-   217         1            2      2.0      0.0      if NbTrainingData+NbTestingData > 76:
-   218                                                   raise NameError('Overlaping between TrainingData and Testing Data')
-   219         1           19     19.0      0.0      event_tr = Event(ImageSize=(32,32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-   220         1            7      7.0      0.0      event_te = Event(ImageSize=(32,32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-   221         1            8      8.0      0.0      event_cl = Event(ImageSize=(32,32), ListPolarities=ListPolarities ,OutOnePolarity=OutOnePolarity)
-   222         1        82248  82248.0     35.9      event_tr.LoadFromMat(Path,image_number=list(np.arange(0,NbTrainingData)),verbose=verbose)
-   223         1        95342  95342.0     41.7      event_te.LoadFromMat(Path,image_number=list(np.arange(NbTrainingData, NbTrainingData+NbTestingData)),verbose=verbose)
-   224                                           
-   225         1            2      2.0      0.0      if ClusteringData is None :
-   226                                                   event_cl = event_tr
-   227                                               else :
-   228         1        49969  49969.0     21.8          event_cl.LoadFromMat(Path,image_number=ClusteringData,verbose=verbose)
-   229                                           
-   230                                               ## Generate Groud Truth Label
-   231        37           46      1.2      0.0      for idx,img in enumerate(np.arange(0,NbTrainingData)):
-   232        36           30      0.8      0.0          if idx!= 0:
-   233        35          468     13.4      0.2              label_tr = np.vstack((label_tr,label_list[img][0]))
-   234                                                   else:
-   235         1            2      2.0      0.0              label_tr = label_list[img][0]
-   236                                           
-   237        41           40      1.0      0.0      for idx,img in enumerate(np.arange(NbTrainingData,NbTrainingData+NbTestingData)):
-   238        40           29      0.7      0.0          if idx!= 0:
-   239        39          477     12.2      0.2              label_te = np.vstack((label_te,label_list[img][0]))
-   240                                                   else:
-   241         1            1      1.0      0.0              label_te = label_list[img][0]
-   242                                           
-   243         1            1      1.0      0.0      return event_tr, event_te, event_cl, label_tr, label_te
+   217         1          1.0      1.0      0.0      if LabelPath is None:
+   218                                                   label_list = LoadObject(
+   219                                                       '../database/SimpleAlphabet/alphabet_label.pkl')
+   220                                               else:
+   221         1        164.0    164.0      0.0          label_list = LoadObject(LabelPath)
+   222                                           
+   223         1          2.0      2.0      0.0      if NbTrainingData+NbTestingData > 76:
+   224                                                   raise NameError('Overlaping between TrainingData and Testing Data')
+   225         1          2.0      2.0      0.0      event_tr = Event(ImageSize=(
+   226         1         25.0     25.0      0.0          32, 32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
+   227         1          1.0      1.0      0.0      event_te = Event(ImageSize=(
+   228         1         12.0     12.0      0.0          32, 32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
+   229         1          1.0      1.0      0.0      event_cl = Event(ImageSize=(
+   230         1         13.0     13.0      0.0          32, 32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
+   231         1          1.0      1.0      0.0      event_tr.LoadFromMat(Path, image_number=list(
+   232         1     199313.0 199313.0     53.5          np.arange(0, NbTrainingData)), verbose=verbose)
+   233         1          7.0      7.0      0.0      event_te.LoadFromMat(Path, image_number=list(
+   234         1     121967.0 121967.0     32.7          np.arange(NbTrainingData, NbTrainingData+NbTestingData)), verbose=verbose)
+   235                                           
+   236         1          1.0      1.0      0.0      if ClusteringData is None:
+   237                                                   event_cl = event_tr
+   238                                               else:
+   239         1          1.0      1.0      0.0          event_cl.LoadFromMat(
+   240         1      49601.0  49601.0     13.3              Path, image_number=ClusteringData, verbose=verbose)
+   241                                           
+   242                                               # Generate Groud Truth Label
+   243        37         51.0      1.4      0.0      for idx, img in enumerate(np.arange(0, NbTrainingData)):
+   244        36         23.0      0.6      0.0          if idx != 0:
+   245        35        646.0     18.5      0.2              label_tr = np.vstack((label_tr, label_list[img][0]))
+   246                                                   else:
+   247         1          2.0      2.0      0.0              label_tr = label_list[img][0]
+   248                                           
+   249        41         45.0      1.1      0.0      for idx, img in enumerate(np.arange(NbTrainingData, NbTrainingData+NbTestingData)):
+   250        40         27.0      0.7      0.0          if idx != 0:
+   251        39        656.0     16.8      0.2              label_te = np.vstack((label_te, label_list[img][0]))
+   252                                                   else:
+   253         1          1.0      1.0      0.0              label_te = label_list[img][0]
+   254                                           
+   255         1          1.0      1.0      0.0      return event_tr, event_te, event_cl, label_tr, label_te
