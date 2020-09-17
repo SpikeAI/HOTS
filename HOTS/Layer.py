@@ -137,21 +137,23 @@ class ClusteringLayer(Layer):
         self.input = event
         self.SpTe_Layer = STS(tau=self.tau, R=self.R,
                               verbose=self.verbose, sigma=self.sigma)
-        Surface_Layer = self.SpTe_Layer.create(
-            event=self.input, kernel=self.kernel)
+        Surface_Layer = self.SpTe_Layer.create(event=self.input, kernel=self.kernel)
+
         # Check that THRFilter=0 is equivalent to no Filter
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.output, _ = Cluster.predict(
             Surface=self.SpTe_Layer.Surface, event=event_filtered)
+
         return self.output
 
     def TrainLayer(self, event, nb_cluster, to_record=False, NbCycle=1):
         '''
-        Learn the Cluster
+        Train the ClusteringLayer
+
         INPUT :
             + event (<object event>) : input event
-            + nb_cluster(<int>) : nb of centers
+            + nb_cluster (<int>) : nb of centers
             + record_each (<int>) : record the convergence error each reach_each
             + NbCycle (<int>) : number of time we repeat the learning process. Need to be used when not enought training data to reach the convergence
 

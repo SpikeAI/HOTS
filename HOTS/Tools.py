@@ -24,7 +24,7 @@ def prediction(to_predict, prototype):
             np.sum((to_predict[idx] - prototype)**2, axis=1))
         polarity[idx] = np.argmin(Euclidian_distance)
         output_distance[idx] = np.amin(Euclidian_distance)
-    return output_distance, polarity
+    return output_distance, polarity.astype(int)
 
 
 def Norm(Hist, Histo_proto, method):

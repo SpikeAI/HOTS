@@ -9,7 +9,7 @@ class KmeansLagorce(Cluster):
     '''
     Clustering algorithm as defined in the HOTS paper (Lagorce et al 2017)
     INPUT :
-        + nb_cluster : (<int>) number of cluster centers
+        + nb_cluster : (<int>) number of centriods to cluster
         + to_record : (<boolean>) parameter to activate the monitoring of the learning
         + verbose : (<int>) control the verbosity
     '''
@@ -48,7 +48,6 @@ class KmeansLagorce(Cluster):
             nb_proto = np.zeros((self.nb_cluster))
             for idx, Si in enumerate(surface):
                 # find the closest prototype
-                #Distance_to_proto = EuclidianNorm(Si, self.prototype)
                 Distance_to_proto = np.linalg.norm(
                     Si - self.prototype, ord=2, axis=1)
                 closest_proto_idx = np.argmin(Distance_to_proto)

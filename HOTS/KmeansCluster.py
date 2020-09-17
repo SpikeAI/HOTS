@@ -26,21 +26,20 @@ class Cluster(object):
         '''
         Methods to predict the closest prototype from a stream a STS
         INPUT :
-            + Surface : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1)) representing the
-                spatiotemporal surface to cluster
-            + event : (<event object>) event associated to the STS. return another event stream with new polarity
+            + Surface : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1))
+                representing the spatiotemporal surface to cluster.
+            + event : (<event object>) event associated to the STS. return another
+                event stream with new polarity
         OUTPUT :
             + output_distance : (<np.array>)
-            + event_output : (<event.object>)
-            + polarity : (<np.array>)
+            + either: event_output : (<event.object>)
+            + or : polarity : (<np.array>)
         '''
 
         if self.prototype is None:
             raise ValueError('Train the Cluster before doing prediction')
 
-        output_distance, polarity = Tools.prediction(
-            Surface, self.prototype)
-        polarity = polarity.astype(int)
+        output_distance, polarity = Tools.prediction(Surface, self.prototype)
 
         if event is not None:
             event_output = event.copy()
@@ -68,7 +67,6 @@ class Cluster(object):
         pol, output_distance, = self.predict(to_predict)
         error = np.mean(output_distance)
         active_probe = np.histogram(pol, bins=np.arange(self.nb_cluster+1))[0]
-        record_one = pd.DataFrame([{'error': error,
-                                    'histo': active_probe}],
-                                  index=[idx_global])
-        self.record = pd.concat([self.record, record_one])
+
+        self.record.loc[idx_global] = {'error': error,
+                                     'histo': active_probe}
