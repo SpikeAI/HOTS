@@ -2,9 +2,6 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import time
 import numpy as np
-from HOTS.Tools import EuclidianNorm, prediction
-import HOTS.Tools as Tools
-import itertools
 
 
 class Cluster(object):

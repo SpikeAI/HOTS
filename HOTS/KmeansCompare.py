@@ -2,10 +2,6 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import time
 import numpy as np
-import pandas as pd
-from HOTS.Tools import EuclidianNorm, prediction
-import HOTS.Tools as Tools
-import itertools
 from HOTS.KmeansCluster import Cluster
 
 class KmeansCompare(Cluster):

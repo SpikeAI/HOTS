@@ -75,7 +75,6 @@ class KmeansWithoutHomeo(Cluster):
 
         np.random.shuffle(X_train)
         batches = np.array_split(X_train, n_batches)
-        import itertools
         # Return elements from list of batches until it is exhausted. Then repeat the sequence indefinitely.
         #
         batches = itertools.cycle(batches)

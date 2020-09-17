@@ -2,10 +2,8 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import time
 import numpy as np
-import pandas as pd
 from HOTS.Tools import EuclidianNorm, prediction
 import HOTS.Tools as Tools
-import itertools
 from HOTS.KmeansCluster import Cluster
 
 class KmeansLagorce(Cluster):
@@ -62,7 +60,7 @@ class KmeansLagorce(Cluster):
                                        * np.sqrt(np.dot(Ck, Ck)))
                 Ck_t = Ck + alpha*(Si - beta*Ck)
                 #Ck_t = Ck + alpha*beta*(Si - Ck)
-                
+
                 # Updating the number of selection
                 nb_proto[closest_proto_idx] += 1
                 self.prototype[closest_proto_idx, :] = Ck_t
