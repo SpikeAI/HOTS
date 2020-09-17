@@ -5,9 +5,7 @@ import numpy as np
 from random import shuffle
 from os import listdir
 from HOTS.Tools import LoadObject
-import numba
 import HOTS.libUnpackAtis as ua
-
 
 class Event(object):
     '''
@@ -135,7 +133,6 @@ class Event(object):
             self.polarity = np.zeros_like(self.polarity)
             self.ListPolarities = [0]
 
-    # @numba.jit(nopython=True)
     def SeparateEachImage(self):
         '''
         find the separation event index if more than one image is represented, and store it into
@@ -150,7 +147,6 @@ class Event(object):
         self.ChangeIdx[:-1] = np.arange(0, comp.shape[0])[comp]
         self.ChangeIdx[-1] = comp.shape[0]
 
-    # @numba.jit(nopython=True)
     def copy(self):
         '''
         copy the address, polarity, timing, and event_nb to another event
@@ -167,7 +163,6 @@ class Event(object):
 
         return event_output
 
-    # @numba.jit(nopython=True)
     def filter(self, filt, mode=None):
         '''
         filter the event is mode is 'itself', or output another event else

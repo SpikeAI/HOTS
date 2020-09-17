@@ -2,13 +2,10 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import numpy as np
 import pickle
-from numba import jit
 
-
-@jit(nopython=True)
-def jitted_prediction(to_predict, prototype):
+def prediction(to_predict, prototype):
     '''
-    jitted fonction to fast predict polarities
+    function to predict polarities
     INPUT :
         + to_predict : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1)) representing the
             spatiotemporal surface to cluster

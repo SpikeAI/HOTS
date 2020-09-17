@@ -3,8 +3,7 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 import time
 import numpy as np
 import pandas as pd
-from numba import jit
-from HOTS.Tools import EuclidianNorm, jitted_prediction
+from HOTS.Tools import EuclidianNorm, prediction
 import HOTS.Tools as Tools
 import itertools
 
@@ -43,7 +42,7 @@ class Cluster(object):
         if self.prototype is None:
             raise ValueError('Train the Cluster before doing prediction')
 
-        output_distance, polarity = Tools.jitted_prediction(
+        output_distance, polarity = Tools.prediction(
             Surface, self.prototype)
         polarity = polarity.astype(int)
 

@@ -1,6 +1,6 @@
 from HOTS.KmeansCluster import Cluster
 import numpy as np
-from HOTS.Tools import EuclidianNorm, jitted_prediction
+from HOTS.Tools import EuclidianNorm, prediction
 import HOTS.Tools as Tools
 import itertools
 import time
