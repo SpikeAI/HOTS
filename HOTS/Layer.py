@@ -2,16 +2,19 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import numpy as np
 from HOTS.STS import STS
-from HOTS.KmeansCluster import KmeansLagorce, KmeansMaro, KmeansCompare
-from HOTS.KmeansHomeoCluster import KmeansHomeo
-from HOTS.HomeoTest import KmeansWithoutHomeo
+from HOTS.KmeansLagorce import KmeansLagorce
+from HOTS.KmeansMaro import KmeansMaro
+from HOTS.KmeansCompare import KmeansCompare
+from HOTS.KmeansHomeo import KmeansHomeo
+from HOTS.KmeansWithoutHomeo import KmeansWithoutHomeo
 
 
 class Layer(object):
     '''
     Layer is a mother class. A Layer is considered as an object with 2 main attributes :
     INPUT :
-        + verbose : (<int>) control the verbosity
+        + verbose : (<int>) controls verbosity
+        + type : (<str>) describes layer type
 
     '''
 
@@ -22,7 +25,7 @@ class Layer(object):
 
 class FilterNHBD(Layer):
     '''
-    Filter that keep the event if the number of event in a neighbour of size [2*neighbourhood+1,2*neighbourhood+1]
+    Filter that keeps the event if the number of event in a neighbour of size [2*neighbourhood+1,2*neighbourhood+1]
     is over the threshold value
     INPUT
         + threshold : (int), specify the minimum number of neighbour
