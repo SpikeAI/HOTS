@@ -2,9 +2,6 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import time
 import numpy as np
-import pandas as pd
-
-from HOTS.Tools import EuclidianNorm
 from HOTS.KmeansCluster import Cluster
 import itertools
 
@@ -75,7 +72,6 @@ class KmeansHomeo(Cluster):
 
         np.random.shuffle(X_train)
         batches = np.array_split(X_train, n_batches)
-        import itertools
         # Return elements from list of batches until it is exhausted. Then repeat the sequence indefinitely.
         #
         batches = itertools.cycle(batches)
