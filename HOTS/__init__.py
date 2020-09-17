@@ -19,5 +19,4 @@ from HOTS import KmeansCluster
 from HOTS import KmeansLagorce
 from HOTS import KmeansMaro
 from HOTS import KmeansHomeo
-from HOTS import KmeansWithoutHomeo
 from HOTS import KmeansCompare

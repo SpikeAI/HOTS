@@ -6,8 +6,6 @@ from HOTS.KmeansLagorce import KmeansLagorce
 from HOTS.KmeansMaro import KmeansMaro
 from HOTS.KmeansCompare import KmeansCompare
 from HOTS.KmeansHomeo import KmeansHomeo
-from HOTS.KmeansWithoutHomeo import KmeansWithoutHomeo
-
 
 class Layer(object):
     '''
@@ -88,14 +86,15 @@ class ClusteringLayer(Layer):
     def __init__(self, tau, R,  ThrFilter=0, LearningAlgo='lagorce', kernel='exponential',
                  eta=None, eta_homeo=None, C=None, sigma=None, l0_sparseness=5, verbose=0):
         Layer.__init__(self, verbose)
+        LearningAlgos = ['homeo', 'maro', 'lagorce', 'comp']
         self.type = 'Layer'
         self.tau = tau
         self.R = R
         self.ThrFilter = ThrFilter
         self.LearningAlgo = LearningAlgo
-        if self.LearningAlgo not in ['homeo', 'maro', 'lagorce', 'comp']:
+        if self.LearningAlgo not in LearningAlgos:
             raise KeyError(
-                'LearningAlgo should be in [homeo,maro,lagorce,comp]')
+                'LearningAlgo should be in ' + str(LearningAlgos))
         self.kernel = kernel
         if self.kernel not in ['linear', 'exponential']:
             raise KeyError('[linear,exponential]')
@@ -115,9 +114,10 @@ class ClusteringLayer(Layer):
             self.ClusterLayer = KmeansHomeo(nb_cluster=0, verbose=self.verbose, to_record=False,
                                             eta=self.eta, eta_homeo=self.eta_homeo, C=self.C)
         elif self.LearningAlgo == 'comp':
-            self.ClusterLayer = KmeansWithoutHomeo(nb_cluster=0, verbose=self.verbose, to_record=False,
-                                                   eta=self.eta, eta_homeo=self.eta_homeo, C=self.C,
-                                                   l0_sparseness=self.l0_sparseness, Norm_Type='standard')
+            self.ClusterLayer = KmeansHomeo(nb_cluster=0, verbose=self.verbose,
+                                            to_record=False,
+                                            eta=self.eta, eta_homeo=0, C=self.C,
+                                            l0_sparseness=self.l0_sparseness,  Norm_Type='standard')
         # print(eta_homeo)
 
     def RunLayer(self, event, Cluster):

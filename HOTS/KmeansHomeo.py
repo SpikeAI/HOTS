@@ -24,7 +24,7 @@ class KmeansHomeo(Cluster):
     '''
 
     def __init__(self, nb_cluster, to_record=False, verbose=0, nb_quant=100,
-                 C=6, Norm_Type='max', eta=0.000005, eta_homeo=0.0005, l0=0):
+                 C=6, Norm_Type='max', eta=0.000005, eta_homeo=0.0005, l0_sparseness=5):
         Cluster.__init__(self, nb_cluster, to_record, verbose)
         self.nb_quant = nb_quant
         self.C = C
@@ -37,10 +37,10 @@ class KmeansHomeo(Cluster):
             self.eta = eta
 
         if eta_homeo is None:
-            self.eta_homeo = 0.0005
-        else:
-            self.eta_homeo = eta_homeo
+            self.P_cum = None
+        self.eta_homeo = eta_homeo
 
+        self.l0_sparseness = l0_sparseness
         self.verbose = verbose
 
     def fit(self, STS, batch_size=100, NbCycle=1, record_num_batches=10000):
@@ -66,8 +66,9 @@ class KmeansHomeo(Cluster):
         norm = self.norm(X_train, Norm_Type=self.Norm_Type)
         X_train /= norm[:, np.newaxis]
         prototype = X_train[:self.nb_cluster, :].copy()
-        self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[
-            np.newaxis, :] * np.ones((self.nb_cluster, 1))
+        if not self.P_cum is None:
+            self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[
+                np.newaxis, :] * np.ones((self.nb_cluster, 1))
         n_batches = n_samples // batch_size
 
         np.random.shuffle(X_train)
@@ -88,21 +89,30 @@ class KmeansHomeo(Cluster):
                 #nb_quant = P_cum.shape[1]
                 stick = np.arange(self.nb_cluster)*self.nb_quant
 
-            corr = (this_X @ prototype.T)
+            if not self.P_cum is None:
 
-            for i_sample in range(n_samples):
-                c = corr[i_sample, :].copy()
-                #ind = np.argmax(c)
-                ind = np.argmax(self.quantile(
-                    self.P_cum, self.rescaling(c), stick))
-                sparse_code[i_sample, ind] = c[ind]
-                Si = this_X[i_sample, :]
-                Ck = prototype[ind, :]
+                corr = (this_X @ prototype.T)
 
-                #alpha = 1/(1+pk)
-                beta = np.dot(Ck, Si)/(np.sqrt(np.dot(Si, Si))
-                                       * np.sqrt(np.dot(Ck, Ck)))
-                prototype[ind, :] = Ck + beta * self.eta * (Si - Ck)
+                for i_sample in range(n_samples):
+                    c = corr[i_sample, :].copy()
+                    #ind = np.argmax(c)
+                    ind = np.argmax(self.quantile(
+                        self.P_cum, self.rescaling(c), stick))
+                    sparse_code[i_sample, ind] = c[ind]
+                    Si = this_X[i_sample, :]
+                    Ck = prototype[ind, :]
+
+                    #alpha = 1/(1+pk)
+                    beta = np.dot(Ck, Si)/(np.sqrt(np.dot(Si, Si))
+                                           * np.sqrt(np.dot(Ck, Ck)))
+                    prototype[ind, :] = Ck + beta * self.eta * (Si - Ck)
+            else:
+                stick = np.arange(self.nb_cluster)*self.nb_quant
+
+                sparse_code = self.code(this_X, prototype)
+                residual = this_X - sparse_code @ prototype
+                residual /= self.nb_cluster
+                prototype += self.eta * sparse_code.T @ residual
 
             norm = self.norm(prototype, Norm_Type=self.Norm_Type)
 
@@ -121,13 +131,12 @@ class KmeansHomeo(Cluster):
                     error = np.linalg.norm(
                         X_train[indx, :] - polarity @ prototype)/record_num_batches
                     active_probe = np.sum(polarity > 0, axis=0)
-                    record_one = pd.DataFrame([{'error': error,
+                    self.record.loc[ii] = {'error': error,
                                                 'histo': active_probe,
-                                                'var': np.var(active_probe)}],
-                                              index=[ii])
-                    self.record = pd.concat([self.record, record_one])
+                                                'var': np.var(active_probe)}
+            if not self.P_cum is None:
+                self.P_cum = self.update_Pcum(self.P_cum, sparse_code)
 
-            self.P_cum = self.update_Pcum(self.P_cum, sparse_code)
         self.prototype = prototype
         return prototype
 
@@ -182,20 +191,37 @@ class KmeansHomeo(Cluster):
         '''
         n_samples = X.shape[0]
         corr = X @ dictionary.T
-        stick = np.arange(self.nb_cluster)*self.nb_quant
-        if sparse == False:
-            polarity = np.zeros(n_samples).astype(int)
-        else:
-            polarity = np.zeros((n_samples, self.nb_cluster)).astype(int)
+        if not self.P_cum is None:
 
-        for i_sample in range(n_samples):
-            c = corr[i_sample, :].copy()
-            ind = np.argmax(self.quantile(P_cum, self.rescaling(c), stick))
+            stick = np.arange(self.nb_cluster)*self.nb_quant
             if sparse == False:
-                polarity[i_sample] = ind
+                polarity = np.zeros(n_samples).astype(int)
             else:
-                polarity[i_sample, ind] = 1
-        return polarity
+                polarity = np.zeros((n_samples, self.nb_cluster)).astype(int)
+
+            for i_sample in range(n_samples):
+                c = corr[i_sample, :].copy()
+                ind = np.argmax(self.quantile(P_cum, self.rescaling(c), stick))
+                if sparse == False:
+                    polarity[i_sample] = ind
+                else:
+                    polarity[i_sample, ind] = 1
+
+            return polarity
+
+        else:
+            Xcorr = (dictionary @ dictionary.T)
+            sparse_code = np.zeros((n_samples, self.nb_cluster))
+            for i_sample in range(n_samples):
+                c = corr[i_sample, :].copy()
+                list_of_ind = list()
+                list_of_c = list()
+                for i_l0 in range(int(self.l0_sparseness)):
+                    ind = np.argmax(c)
+                    c_ind = c[ind] / Xcorr[ind, ind]
+                    sparse_code[i_sample, ind] += c_ind
+                    c -= c_ind * Xcorr[ind, :]
+            return sparse_code
 
     def get_Pcum(self, code):
         '''
