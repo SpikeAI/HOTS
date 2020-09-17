@@ -2,7 +2,7 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import numpy as np
 
-from HOTS.Tools import EuclidianNorm, NormalizedNorm, BattachaNorm, Norm
+from HOTS.Tools import Norm
 from HOTS.Tools import GenerateHistogram
 
 
@@ -38,8 +38,7 @@ class Classifier(object):
         nb_sample = list_of_classified[0].shape[0]
         list_of_accuracy = list()
         for idx, each_norm in enumerate(list_of_classified):
-            list_of_accuracy.append(
-                (np.sum(list_of_classified[idx] == self.GroundTruth)/nb_sample))
+            list_of_accuracy.append((np.sum(list_of_classified[idx] == self.GroundTruth)/nb_sample))
 
         return list_of_accuracy
 
@@ -75,10 +74,7 @@ class Classifier(object):
         if to_print == True:
             to_write = ''
             for each_accu, each_method in zip(accu, allmethod):
-                # print(each_accu))
-                # print(type(each_method))
-                to_write = str(each_method) + ':' + \
-                    str(each_accu*100) + '% ### ' + to_write
+                to_write = str(each_method) + ':' + str(each_accu*100) + '% ### ' + to_write
             print(to_write)
 
         return prediction, accu, allmethod
