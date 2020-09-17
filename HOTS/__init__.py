@@ -1,5 +1,5 @@
 from __future__ import division, print_function, absolute_import
-___author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS"
+___author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Grimaldi (2020-)"
 __version__ = '2017-01-10'
 __licence__ = 'GPLv3'
 __all__ = ['STS.py']

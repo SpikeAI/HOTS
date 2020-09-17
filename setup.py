@@ -1,4 +1,4 @@
-__author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS"
+__author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Grimaldi (2020-)"
 
 import os
 from setuptools import setup, find_packages
