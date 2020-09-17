@@ -6,6 +6,7 @@ Python code to replicate [HOTS: A Hierarchy of Event-Based Time-Surfaces for Pat
 Running the HOTS library requires the following packages :
 
 * numpy
+* pandas
 * matplotlib
 
 This can be performed using the `requirements.txt` file :

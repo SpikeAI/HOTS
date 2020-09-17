@@ -2,7 +2,8 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import time
 import numpy as np
-
+import pandas as pd
+import HOTS.Tools as Tools
 
 class Cluster(object):
     '''

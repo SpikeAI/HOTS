@@ -3,7 +3,6 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 import time
 import numpy as np
 from HOTS.Tools import EuclidianNorm, prediction
-import HOTS.Tools as Tools
 from HOTS.KmeansCluster import Cluster
 
 class KmeansLagorce(Cluster):
@@ -15,7 +14,7 @@ class KmeansLagorce(Cluster):
         + verbose : (<int>) control the verbosity
     '''
 
-    def __init__(self, nb_cluster, to_record=True, verbose=0, verbose=0):
+    def __init__(self, nb_cluster, to_record=True, verbose=0):
         Cluster.__init__(self, nb_cluster, to_record, verbose)
 
     def fit(self, STS, init=None, NbCycle=1):

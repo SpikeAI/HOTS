@@ -14,7 +14,10 @@ Pattern Recognition' Xavier Lagorce, Garrick Orchard, Fransesco Gallupi, And Rya
 from HOTS import STS
 from HOTS import Event
 from HOTS import Monitor
-from HOTS import KmeansCluster
 from HOTS import Tools
-from HOTS import KmeansHomeoCluster
-from HOTS import HomeoTest
+from HOTS import KmeansCluster
+from HOTS import KmeansLagorce
+from HOTS import KmeansMaro
+from HOTS import KmeansHomeo
+from HOTS import KmeansWithoutHomeo
+from HOTS import KmeansCompare
