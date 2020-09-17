@@ -79,7 +79,7 @@ class STS(object):
 
             elif kernel == 'linear':
                 # TODO : deprecate this kernel
-                mask = (self.LocalTimeDiff < self.tau)
+                mask = (self.LocalTimeDiff < self.tau) * 1.
                 mask *= self.mask_circular
                 SI = ((1-self.LocalTimeDiff/self.tau)  * mask)
             else:
