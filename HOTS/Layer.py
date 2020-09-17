@@ -9,7 +9,8 @@ from HOTS.KmeansHomeo import KmeansHomeo
 
 class Layer(object):
     '''
-    Layer is a mother class. A Layer is considered as an object with 2 main attributes :
+    Layer is the mother class.
+
     INPUT :
         + verbose : (<int>) controls verbosity
         + type : (<str>) describes layer type
@@ -23,12 +24,16 @@ class Layer(object):
 
 class FilterNHBD(Layer):
     '''
-    Filter that keeps the event if the number of event in a neighbour of size [2*neighbourhood+1,2*neighbourhood+1]
+    Filtering layer that keeps the event if the number of event in a neighbour
+    of size [2*neighbourhood+1,2*neighbourhood+1] around the event's position
     is over the threshold value
+
     INPUT
         + threshold : (int), specify the minimum number of neighbour
         + neighbourhood : (int), specify the size of the neighbourhood to take into account
         + verbose : (<int>) control the verbosity
+
+    TODO: is that function redundant with FilterRecent ?
     '''
 
     def __init__(self, threshold, neighbourhood, verbose=0):
@@ -77,10 +82,10 @@ class ClusteringLayer(Layer):
         + ThrFilter :
         + LearningAlgo : (<string>)
         + kernel : (<string>)
-        + eta :
-        + eta_homeo :
-        + sigma : (<float>) parameter of filtering in the circular filter. If None, there is no filter applied
-        + verbose : (<int>) control the verbosity
+        + eta : (<float>) learning rate.
+        + eta_homeo : (<float>) learning rate for homeostasis. Set to zero to not use homeostasis.
+        + sigma : (<float>) parameter of filtering in the isotropic filter. If None, there is no filter applied
+        + verbose : (<int>) controls the verbosity
     '''
 
     def __init__(self, tau, R,  ThrFilter=0, LearningAlgo='lagorce', kernel='exponential',
@@ -135,8 +140,8 @@ class ClusteringLayer(Layer):
         Surface_Layer = self.SpTe_Layer.create(
             event=self.input, kernel=self.kernel)
         # Check that THRFilter=0 is equivalent to no Filter
-        event_filtered, filt = self.SpTe_Layer.FilterRecent(
-            event=self.input, threshold=self.ThrFilter)
+        event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
+
         self.output, _ = Cluster.predict(
             Surface=self.SpTe_Layer.Surface, event=event_filtered)
         return self.output
@@ -159,8 +164,9 @@ class ClusteringLayer(Layer):
                               verbose=self.verbose, sigma=self.sigma)
         Surface_Layer = self.SpTe_Layer.create(
             event=self.input, kernel=self.kernel)
-        event_filtered, filt = self.SpTe_Layer.FilterRecent(
-            event=self.input, threshold=self.ThrFilter)
+
+        event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
+
         self.ClusterLayer.nb_cluster, self.ClusterLayer.to_record = nb_cluster, to_record
         Prototype = self.ClusterLayer.fit(self.SpTe_Layer, NbCycle=NbCycle)
         self.output, _ = self.ClusterLayer.predict(

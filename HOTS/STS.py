@@ -72,8 +72,7 @@ class STS(object):
             x, y = addr + self.R
 
             self.ListOfTimeMatrix[pol, x, y] = t
-            self.LocalTimeDiff = t - \
-                self.ListOfTimeMatrix[:, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]
+            self.LocalTimeDiff = t - self.ListOfTimeMatrix[:, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]
 
             if kernel == 'exponential':
                 #SI = np.exp(-(t-self.LocalTimeMatrix)/self.tau).reshape((len(self.ListPolarities)* self.area))
@@ -87,6 +86,7 @@ class STS(object):
                 SI2 = SI.reshape((len(self.ListPolarities) * self.area))
             else:
                 print('error')
+
             self.Surface[idx_event, :] = SI2  # SI*self.mask
             t_previous = t
             if idx_event == stop:
@@ -100,8 +100,9 @@ class STS(object):
 
     def FilterRecent(self, event, threshold=0):
         '''
-        Method to filter the event. Only the event associated with a surface having enought recent event
-            in the neighbourhood with be kept
+        Method to filter events. Only the events associated with a surface having
+            enough recent events in the neighbourhood with be kept.
+
         INPUT :
             + event : (<object event>) stream of event to filter
             + threshold : (<float>), filtering parameter. 0 means no filter
@@ -109,6 +110,9 @@ class STS(object):
             + event_output : (<object event>) filtered stream of event
             + filt : (<np array>) bolean vector of size (nb_of_input event). A False is assocated with the
                 removed event and a True is assocated with kept event
+
+        TODO: is that function redundant with FilterNHBD ?
+
         '''
         # if self.verbose > 0:
         #    print('threshold', threshold)

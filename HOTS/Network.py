@@ -3,7 +3,7 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 class Network(object):
     '''
-    Class to define a network
+    Class to define a hierarchical network
         INPUT :
             + Layers : (<list>) list of (<object Layer>) stacking in the order of excecution all the Layers
                 of the Network
@@ -16,7 +16,7 @@ class Network(object):
 
     def TrainCluster(self, event, NbClusterList, to_record=False, NbCycle=1):
         '''
-        Method to train all the layer of the network
+        Method to train all the layers of the network
         INPUT :
             + event : (<obect event>) the input event of the network
             + NbClusterList : (<list>) of int, stacking the number of cluster of each Clustering Layers
