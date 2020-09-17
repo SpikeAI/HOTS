@@ -4,7 +4,7 @@
 # libDataHelper.py #
 ####################
 # April 2017 - Jean-Matthieu Maro
-# Email: jean-matthieu dot maro, hosted at inserm, which is located in FRance.
+# Email: jean-matthieu dot maro, hosted at inserm, which is located in France.
 
 # read db files and so on to easily load data and labels
 

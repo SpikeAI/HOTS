@@ -3,7 +3,7 @@
 # unpackAtis.py #
 #################
 # Feb 2017 - Jean-Matthieu Maro
-# Email: jean-matthieu dot maro, hosted at inserm, which is located in FRance.
+# Email: jean-matthieu dot maro, hosted at inserm, which is located in France.
 # Thanks to Germain Haessig for his code snippets (in peek and readATIS_td).
 
 from struct import unpack, pack
