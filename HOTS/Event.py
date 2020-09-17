@@ -36,7 +36,7 @@ class Event(object):
         '''
         Load Events from a .mat file. Only the events contained in ListPolarities are kept:
         INPUT
-            + path : a string which is the path of the .mat file (ex : './data_cache/ExtractedStabilized.mat')
+            + path : a string which is the path of the .mat file (ex : './data_cache/alphabet_ExtractedStabilized.mat')
             + image_number : list with all the numbers of image to load
         '''
         obj = scipy.io.loadmat(path)
@@ -192,7 +192,7 @@ def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, Clu
     INPUT :
         + NbTrainingData : (int) Number of Training Data
         + NbTestingData : (int) Number of Testing Data
-        + Path : (str) Path of the .mat file. If the path is None, the path is ../database/SimpleAlphabet/ExtractedStabilized.mat
+        + Path : (str) Path of the .mat file. If the path is None, the path is ../database/SimpleAlphabet/alphabet_ExtractedStabilized.mat
         + LabelPath : (str) Path of the .pkl label path. If the path is None, the path is  ../database/SimpleAlphabet/alphabet_label.pkl
         + ClusteringData : (list) a list of int indicating the image used to train the cluster. If None, the image used to train the
             the cluster are the trainingData
@@ -206,7 +206,7 @@ def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, Clu
         + label_te :
     '''
     if Path is None:
-        Path = '../database/SimpleAlphabet/ExtractedStabilized.mat'
+        Path = '../database/SimpleAlphabet/alphabet_ExtractedStabilized.mat'
 
     if LabelPath is None:
         label_list = LoadObject(
