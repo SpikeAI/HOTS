@@ -6,7 +6,6 @@ from random import shuffle
 from os import listdir
 from HOTS.Tools import LoadObject
 import numba
-import line_profiler
 import HOTS.libUnpackAtis as ua
 
 
