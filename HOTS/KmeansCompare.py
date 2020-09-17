@@ -13,8 +13,7 @@ class KmeansCompare(Cluster):
     Clustering algorithm as defined in the second HOTS paper (Maro et al 2017)
     INPUT :
         + nb_cluster : (<int>) number of cluster centers
-        + record_each : (<int>) used to monitor the learning, it records errors and histogram each
-            'reach_each' steps
+        + to_record : (<boolean>) parameter to activate the monitoring of the learning
         + verbose : (<int>) control the verbosity
         + eta : (<float>) could be use to define a learning rate
     '''
@@ -22,7 +21,7 @@ class KmeansCompare(Cluster):
     def __init__(self, nb_cluster, to_record=True, verbose=0, eta=1e-5):
         Cluster.__init__(self, nb_cluster, to_record, verbose)
         if eta is None:
-            self.eta = 1
+            self.eta = 1.
         else:
             self.eta = eta
 
@@ -41,11 +40,17 @@ class KmeansCompare(Cluster):
 
         surface = STS.Surface.copy()
         if self.to_record == True:
-            self.record_each = surface.shape[0]//100
-        self.prototype = surface[:self.nb_cluster, :]
-        nb_proto = np.zeros((self.nb_cluster))
+            self.record_each = surface.shape[0]//1000
+        if init is None:
+            self.prototype = surface[:self.nb_cluster, :]
+        elif init == 'rdn':
+            idx = np.random.permutation(np.arange(surface.shape[0]))[:self.nb_cluster]
+            self.prototype = surface[idx, :]
+        else:
+            self.prototype = init
+
         last_time_activated = np.zeros((self.nb_cluster)).astype(int)
-        idx_global = 0
+        self.idx_global = 0
         for each_cycle in range(NbCycle):
             for idx, Si in enumerate(surface):
                 # find the closest prototype
@@ -78,9 +83,9 @@ class KmeansCompare(Cluster):
                 #        self.prototype[idx_c,:]=Ck_t
 
                 if self.to_record == True:
-                    if idx_global % int(self.record_each) == 0:
-                        self.monitor(surface, idx_global, SurfaceFilter=1000)
-                idx_global += 1
+                    if self.idx_global % int(self.record_each) == 0:
+                        self.monitor(surface, self.idx_global, SurfaceFilter=1000)
+                self.idx_global += 1
 
         tac = time.time()
 
