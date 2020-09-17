@@ -13,7 +13,7 @@ Pattern Recognition' Xavier Lagorce, Garrick Orchard, Fransesco Gallupi, And Rya
 
 from HOTS import STS
 from HOTS import Event
-from HOTS import Monitor
+from HOTS import ToolsMonitor
 from HOTS import Tools
 from HOTS import KmeansCluster
 from HOTS import KmeansLagorce

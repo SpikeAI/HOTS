@@ -153,7 +153,7 @@ def DisplaySurface2D(Surface, nb_polarities):
             idx = idx+1
 
 
-def GenerateAM(Event, Cluster, mode='separate'):
+def GenerateActivationMap(Event, Cluster, mode='separate'):
     '''
     Function to generate activation map from a stream of event
     INPUT :
@@ -190,7 +190,7 @@ def GenerateAM(Event, Cluster, mode='separate'):
     return activation_map
 
 
-def DisplayAM(activation_map, scale=1):
+def DisplayActivationMap(activation_map, scale=1):
     '''
     Function display the activation map
     INPUT :
