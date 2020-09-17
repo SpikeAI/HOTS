@@ -7,11 +7,10 @@ import HOTS.Tools as Tools
 
 class Cluster(object):
     '''
-    Cluster is a mother class gathering all the clustering algorithm.
+    Cluster is the master class gathering all the clustering algorithms.
     INPUT :
         + nb_cluster : (<int>) number of cluster centers
-        + record_each : (<int>) used to monitor the learning, it records errors and histogram each
-            'reach_each' steps
+        + record_each : (<int>) used to monitor the learning, it records errors and histogram
         + verbose : (<int>) control the verbosity
     '''
 

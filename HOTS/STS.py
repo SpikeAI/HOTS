@@ -3,7 +3,6 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 import numpy as np
 import time
 
-
 class STS(object):
     '''
     Object with spatiotemporal Surface and methods to generate them

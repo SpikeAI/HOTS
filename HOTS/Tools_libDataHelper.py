@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf8 -*
 ####################
-# libDataHelper.py #
+# Tools_libDataHelper.py #
 ####################
 # April 2017 - Jean-Matthieu Maro
 # Email: jean-matthieu dot maro, hosted at inserm, which is located in France.

@@ -5,11 +5,11 @@ import numpy as np
 from random import shuffle
 from os import listdir
 from HOTS.Tools import LoadObject
-import HOTS.libUnpackAtis as ua
+import HOTS.Tool_libUnpackAtis as ua
 
 class Event(object):
     '''
-    Events is a class representing an event with all his attribute
+    Class representing an event with all its attributes
     ATTRIBUTE
         + polarity : np.array of shape [nb_event] with the polarity number of each event
         + address : np array of shape [nb_event, 2] with the x and y of each event
@@ -48,7 +48,7 @@ class Event(object):
             raise TypeError(
                 'the type of argument image_number should be int or list')
         if verbose > 0:
-            print("chargement des images {0}".format(image_number))
+            print("loading images {0}".format(image_number))
         Total_size = 0
         for idx, each_image in enumerate(image_number):
             image = ROI[each_image][0, 0]
@@ -165,7 +165,7 @@ class Event(object):
 
     def filter(self, filt, mode=None):
         '''
-        filter the event is mode is 'itself', or output another event else
+        filters the event if mode is 'itself', or else outputs another event
         INPUT :
             + filt : np.array of boolean having the same dimension than self.polarity
         OUTPUT :
@@ -188,7 +188,7 @@ class Event(object):
 
 def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, ClusteringData=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
     '''
-    Extract the Data from the SimpleAlphabet DataBase :
+    Extracts the Data from the SimpleAlphabet DataBase :
     INPUT :
         + NbTrainingData : (int) Number of Training Data
         + NbTestingData : (int) Number of Testing Data
@@ -247,112 +247,6 @@ def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, Clu
             label_te = label_list[img][0]
 
     return event_tr, event_te, event_cl, label_tr, label_te
-
-
-def ExtractMNIST(NbTrainingSerie, NbTestingSerie, PathTraining=None, PathTesting=None,
-                 ClusteringData=None, OutOnePolarity=False, ListPolarities=[-1, 1], verbose=0):
-    '''
-    Extract the Data from the SimpleAlphabet DataBase :
-    INPUT :
-        + NbTrainingSerie : (int) Number of Training Data
-        + NbTestingSerie : (int) Number of Testing Data
-        + Path : (str) Path of the .mat file. If the path is None, the path is ../database/SimpleAlphabet/ExtractedStabilized.mat
-        + LabelPath : (str) Path of the .pkl label path. If the path is None, the path is  ../database/SimpleAlphabet/alphabet_label.pkl
-        + ClusteringData : (list) a list of int indicating the image used to train the cluster. If None, the image used to train the
-            the cluster are the trainingData
-        + OutOnePolarity : (bool), transform all polarities into 1 polarity
-        + ListPolarities : (list), list of the polarity we want to keep
-    OUTPUT :
-        + event_tr : (<object event>)
-        + event_te : (<object event>)
-        + event_cl : (<object event>)
-        + label_tr :
-        + label_te :
-    '''
-
-    if PathTraining is None:
-        PathTraining = '../database/MNIST_Train/'
-    if PathTesting is None:
-        PathTesting = '../database/MNIST_Test/'
-
-    event_tr = Event(ImageSize=(
-        34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_te = Event(ImageSize=(
-        34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_cl = Event(ImageSize=(
-        34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-
-    # generate TestingList
-    FileListTesting = load_file_list(PathTesting)
-    TestingData = np.zeros((NbTestingSerie*10, 2)).astype('<U35')
-    # generate Traininglist
-    FileListTraining = load_file_list(PathTraining)
-    TrainingData = np.zeros((NbTrainingSerie*10, 2)).astype('<U35')
-
-    idx_Tr = 0
-    for i in np.arange(10):
-        to_pick = FileListTraining[FileListTraining[:, 1] == str(i), 0]
-        for EachCycle in range(NbTrainingSerie):
-            TrainingData[idx_Tr, 0] = to_pick[EachCycle]
-            TrainingData[idx_Tr, 1] = str(i)
-            idx_Tr += 1
-    np.random.shuffle(TrainingData)
-    label_tr = TrainingData[:, 1]
-
-    idx_Te = 0
-
-    for i in np.arange(10):
-        to_pick = FileListTesting[FileListTesting[:, 1] == str(i), 0]
-        for EachCycle in range(NbTestingSerie):
-            TestingData[idx_Te, 0] = to_pick[EachCycle]
-            TestingData[idx_Te, 1] = str(i)
-            idx_Te += 1
-    np.random.shuffle(TestingData)
-    label_te = TestingData[:, 1]
-
-    if ClusteringData is None:
-        ClusteringData = TrainingData
-
-    event_tr.LoadFromBin(TrainingData[:, 0], verbose=verbose)
-    event_te.LoadFromBin(TestingData[:, 0], verbose=verbose)
-    event_cl.LoadFromBin(ClusteringData[:, 0], verbose=verbose)
-
-    return event_tr, event_te, event_cl, label_tr, label_te
-
-
-def load_file_list(mainpath='./Train/'):
-    nb_list = list(np.arange(10))
-    file_name = list()
-    for idx_sample, nb in enumerate(nb_list):
-        subdir = mainpath + str(nb) + '/'
-        for bin_file in listdir(subdir):
-            if bin_file != '.DS_Store':
-                tot_dir = subdir + bin_file
-                file_name.append((tot_dir, nb))
-    shuffle(file_name)
-    file_name = np.asarray(file_name)
-    return file_name
-
-
-def GenerateRandomSquare(x, y, t, p, seed=33, image_size=(30, 30)):
-    np.random.seed(seed=seed)
-    event = Event(ImageSize=image_size)
-    event.address = np.zeros((8, 2), dtype=int)
-    event.address[0, :] = (x - 1, y - 1)
-    event.address[1, :] = (x - 1, y)
-    event.address[2, :] = (x - 1, y + 1)
-    event.address[3, :] = (x, y - 1)
-    event.address[4, :] = (x, y + 1)
-    event.address[5, :] = (x + 1, y - 1)
-    event.address[6, :] = (x + 1, y)
-    event.address[7, :] = (x + 1, y + 1)
-    event.address = event.address[np.random.permutation(8), :].T
-    event.time = np.zeros(8, dtype=int)
-    for idt in np.arange(event.time.size):
-        event.time[idt] = t
-        t += np.random.randint(0, 10)
-    event.polarity = np.ones(8, dtype=int) * p
-    return event
 
 
 def LoadGestureDB(filepath, OutOnePolarity=False):
