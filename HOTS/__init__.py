@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
 ___author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Grimaldi (2020-)"
-__version__ = '2017-01-10'
+__version__ = '2020-09-17'
 __licence__ = 'GPLv3'
 __all__ = ['STS.py']
-
 """
 ========================================================
 A Hierarchy of event-based Time-Surfaces for Pattern Recognition
