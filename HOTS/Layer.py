@@ -121,7 +121,7 @@ class ClusteringLayer(Layer):
         elif self.LearningAlgo == 'comp':
             self.ClusterLayer = KmeansHomeo(nb_cluster=0, verbose=self.verbose,
                                             to_record=False,
-                                            eta=self.eta, eta_homeo=0, C=self.C,
+                                            eta=self.eta, eta_homeo=None, C=self.C,
                                             l0_sparseness=self.l0_sparseness,  Norm_Type='standard')
         # print(eta_homeo)
 

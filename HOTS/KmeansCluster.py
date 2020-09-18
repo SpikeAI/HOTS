@@ -19,7 +19,7 @@ class Cluster(object):
         self.verbose = verbose
         self.prototype = np.zeros(0)
         self.to_record = to_record
-        self.record = pd.DataFrame()
+        self.record = pd.DataFrame([], columns=['error', 'histo'])
         self.idx_global = 0
 
     def predict(self, Surface, event=None, SurfaceFilter=None):

@@ -38,6 +38,9 @@ class KmeansHomeo(Cluster):
 
         if eta_homeo is None:
             self.P_cum = None
+        else: # if not self.P_cum is None:
+            self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[
+                np.newaxis, :] * np.ones((self.nb_cluster, 1))
         self.eta_homeo = eta_homeo
 
         self.l0_sparseness = l0_sparseness
@@ -66,9 +69,6 @@ class KmeansHomeo(Cluster):
         norm = self.norm(X_train, Norm_Type=self.Norm_Type)
         X_train /= norm[:, np.newaxis]
         prototype = X_train[:self.nb_cluster, :].copy()
-        if not self.P_cum is None:
-            self.P_cum = np.linspace(0, 1, self.nb_quant, endpoint=True)[
-                np.newaxis, :] * np.ones((self.nb_cluster, 1))
         n_batches = n_samples // batch_size
 
         np.random.shuffle(X_train)
