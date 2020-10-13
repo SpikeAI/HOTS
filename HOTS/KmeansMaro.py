@@ -14,8 +14,9 @@ class KmeansMaro(Cluster):
         + eta : (<float>) could be use to define a learning rate
     '''
 
-    def __init__(self, nb_cluster, to_record=True, verbose=0, eta=None):
+    def __init__(self, nb_cluster, homeo, to_record=True, verbose=0, eta=None):
         Cluster.__init__(self, nb_cluster, to_record, verbose)
+        self.homeo = homeo
         if eta is None:
             self.eta = 1.
         else:
@@ -46,7 +47,7 @@ class KmeansMaro(Cluster):
             self.prototype = init
 
         last_time_activated = np.zeros((self.nb_cluster)).astype(int)
-
+        self.idx_global = 0
         for each_cycle in range(NbCycle):
             nb_proto = np.zeros((self.nb_cluster))
             for idx, Si in enumerate(surface):
@@ -54,7 +55,11 @@ class KmeansMaro(Cluster):
                 #Distance_to_proto = EuclidianNorm(Si, self.prototype)
                 Distance_to_proto = np.linalg.norm(
                     Si - self.prototype, ord=2, axis=1)
-                closest_proto_idx = np.argmin(Distance_to_proto)
+                if self.homeo==True:
+                    gain = np.exp(STS.R*(nb_proto/max(self.idx_global,1)-1/self.nb_cluster))
+                    closest_proto_idx = np.argmin(Distance_to_proto*gain)
+                else:
+                    closest_proto_idx = np.argmin(Distance_to_proto)
                 Ck = self.prototype[closest_proto_idx, :]
                 last_time_activated[closest_proto_idx] = idx
                 # Updating the prototype
@@ -83,7 +88,7 @@ class KmeansMaro(Cluster):
                 if self.to_record == True:
                     if self.idx_global % int(self.record_each) == 0:
                         self.monitor(surface, self.idx_global,
-                                     SurfaceFilter=1000)
+                                     SurfaceFilter=1000, R = STS.R)
                 self.idx_global += 1
 
         tac = time.time()

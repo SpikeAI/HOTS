@@ -65,6 +65,42 @@ def DisplayImage(list_of_event, multi_image=0):
         ax.axis('off')
         ax.set_title('Image {0}'.format(idx+1), fontsize=8)
         idx += 1
+        
+        
+def DisplayPola(list_of_event, ImageSize, nb_pola, R=2, rect=False):
+    '''
+    Function to accumulated event as an image
+    INPUT :
+        + list_of_event : (<list>) of (<object event>) stream of event to display
+        + multi_image : (<int>) option to display another image than the first one
+    '''
+    idl = int(np.floor(np.sqrt(nb_pola)))
+    idc = int(np.ceil(nb_pola/idl))
+    fig, axes = plt.subplots(nrows=idl, ncols=idc, figsize=(15,8))
+    sub = []
+    idp = 0
+    for ax in axes.flat:
+        if idp == nb_pola:
+            break
+        ev_p = list_of_event.polarity[list_of_event.polarity==idp].copy()
+        ev_t = list_of_event.time[list_of_event.polarity==idp].copy()
+        ev_x = list_of_event.address[list_of_event.polarity==idp].copy()
+        ima = np.zeros(ImageSize)
+        for i in range(len(ev_p)):
+            ima[ev_x[i][0], ev_x[i][1]] = ev_t[i]*1000
+        impol = ax.imshow(ima)
+        idp += 1
+        if rect==True:
+            ax.plot([list_of_event.address[-1][1]-R, list_of_event.address[-1][1]-R], [list_of_event.address[-1][0]-R, list_of_event.address[-1][0]+R], color='red')
+            ax.plot([list_of_event.address[-1][1]+R, list_of_event.address[-1][1]+R], [list_of_event.address[-1][0]-R, list_of_event.address[-1][0]+R], color='red')
+            ax.plot([list_of_event.address[-1][1]-R, list_of_event.address[-1][1]+R], [list_of_event.address[-1][0]-R, list_of_event.address[-1][0]-R], color='red')
+            ax.plot([list_of_event.address[-1][1]-R, list_of_event.address[-1][1]+R], [list_of_event.address[-1][0]+R, list_of_event.address[-1][0]+R], color='red')
+            ax.plot(list_of_event.address[-1][1], list_of_event.address[-1][0], marker = 'o', color='red')
+    fig.suptitle('ON and OFF events')
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    fig.colorbar(impol, cax=cbar_ax, label="timescale in millisec")
+    plt.show()  
 
 
 def DisplaySurface3D(Surface, nb_polarities, angle=(20, 90)):

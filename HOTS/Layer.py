@@ -88,11 +88,12 @@ class ClusteringLayer(Layer):
         + verbose : (<int>) controls the verbosity
     '''
 
-    def __init__(self, tau, R,  ThrFilter=0, LearningAlgo='lagorce', kernel='exponential',
-                 eta=None, eta_homeo=None, C=None, sigma=None, l0_sparseness=5, verbose=0):
+    def __init__(self, tau, R, ThrFilter=0, LearningAlgo='lagorce', kernel='exponential',
+                 eta=None, homeo=False, eta_homeo=None, C=None, sigma=None, l0_sparseness=5, verbose=0):
         Layer.__init__(self, verbose)
         LearningAlgos = ['homeo', 'maro', 'lagorce', 'comp']
         self.type = 'Layer'
+        self.homeo = homeo
         self.tau = tau
         self.R = R
         self.ThrFilter = ThrFilter
@@ -104,26 +105,24 @@ class ClusteringLayer(Layer):
         if self.kernel not in ['linear', 'exponential']:
             raise KeyError('[linear,exponential]')
         self.eta = eta
-        # print(eta)
         self.eta_homeo = eta_homeo
         self.C = C
         self.sigma = sigma
         self.l0_sparseness = l0_sparseness
         if self.LearningAlgo == 'lagorce':
             self.ClusterLayer = KmeansLagorce(
-                nb_cluster=0, verbose=self.verbose, to_record=False)
+                nb_cluster=0, homeo=self.homeo, verbose=self.verbose, to_record=False)
         elif self.LearningAlgo == 'maro':
-            self.ClusterLayer = KmeansMaro(nb_cluster=0, verbose=self.verbose, to_record=False,
+            self.ClusterLayer = KmeansMaro(nb_cluster=0, homeo=self.homeo, verbose=self.verbose, to_record=False,
                                            eta=self.eta)
         elif self.LearningAlgo == 'homeo':
-            self.ClusterLayer = KmeansHomeo(nb_cluster=0, verbose=self.verbose, to_record=False,
-                                            eta=self.eta, eta_homeo=self.eta_homeo, C=self.C)
+            self.ClusterLayer = KmeansLagorceHomeo(
+                nb_cluster=0, verbose=self.verbose, to_record=False)
         elif self.LearningAlgo == 'comp':
             self.ClusterLayer = KmeansHomeo(nb_cluster=0, verbose=self.verbose,
                                             to_record=False,
                                             eta=self.eta, eta_homeo=None, C=self.C,
                                             l0_sparseness=self.l0_sparseness,  Norm_Type='standard')
-        # print(eta_homeo)
 
     def RunLayer(self, event, Cluster):
         '''
@@ -143,7 +142,7 @@ class ClusteringLayer(Layer):
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.output, _ = Cluster.predict(
-            Surface=self.SpTe_Layer.Surface, event=event_filtered)
+            Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R)
 
         return self.output
 
@@ -172,6 +171,6 @@ class ClusteringLayer(Layer):
         self.ClusterLayer.nb_cluster, self.ClusterLayer.to_record = nb_cluster, to_record
         Prototype = self.ClusterLayer.fit(self.SpTe_Layer, NbCycle=NbCycle)
         self.output, _ = self.ClusterLayer.predict(
-            Surface=self.SpTe_Layer.Surface, event=event_filtered)
+            Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R)
 
         return self.output, self.ClusterLayer

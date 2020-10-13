@@ -108,10 +108,8 @@ class STS(object):
             + event_output : (<object event>) filtered stream of event
             + filt : (<np array>) bolean vector of size (nb_of_input event). A False is assocated with the
                 removed event and a True is assocated with kept event
-
-        TODO: is that function redundant with FilterNHBD ?
-
         '''
+        
         # if self.verbose > 0:
         #    print('threshold', threshold)
         threshold = threshold*self.R

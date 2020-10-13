@@ -14,8 +14,9 @@ class KmeansLagorce(Cluster):
         + verbose : (<int>) control the verbosity
     '''
 
-    def __init__(self, nb_cluster, to_record=True, verbose=0):
-        Cluster.__init__(self, nb_cluster, to_record, verbose)
+    def __init__(self, nb_cluster, homeo, to_record=True, verbose=0):
+        Cluster.__init__(self, nb_cluster, homeo, to_record, verbose)
+        self.homeo = homeo
 
     def fit(self, STS, init=None, NbCycle=1):
         '''
@@ -50,7 +51,12 @@ class KmeansLagorce(Cluster):
                 # find the closest prototype
                 Distance_to_proto = np.linalg.norm(
                     Si - self.prototype, ord=2, axis=1)
-                closest_proto_idx = np.argmin(Distance_to_proto)
+                #Adding homeostasis rule
+                if self.homeo==True:
+                    gain = np.exp(STS.R*(nb_proto/max(self.idx_global,1)-1/self.nb_cluster))
+                    closest_proto_idx = np.argmin(Distance_to_proto*gain)
+                else:
+                    closest_proto_idx = np.argmin(Distance_to_proto)
                 pk = nb_proto[closest_proto_idx]
                 Ck = self.prototype[closest_proto_idx, :]
                 alpha = 0.01/(1+pk/20000)
@@ -66,7 +72,7 @@ class KmeansLagorce(Cluster):
                 if self.to_record == True:
                     if self.idx_global % int(self.record_each) == 0:
                         self.monitor(surface, self.idx_global,
-                                     SurfaceFilter=1000)
+                                     SurfaceFilter=1000, R = STS.R)
                 self.idx_global += 1
 
         tac = time.time()

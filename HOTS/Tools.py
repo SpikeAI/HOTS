@@ -3,7 +3,7 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 import numpy as np
 import pickle
 
-def prediction(to_predict, prototype):
+def prediction(to_predict, prototype, homeo, R):
     '''
     function to predict polarities
     INPUT :
@@ -16,14 +16,23 @@ def prediction(to_predict, prototype):
             prototype
         + polarity : (<np.array>) vector representing the polarity of the closest prototype (argmin)
     '''
-
+    if homeo==True:
+        nb_proto = np.zeros(prototype.shape[0]).astype(int)
+        idx_global = 0
     polarity, output_distance = np.zeros(
         to_predict.shape[0]), np.zeros(to_predict.shape[0])
     for idx in range(to_predict.shape[0]):
         Euclidian_distance = np.sqrt(
             np.sum((to_predict[idx] - prototype)**2, axis=1))
-        polarity[idx] = np.argmin(Euclidian_distance)
-        output_distance[idx] = np.amin(Euclidian_distance)
+        if homeo==False:
+            polarity[idx] = np.argmin(Euclidian_distance)
+            output_distance[idx] = np.amin(Euclidian_distance)
+        else:
+            gain = np.exp(R*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+            polarity[idx] = np.argmin(Euclidian_distance*gain)
+            output_distance[idx] = Euclidian_distance[int(polarity[idx])]
+            nb_proto[int(polarity[idx])] += 1
+            idx_global += 1
     return output_distance, polarity.astype(int)
 
 

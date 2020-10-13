@@ -14,15 +14,16 @@ class Cluster(object):
         + verbose : (<int>) control the verbosity
     '''
 
-    def __init__(self, nb_cluster, to_record=False, verbose=0):
+    def __init__(self, nb_cluster, homeo=False, to_record=False, verbose=0):
         self.nb_cluster = nb_cluster
         self.verbose = verbose
+        self.homeo = homeo
         self.prototype = np.zeros(0)
         self.to_record = to_record
         self.record = pd.DataFrame([], columns=['error', 'histo'])
         self.idx_global = 0
 
-    def predict(self, Surface, event=None, SurfaceFilter=None):
+    def predict(self, Surface, R, event=None, SurfaceFilter=None):
         '''
         Methods to predict the closest prototype from a stream a STS
         INPUT :
@@ -39,7 +40,7 @@ class Cluster(object):
         if self.prototype is None:
             raise ValueError('Train the Cluster before doing prediction')
 
-        output_distance, polarity = Tools.prediction(Surface, self.prototype)
+        output_distance, polarity = Tools.prediction(Surface, self.prototype, self.homeo, R)
 
         if event is not None:
             event_output = event.copy()
@@ -49,7 +50,7 @@ class Cluster(object):
         else:
             return polarity, output_distance
 
-    def monitor(self, Surface, idx_global, SurfaceFilter):
+    def monitor(self, Surface, idx_global, SurfaceFilter, R):
         '''
         Methods to record error and activation histogram during the training
         INPUT :
@@ -64,7 +65,7 @@ class Cluster(object):
                 np.arange(Surface.shape[0]))[:SurfaceFilter]
             to_predict = Surface[random_selection]
 
-        pol, output_distance, = self.predict(to_predict)
+        pol, output_distance, = self.predict(to_predict, R)
         error = np.mean(output_distance)
         active_probe = np.histogram(pol, bins=np.arange(self.nb_cluster+1))[0]
 
