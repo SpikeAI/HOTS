@@ -138,7 +138,6 @@ class ClusteringLayer(Layer):
                               verbose=self.verbose, sigma=self.sigma)
         Surface_Layer = self.SpTe_Layer.create(event=self.input, kernel=self.kernel)
 
-        # Check that THRFilter=0 is equivalent to no Filter
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.output, _ = Cluster.predict(

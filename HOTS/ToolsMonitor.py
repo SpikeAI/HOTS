@@ -96,7 +96,7 @@ def DisplayPola(list_of_event, ImageSize, nb_pola, R=2, rect=False):
             ax.plot([list_of_event.address[-1][1]-R, list_of_event.address[-1][1]+R], [list_of_event.address[-1][0]-R, list_of_event.address[-1][0]-R], color='red')
             ax.plot([list_of_event.address[-1][1]-R, list_of_event.address[-1][1]+R], [list_of_event.address[-1][0]+R, list_of_event.address[-1][0]+R], color='red')
             ax.plot(list_of_event.address[-1][1], list_of_event.address[-1][0], marker = 'o', color='red')
-    fig.suptitle('ON and OFF events')
+    fig.suptitle('ON and OFF events', fontsize=16, fontweight='bold')
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(impol, cax=cbar_ax, label="timescale in millisec")
