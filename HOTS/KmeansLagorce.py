@@ -18,7 +18,7 @@ class KmeansLagorce(Cluster):
         Cluster.__init__(self, nb_cluster, homeo, to_record, verbose)
         self.homeo = homeo
 
-    def fit(self, STS, init='rdn', NbCycle=1):
+    def fit(self, STS, init=None, NbCycle=1):
         '''
         Methods to learn prototypes fitting data
         INPUT :

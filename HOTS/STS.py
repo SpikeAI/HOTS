@@ -110,10 +110,9 @@ class STS(object):
                 removed event and a True is assocated with kept event
         '''
         
-        # if self.verbose > 0:
-        #    print('threshold', threshold)
         threshold = threshold*self.R
-        filt = np.sum(self.Surface, axis=1) > threshold
+        binsurf = (self.Surface != 0).astype(int)
+        filt = np.sum(binsurf, axis=1) > threshold
         self.Surface = self.Surface[filt]
         event_output = event.filter(filt)
 
