@@ -116,8 +116,7 @@ class ClusteringLayer(Layer):
             self.ClusterLayer = KmeansMaro(nb_cluster=0, homeo=self.homeo, verbose=self.verbose, to_record=False,
                                            eta=self.eta)
         elif self.LearningAlgo == 'homeo':
-            self.ClusterLayer = KmeansLagorceHomeo(
-                nb_cluster=0, verbose=self.verbose, to_record=False)
+            self.ClusterLayer = KmeansLagorceHomeo(nb_cluster=0, verbose=self.verbose, to_record=False)
         elif self.LearningAlgo == 'comp':
             self.ClusterLayer = KmeansHomeo(nb_cluster=0, verbose=self.verbose,
                                             to_record=False,
