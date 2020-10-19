@@ -34,7 +34,6 @@ class Classifier(object):
         '''
         if type(list_of_classified) is not list:
             list_of_classified = [list_of_classified]
-
         nb_sample = list_of_classified[0].shape[0]
         list_of_accuracy = list()
         for idx, each_norm in enumerate(list_of_classified):
@@ -56,6 +55,7 @@ class Classifier(object):
             + accu : (<list>) of (<float>) of size (nb_of_methods) representing the accuracy on the testing_sample for each method
             + methods : (<list>) of (<string>) of size (nb_of_methods) representing the name of the method used to calculate distance
         '''
+        self.GroundTruth = self.GroundTruth.astype(np.str_)
         histo_train, pola_train = GenerateHistogram(self.event_train)
         histo_test, pola_test = GenerateHistogram(self.event_test)
         prediction = list()
@@ -67,7 +67,7 @@ class Classifier(object):
                 distance = Norm(each_histo, histo_train, each_method)
                 min_dist = np.argmin(distance)
                 output[idx, 0] = self.TrainingLabel[min_dist][0]
-
+                
             prediction.append(output)
             allmethod.append(each_method)
         accu = self.Accuracy(prediction)

@@ -69,8 +69,8 @@ class STS(object):
             if t < t_previous:
                 self.ListOfTimeMatrix = np.zeros(
                     (self.nb_polarities, self.width, self.height)) - self.initial_time
-            x, y = addr + self.R
 
+            x, y = addr + self.R
             self.ListOfTimeMatrix[pol, x, y] = t
             self.LocalTimeDiff = t - self.ListOfTimeMatrix[:, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]
 

@@ -288,7 +288,6 @@ def DisplayConvergence(ClusterLayer, to_display=['error'], eta=None, eta_homeo=N
                     ax.set_title(
                         'Convergence Layer {0}'.format(idx+1), fontsize=8)
             elif each_type == 'histo':
-
                 to_plot = plt.bar(np.arange(each_Layer.nb_cluster), each_Layer.record[each_type].values[-1],
                                   width=np.diff(np.arange(each_Layer.nb_cluster+1)), ec="k", align="edge")
                 if (eta is not None) and (eta_homeo is not None):
