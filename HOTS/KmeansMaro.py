@@ -22,7 +22,7 @@ class KmeansMaro(Cluster):
         else:
             self.eta = eta
 
-    def fit(self, STS, init='rdn', NbCycle=1):
+    def fit(self, STS, init=None, NbCycle=1):
         '''
         Methods to learn prototypes fitting data
         INPUT :

@@ -300,8 +300,8 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, Path=None, OutOn
         events = EVE[idx]
         for idev in range(len(events.t)):
             event_tr.time[idg] = events.t[idev]*pow(10,-6)
-            event_tr.address[idg][0] = int(events.x[idev])
-            event_tr.address[idg][1] = int(events.y[idev])
+            event_tr.address[idg][0] = int(events.y[idev])
+            event_tr.address[idg][1] = int(events.x[idev])
             event_tr.polarity[idg] = int(events.p[idev])
             idg += 1
         changeidx.append(len(events.t))
@@ -325,8 +325,8 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, Path=None, OutOn
         events = EVE[idx]
         for idev in range(len(events.t)):
             event_te.time[idg] = events.t[idev]*pow(10,-6)
-            event_te.address[idg][0] = int(events.x[idev])
-            event_te.address[idg][1] = int(events.y[idev])
+            event_te.address[idg][0] = int(events.y[idev])
+            event_te.address[idg][1] = int(events.x[idev])
             event_te.polarity[idg] = int(events.p[idev])
             idg += 1
         changeidx.append(len(events.t))
@@ -349,8 +349,8 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, Path=None, OutOn
         events = EVE[idx]
         for idev in range(len(events.t)):
             event_cl.time[idg] = events.t[idev]*pow(10,-6)
-            event_cl.address[idg][0] = int(events.x[idev])
-            event_cl.address[idg][1] = int(events.y[idev])
+            event_cl.address[idg][0] = int(events.y[idev])
+            event_cl.address[idg][1] = int(events.x[idev])
             event_cl.polarity[idg] = int(events.p[idev])
             idg += 1
         changeidx.append(len(events.t))

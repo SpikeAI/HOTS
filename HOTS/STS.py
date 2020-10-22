@@ -76,7 +76,6 @@ class STS(object):
 
             if kernel == 'exponential':
                 SI = np.exp(-(self.LocalTimeDiff)/self.tau)*self.mask_circular
-
             elif kernel == 'linear':
                 # TODO : deprecate this kernel
                 mask = (self.LocalTimeDiff < self.tau) * 1.
@@ -86,6 +85,9 @@ class STS(object):
                 print('error')
 
             self.Surface[idx_event, :] = SI.reshape((len(event.ListPolarities) * self.area))
+            #normalization of the STS
+            self.Surface[idx_event,:] /= np.linalg.norm(self.Surface[idx_event,:])
+            
             t_previous = t
             if idx_event == stop:
                 break

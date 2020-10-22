@@ -53,7 +53,8 @@ class KmeansLagorce(Cluster):
                     Si - self.prototype, ord=2, axis=1)
                 #Adding homeostasis rule
                 if self.homeo==True:
-                    gain = np.exp(STS.R*(nb_proto/max(self.idx_global,1)-1/self.nb_cluster))
+                    gain = np.exp(STS.R/2*(nb_proto/max(self.idx_global,1)-1/self.nb_cluster))
+                    #print('fit', gain, Distance_to_proto)
                     closest_proto_idx = np.argmin(Distance_to_proto*gain)
                 else:
                     closest_proto_idx = np.argmin(Distance_to_proto)

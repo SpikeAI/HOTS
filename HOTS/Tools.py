@@ -28,7 +28,8 @@ def prediction(to_predict, prototype, homeo, R):
             polarity[idx] = np.argmin(Euclidian_distance)
             output_distance[idx] = np.amin(Euclidian_distance)
         else:
-            gain = np.exp(R*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+            gain = np.exp(R/2*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+            #print('predict', gain, Euclidian_distance)
             polarity[idx] = np.argmin(Euclidian_distance*gain)
             output_distance[idx] = Euclidian_distance[int(polarity[idx])]
             nb_proto[int(polarity[idx])] += 1

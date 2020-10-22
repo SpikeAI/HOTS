@@ -89,12 +89,13 @@ class ClusteringLayer(Layer):
     '''
 
     def __init__(self, tau, R, ThrFilter=0, LearningAlgo='lagorce', kernel='exponential',
-                 eta=None, homeo=False, eta_homeo=None, C=None, sigma=None, l0_sparseness=5, verbose=0):
+                 eta=None, homeo=False, eta_homeo=None, C=None, sigma=None, init=None, l0_sparseness=5, verbose=0):
         Layer.__init__(self, verbose)
         LearningAlgos = ['homeo', 'maro', 'lagorce', 'comp']
         self.type = 'Layer'
         self.homeo = homeo
         self.tau = tau
+        self.init = init
         self.R = R
         self.ThrFilter = ThrFilter
         self.LearningAlgo = LearningAlgo
@@ -167,7 +168,7 @@ class ClusteringLayer(Layer):
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.ClusterLayer.nb_cluster, self.ClusterLayer.to_record = nb_cluster, to_record
-        Prototype = self.ClusterLayer.fit(self.SpTe_Layer, NbCycle=NbCycle)
+        Prototype = self.ClusterLayer.fit(self.SpTe_Layer, init=self.init, NbCycle=NbCycle)
         self.output, _ = self.ClusterLayer.predict(
             Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R)
 

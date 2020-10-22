@@ -42,7 +42,7 @@ class Classifier(object):
         return list_of_accuracy
 
     # (histo_to_classify,proto_histo,proto_label_list=None):
-    def HistogramDistance(self, methods=['euclidian', 'normalized', 'battacha'], to_print=False):
+    def HistogramDistance(self, methods=['euclidian', 'normalized', 'battacha'], knn=None, to_print=False):
         '''
         method to classify using histogram distance between prototypes and :
         INPUT :
@@ -58,16 +58,26 @@ class Classifier(object):
         self.GroundTruth = self.GroundTruth.astype(np.str_)
         histo_train, pola_train = GenerateHistogram(self.event_train)
         histo_test, pola_test = GenerateHistogram(self.event_test)
+        
         prediction = list()
         allmethod = list()
         for each_method in methods:
             output = np.zeros((histo_test.shape[0], 1)).astype(np.str_)
             for idx, each_histo in enumerate(histo_test):
-
+# il existe sklearn knn mais peut être pas approprié pour la battha norm
                 distance = Norm(each_histo, histo_train, each_method)
-                min_dist = np.argmin(distance)
-                output[idx, 0] = self.TrainingLabel[min_dist][0]
-                
+                if knn is not None:
+                    results = np.zeros([10])
+                    distance = Norm(each_histo, histo_train, each_method)
+                    kneig = distance[distance.argsort(kind='mergesort')][:knn]
+                    for i in kneig:
+                        sybl = self.TrainingLabel[np.argwhere(distance==i)[0][0]][0]
+                        results[int(sybl)]+=1/i
+                    classif = np.argmax(results)
+                    output[idx, 0] = float(classif)
+                else:
+                    min_dist = np.argmin(distance)
+                    output[idx, 0] = self.TrainingLabel[min_dist][0]
             prediction.append(output)
             allmethod.append(each_method)
         accu = self.Accuracy(prediction)

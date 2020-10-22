@@ -182,7 +182,7 @@ def DisplaySurface2D(Surface, nb_polarities):
             cmin = 0
             cmax = np.max(surface)
             # print(cmax)
-            ax.imshow(surface.reshape((dim_patch, dim_patch)), cmap=plt.cm.gray_r, vmin=cmin, vmax=cmax,
+            ax.imshow(surface.reshape((dim_patch, dim_patch)), cmap=plt.cm.gray, vmin=cmin, vmax=cmax,
                       interpolation='nearest')
             ax.set_xticks(())
             ax.set_yticks(())
