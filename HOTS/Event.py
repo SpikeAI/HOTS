@@ -265,7 +265,7 @@ def LoadGestureDB(filepath, OutOnePolarity=False):
     return event
 
 
-def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, Path=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
+def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, OneOfEach=False, Path=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
     '''
     '''  
     if Path is None:
@@ -296,17 +296,32 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, Path=None, OutOn
     event_tr.polarity = np.zeros((sizetrain)).astype(int)
     idg = 0 
     idgl = 0
+    selectid = []
     for idx in listrain:
         events = EVE[idx]
-        for idev in range(len(events.t)):
-            event_tr.time[idg] = events.t[idev]*pow(10,-6)
-            event_tr.address[idg][0] = int(events.y[idev])
-            event_tr.address[idg][1] = int(events.x[idev])
-            event_tr.polarity[idg] = int(events.p[idev])
-            idg += 1
-        changeidx.append(len(events.t))
-        label_tr[idgl][0] = events.l
-        idgl+=1
+        if OneOfEach is True:
+            if events.l not in selectid:
+                for idev in range(len(events.t)):
+                    event_tr.time[idg] = events.t[idev]*pow(10,-6)
+                    event_tr.address[idg][0] = int(events.y[idev])
+                    event_tr.address[idg][1] = int(events.x[idev])
+                    event_tr.polarity[idg] = int(events.p[idev])
+                    idg += 1
+                changeidx.append(len(events.t))
+                label_tr[idgl][0] = events.l
+                idgl+=1
+                selectid.append(events.l)
+        else:
+            for idev in range(len(events.t)):
+                event_tr.time[idg] = events.t[idev]*pow(10,-6)
+                event_tr.address[idg][0] = int(events.y[idev])
+                event_tr.address[idg][1] = int(events.x[idev])
+                event_tr.polarity[idg] = int(events.p[idev])
+                idg += 1
+            changeidx.append(len(events.t))
+            label_tr[idgl][0] = events.l
+            idgl+=1            
+    print(selectid)        
     event_tr.ChangeIdx = changeidx
     
     changeidx = []

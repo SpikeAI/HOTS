@@ -168,7 +168,7 @@ class ClusteringLayer(Layer):
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.ClusterLayer.nb_cluster, self.ClusterLayer.to_record = nb_cluster, to_record
-        Prototype = self.ClusterLayer.fit(self.SpTe_Layer, init=self.init, NbCycle=NbCycle)
+        Prototype = self.ClusterLayer.fitcosine(self.SpTe_Layer, init=self.init, NbCycle=NbCycle)
         self.output, _ = self.ClusterLayer.predict(
             Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R)
 

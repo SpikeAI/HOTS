@@ -40,7 +40,7 @@ class Cluster(object):
         if self.prototype is None:
             raise ValueError('Train the Cluster before doing prediction')
 
-        output_distance, polarity = Tools.prediction(Surface, self.prototype, self.homeo, R)
+        output_distance, polarity = Tools.predictioncosine(Surface, self.prototype, self.homeo, R)
 
         if event is not None:
             event_output = event.copy()

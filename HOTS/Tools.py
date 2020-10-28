@@ -16,26 +16,69 @@ def prediction(to_predict, prototype, homeo, R):
             prototype
         + polarity : (<np.array>) vector representing the polarity of the closest prototype (argmin)
     '''
+    valmin = 0.7
+    valmax = 1.3*2
+    N = prototype.shape[0]
+    b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
+    d = -b/np.log(valmin)
+    a = -b*N
+
     if homeo==True:
-        nb_proto = np.zeros(prototype.shape[0]).astype(int)
+        nb_proto = np.zeros(prototype.shape[0])
         idx_global = 0
     polarity, output_distance = np.zeros(
         to_predict.shape[0]), np.zeros(to_predict.shape[0])
     for idx in range(to_predict.shape[0]):
         Euclidian_distance = np.sqrt(
             np.sum((to_predict[idx] - prototype)**2, axis=1))
-        if homeo==False:
-            polarity[idx] = np.argmin(Euclidian_distance)
-            output_distance[idx] = np.amin(Euclidian_distance)
-        else:
-            gain = np.exp(R/2*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+        if homeo==True and idx_global>0:
+            #gain = np.exp((a*nb_proto/max(idx_global,1)+b)/(nb_proto/max(idx_global,1)-d))
+            gain = np.exp(R*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+            #gain = np.log(1/prototype.shape[0])/np.log(nb_proto/idx_global)
             #print('predict', gain, Euclidian_distance)
             polarity[idx] = np.argmin(Euclidian_distance*gain)
             output_distance[idx] = Euclidian_distance[int(polarity[idx])]
             nb_proto[int(polarity[idx])] += 1
             idx_global += 1
+        else:
+            polarity[idx] = np.argmin(Euclidian_distance)
+            output_distance[idx] = np.amin(Euclidian_distance)
     return output_distance, polarity.astype(int)
 
+def predictioncosine(to_predict, prototype, homeo, R):
+    '''
+    function to predict polarities
+    INPUT :
+        + to_predict : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1)) representing the
+            spatiotemporal surface to cluster
+        + prototype : (<np.array>)  array of size (nb_cluster,nb_polarity*(2*R+1)*(2*R+1)) representing the
+            learnt prototype
+    OUTPUT :
+        + output_distance : (<np.array>) vector representing the euclidian distance from each surface to the closest
+            prototype
+        + polarity : (<np.array>) vector representing the polarity of the closest prototype (argmin)
+    '''
+
+    if homeo==True:
+        nb_proto = np.ones(prototype.shape[0])
+        idx_global = prototype.shape[0]
+    polarity, output_distance = np.zeros(
+        to_predict.shape[0]), np.zeros(to_predict.shape[0])
+    for idx in range(to_predict.shape[0]):
+        Euclidian_distance = np.dot(prototype, to_predict[idx])/(np.sqrt(np.sum(to_predict**2))*np.sqrt(np.sum(prototype**2, axis=1)))
+        if homeo==True:
+            #gain = np.exp((a*nb_proto/max(idx_global,1)+b)/(nb_proto/max(idx_global,1)-d))
+            #gain = np.exp(R*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+            gain = np.log(nb_proto/idx_global)/np.log(1/prototype.shape[0])
+            #print('predict', gain, Euclidian_distance)
+            polarity[idx] = np.argmax(Euclidian_distance*gain)
+            output_distance[idx] = Euclidian_distance[int(polarity[idx])]
+            nb_proto[int(polarity[idx])] += 1
+            idx_global += 1
+        else:
+            polarity[idx] = np.argmax(Euclidian_distance)
+            output_distance[idx] = np.amax(Euclidian_distance)
+    return output_distance, polarity.astype(int)
 
 def Norm(Hist, Histo_proto, method):
     '''
