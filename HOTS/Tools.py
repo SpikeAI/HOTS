@@ -16,33 +16,40 @@ def prediction(to_predict, prototype, homeo, R):
             prototype
         + polarity : (<np.array>) vector representing the polarity of the closest prototype (argmin)
     '''
+
     valmin = 0.7
-    valmax = 1.3*2
+    valmax = 1.3
     N = prototype.shape[0]
+    c = (np.log(valmax)-1)/(np.log(valmax)-np.log(valmin)+N*(np.log(valmin)-1))
+    b = c*np.log(valmin)
+    a = np.log(valmax)*(c-1)-b
+        
     b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
     d = -b/np.log(valmin)
     a = -b*N
-
+    
+    idx_global = 0
     if homeo==True:
         nb_proto = np.zeros(prototype.shape[0])
-        idx_global = 0
     polarity, output_distance = np.zeros(
         to_predict.shape[0]), np.zeros(to_predict.shape[0])
     for idx in range(to_predict.shape[0]):
         Euclidian_distance = np.sqrt(
             np.sum((to_predict[idx] - prototype)**2, axis=1))
         if homeo==True and idx_global>0:
-            #gain = np.exp((a*nb_proto/max(idx_global,1)+b)/(nb_proto/max(idx_global,1)-d))
-            gain = np.exp(R*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+            #gain = np.exp((a*nb_proto/max(idx_global,1)+b)/(c-nb_proto/max(idx_global,1)))
+            gain = np.exp(prototype.shape[0]/4*(nb_proto/max(idx_global,1)-1/prototype.shape[0]))
+            #gain = 1/np.linalg.norm(to_predict[idx])*np.exp((nb_proto/max(idx_global,1)-1/prototype.shape[0]))
             #gain = np.log(1/prototype.shape[0])/np.log(nb_proto/idx_global)
+            #gain = np.exp((a*nb_proto/max(idx_global,1)+b)/(nb_proto/max(idx_global,1)-d))
             #print('predict', gain, Euclidian_distance)
             polarity[idx] = np.argmin(Euclidian_distance*gain)
             output_distance[idx] = Euclidian_distance[int(polarity[idx])]
             nb_proto[int(polarity[idx])] += 1
-            idx_global += 1
         else:
             polarity[idx] = np.argmin(Euclidian_distance)
             output_distance[idx] = np.amin(Euclidian_distance)
+        idx_global += 1
     return output_distance, polarity.astype(int)
 
 def predictioncosine(to_predict, prototype, homeo, R):

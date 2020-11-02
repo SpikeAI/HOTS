@@ -89,7 +89,7 @@ class ClusteringLayer(Layer):
     '''
 
     def __init__(self, tau, R, ThrFilter=0, LearningAlgo='lagorce', kernel='exponential',
-                 eta=None, homeo=False, eta_homeo=None, C=None, sigma=None, init=None, l0_sparseness=5, verbose=0):
+                 eta=None, homeo=False, eta_homeo=None, C=None, sigma=None, init='rdn', l0_sparseness=5, verbose=0):
         Layer.__init__(self, verbose)
         LearningAlgos = ['homeo', 'maro', 'lagorce', 'comp']
         self.type = 'Layer'
@@ -97,6 +97,7 @@ class ClusteringLayer(Layer):
         self.tau = tau
         self.init = init
         self.R = R
+        self.hompower = 0
         self.ThrFilter = ThrFilter
         self.LearningAlgo = LearningAlgo
         if self.LearningAlgo not in LearningAlgos:
@@ -124,7 +125,7 @@ class ClusteringLayer(Layer):
                                             eta=self.eta, eta_homeo=None, C=self.C,
                                             l0_sparseness=self.l0_sparseness,  Norm_Type='standard')
 
-    def RunLayer(self, event, Cluster):
+    def RunLayer(self, event, Cluster, homrun):
         '''
         Associate each polarity of the event input to the prototype of the cluster
         INPUT :
@@ -141,7 +142,7 @@ class ClusteringLayer(Layer):
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.output, _ = Cluster.predict(
-            Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R)
+            Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R, homrun=homrun)
 
         return self.output
 
@@ -168,8 +169,8 @@ class ClusteringLayer(Layer):
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.ClusterLayer.nb_cluster, self.ClusterLayer.to_record = nb_cluster, to_record
-        Prototype = self.ClusterLayer.fitcosine(self.SpTe_Layer, init=self.init, NbCycle=NbCycle)
+        Prototype = self.ClusterLayer.fit(self.SpTe_Layer, init=self.init, NbCycle=NbCycle)
         self.output, _ = self.ClusterLayer.predict(
-            Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R)
+            Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R, homrun=self.ClusterLayer.homeo)
 
         return self.output, self.ClusterLayer

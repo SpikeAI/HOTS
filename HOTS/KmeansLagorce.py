@@ -17,8 +17,9 @@ class KmeansLagorce(Cluster):
     def __init__(self, nb_cluster, homeo, to_record=True, verbose=0):
         Cluster.__init__(self, nb_cluster, homeo, to_record, verbose)
         self.homeo = homeo
+        self.hompower = 0
 
-    def fit(self, STS, init=None, NbCycle=1):
+    def fit(self, STS, init='rdn', NbCycle=1):
         '''
         Methods to learn prototypes fitting data
         INPUT :
@@ -32,8 +33,12 @@ class KmeansLagorce(Cluster):
         tic = time.time()
         
         valmin = 0.7
-        valmax = 1.3*2
+        valmax = 1.3
         N = self.nb_cluster
+        c = (np.log(valmax)-1)/(np.log(valmax)-np.log(valmin)+N*(np.log(valmin)-1))
+        b = c*np.log(valmin)
+        a = np.log(valmax)*(c-1)-b
+        
         b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
         d = -b/np.log(valmin)
         a = -b*N
@@ -51,6 +56,7 @@ class KmeansLagorce(Cluster):
             raise NameError('argument '+str(init) +
                             ' is not valid. Only None or rdn are valid')
         self.idx_global = 0
+        selectivity = 0
         nb_proto = np.zeros((self.nb_cluster))
         for each_cycle in range(NbCycle):
             for idx, Si in enumerate(surface):
@@ -58,11 +64,14 @@ class KmeansLagorce(Cluster):
                 Distance_to_proto = np.linalg.norm(Si - self.prototype, ord=2, axis=1)
                 #Adding homeostasis rule
                 if self.homeo==True:
-                    #gain = np.exp((a*nb_proto/max(self.idx_global,1)+b)/(nb_proto/max(self.idx_global,1)-d))
-                    gain = np.exp(STS.R*(nb_proto/max(self.idx_global,1)-1/self.nb_cluster))
+                    #gain = np.exp((a*nb_proto/max(self.idx_global,1)+b)/(c-nb_proto/max(self.idx_global,1)))
+                    gain = np.exp(self.nb_cluster/4*(nb_proto/max(self.idx_global,1)-1/self.nb_cluster))
                     #gain = np.log(1/self.nb_cluster)/np.log(nb_proto/self.idx_global)
-                    #print('fit', gain, Distance_to_proto)
+                    #gain = np.exp((a*nb_proto/max(self.idx_global,1)+b)/(nb_proto/max(self.idx_global,1)-d))
+                    #print('fit', self.nb_cluster, gain, Distance_to_proto)
                     closest_proto_idx = np.argmin(Distance_to_proto*gain)
+                    if closest_proto_idx==np.argmin(gain) and closest_proto_idx!=np.argmin(Distance_to_proto):
+                        selectivity+=1       
                 else:
                     closest_proto_idx = np.argmin(Distance_to_proto)
                 pk = nb_proto[closest_proto_idx]
@@ -89,7 +98,7 @@ class KmeansLagorce(Cluster):
         if self.verbose > 0:
             print(
                 'Clustering SpatioTemporal Surface in ------ {0:.2f} s'.format(tac-tic))
-
+        self.hompower = selectivity/self.idx_global
         return self.prototype
 
     def fitcosine(self, STS, init=None, NbCycle=1):

@@ -1,6 +1,5 @@
 __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Grimaldi (2020-)"
 
-
 class Network(object):
     def __init__(self, Layers, verbose=0):
         '''
@@ -42,7 +41,7 @@ class Network(object):
             event_i = event_o
         return ClusterList, event_o
 
-    def RunNetwork(self, event, NbClusterList):
+    def RunNetwork(self, event, NbClusterList, homrun):
         '''
         Method to run the network
         INPUT :
@@ -59,7 +58,7 @@ class Network(object):
             elif each_Layer.type == 'Filter':
                 event_o = each_Layer.RunLayer(event_i)
             elif each_Layer.type == 'Layer':
-                event_o = each_Layer.RunLayer(event_i, Cluster=NbClusterList[idx_Layer])
+                event_o = each_Layer.RunLayer(event_i, Cluster=NbClusterList[idx_Layer], homrun=homrun)
                 idx_Layer = idx_Layer + 1
             else:
                 print(type(each_Layer))

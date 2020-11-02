@@ -23,7 +23,7 @@ class Cluster(object):
         self.record = pd.DataFrame([], columns=['error', 'histo'])
         self.idx_global = 0
 
-    def predict(self, Surface, R, event=None, SurfaceFilter=None):
+    def predict(self, Surface, R, homrun, event=None, SurfaceFilter=None):
         '''
         Methods to predict the closest prototype from a stream a STS
         INPUT :
@@ -36,11 +36,11 @@ class Cluster(object):
             + either: event_output : (<event.object>)
             + or : polarity : (<np.array>)
         '''
-
+        self.homeo = homrun
         if self.prototype is None:
             raise ValueError('Train the Cluster before doing prediction')
 
-        output_distance, polarity = Tools.predictioncosine(Surface, self.prototype, self.homeo, R)
+        output_distance, polarity = Tools.prediction(Surface, self.prototype, self.homeo, R)
 
         if event is not None:
             event_output = event.copy()
@@ -65,7 +65,7 @@ class Cluster(object):
                 np.arange(Surface.shape[0]))[:SurfaceFilter]
             to_predict = Surface[random_selection]
 
-        pol, output_distance, = self.predict(to_predict, R)
+        pol, output_distance, = self.predict(to_predict, R, self.homeo)
         error = np.mean(output_distance)
         active_probe = np.histogram(pol, bins=np.arange(self.nb_cluster+1))[0]
 
