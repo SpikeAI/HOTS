@@ -6,6 +6,7 @@ import pickle
 def prediction(to_predict, prototype, homeo, R):
     '''
     function to predict polarities
+
     INPUT :
         + to_predict : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1)) representing the
             spatiotemporal surface to cluster
@@ -55,6 +56,7 @@ def prediction(to_predict, prototype, homeo, R):
 def predictioncosine(to_predict, prototype, homeo, R):
     '''
     function to predict polarities
+
     INPUT :
         + to_predict : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1)) representing the
             spatiotemporal surface to cluster
@@ -113,27 +115,26 @@ def GenerateHistogram(event):
 
 def Norm(Hist, Histo_proto, method):
     '''
-    One function to pack all the hitstogram norms
+    One function to pack all the histogram norms.
+
     INPUT :
-        + Hist : (<np.array>) matrix of size (nb_sample,nb_polarity) representing the histogram for each sample
-        + Histo_proto : (<np.array>) matrix of size (nb_cluster,nb_polarity) representing the histogram for each
-            prototype
+        + Hist : (<np.array>) matrix of size (nb_sample, nb_polarity) representing the histogram for each sample
+        + Histo_proto : (<np.array>) matrix of size (nb_cluster, nb_polarity) representing the histogram for each prototype
     OUTPUT :
-        + to_return : (<np.array>)  of size (nb_sample,nb_Cluster) representing the euclidian distance from the samples histogram
-            to the prototype histo
+        + to_return : (<np.array>)  of size (nb_sample, nb_Cluster) representing the distance from the samples histogram to the prototype histo
+
     '''
     if method == 'euclidian':
-        to_return = EuclidianNorm(Hist, Histo_proto)
+        return EuclidianNorm(Hist, Histo_proto)
     elif method == 'normalized':
-        to_return = NormalizedNorm(Hist, Histo_proto)
+        return NormalizedNorm(Hist, Histo_proto)
     elif method == 'battacha':
-        to_return = BattachaNorm(Hist, Histo_proto)
-    return to_return
-
+        return BattachaNorm(Hist, Histo_proto)
+    else:
+        return f'computing with {method} norm is not implemented yet'
 
 def EuclidianNorm(Hist, Histo_proto):
     return np.sqrt(np.sum((Hist - Histo_proto)**2, axis=1))
-
 
 def NormalizedNorm(Hist, Histo_proto):
     summation = np.sum(Histo_proto, axis=1)

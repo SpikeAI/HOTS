@@ -8,7 +8,7 @@ from HOTS.Tools import LoadObject
 import HOTS.Tool_libUnpackAtis as ua
 import pickle
 
-# from HOTS.conv2eve import conv2eve
+#from HOTS.conv2eve import conv2eve
 class conv2eve(object):
 	""" Transform a matrix into event type:
                 .t -> time
@@ -286,7 +286,7 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, OneOfEach=False,
 
     '''
     # loads the pickle
-    if Path is None: Path = 'Data/testsetnmnist.p'
+    if Path is None: Path = '../Data/testsetnmnist.p'
     EVE = pickle.load(open(Path, "rb" ))
 
     # initializes event lists

@@ -44,7 +44,8 @@ class Classifier(object):
     # (histo_to_classify,proto_histo,proto_label_list=None):
     def HistogramDistance(self, methods=['euclidian', 'normalized', 'battacha'], knn=None, to_print=False):
         '''
-        method to classify using histogram distance between prototypes and :
+        Method to classify using histogram distance between prototypes and data.
+
         INPUT :
             + methods : (<list>) of (<string>) to inform which norm to use to calculate histogram distances
                 should be euclidian, normalized or battacha
@@ -58,7 +59,7 @@ class Classifier(object):
         self.GroundTruth = self.GroundTruth.astype(np.str_)
         histo_train, pola_train = GenerateHistogram(self.event_train)
         histo_test, pola_test = GenerateHistogram(self.event_test)
-        
+
         prediction = list()
         allmethod = list()
         for each_method in methods:
