@@ -40,7 +40,7 @@ class Network(object):
                 print(type(each_Layer))
             event_i = event_o
         return ClusterList, event_o
-
+    
     def RunNetwork(self, event, NbClusterList, homrun=False):
         '''
         Method to run the network
@@ -64,3 +64,29 @@ class Network(object):
                 print(type(each_Layer))
             event_i = event_o
         return event_o
+
+    def RunNetwork2(self, event, NbClusterList, homrun=False):
+        '''
+        Method to run the network
+        INPUT :
+            + event : (<obect event>) the input event of the network
+            + NbClusterList : (<list>) of int, stacking the number of cluster of each Clustering Layers
+        OUTPUT :
+            + event_o : (<object event>) the output event of the network
+        '''
+        event_i = event
+        event_olz = []
+        idx_Layer = 0
+        for idx, each_Layer in enumerate(self.Layers):
+            if each_Layer.type == 'void':
+                print('problem !!')
+            elif each_Layer.type == 'Filter':
+                event_o = each_Layer.RunLayer(event_i)
+            elif each_Layer.type == 'Layer':
+                event_o = each_Layer.RunLayer(event_i, Cluster=NbClusterList[idx_Layer], homrun=homrun)
+                idx_Layer = idx_Layer + 1
+            else:
+                print(type(each_Layer))
+            event_i = event_o
+            event_olz.append(event_o)
+        return event_o, event_olz
