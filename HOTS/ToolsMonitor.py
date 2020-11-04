@@ -65,8 +65,8 @@ def DisplayImage(list_of_event, multi_image=0):
         ax.axis('off')
         ax.set_title('Image {0}'.format(idx+1), fontsize=8)
         idx += 1
-        
-        
+
+
 def DisplayPola(list_of_event, ImageSize, nb_pola, R=2, rect=False):
     '''
     Function to accumulated event as an image
@@ -101,7 +101,7 @@ def DisplayPola(list_of_event, ImageSize, nb_pola, R=2, rect=False):
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(impol, cax=cbar_ax, label="timescale in millisec")
-    plt.show()  
+    plt.show()
 
 
 def DisplaySurface3D(Surface, nb_polarities, angle=(20, 90)):
@@ -154,15 +154,14 @@ def DisplaySurface3D(Surface, nb_polarities, angle=(20, 90)):
             idx = idx+1
 
 
-def DisplaySurface2D(Surface, nb_polarities):
+def DisplaySurface2D(Surface, nb_polarities,
+                     cmap=plt.cm.plasma, full_normalize=True):
     '''
     Function to display 2D graph of spatiotemporal surface
     INPUT :
         + Surface : (<np.array>) of size (nb_surface,nb_polarity*(2*R+1)*(2*R+1))
         + nb_polarities : (<int>) number of polarities per surface
     '''
-    subplotpars = matplotlib.figure.SubplotParams(
-        left=0., right=1., bottom=0., top=1., wspace=0.1, hspace=0.1)
     nb_center = Surface.shape[0]  # len(ClusterCenter)
 
     if len(Surface.shape) == 2:
@@ -170,24 +169,29 @@ def DisplaySurface2D(Surface, nb_polarities):
         Surface = Surface.reshape((nb_center, nb_polarities, area))
     else:
         area = int(Surface.shape[2])
+    dim_patch = int(np.sqrt(area))
+
+    subplotpars = matplotlib.figure.SubplotParams(
+        left=0., right=1., bottom=0., top=1., wspace=0.1, hspace=0.1)
     fig = plt.figure(figsize=(nb_center*0.6, nb_polarities*0.6),
                      subplotpars=subplotpars)
-    dim_patch = int(np.sqrt(area))
-    idx = 0
+
+    cmin = 0
+    if full_normalize: cmax = Surface.max()
+
     for idx_center, each_center in enumerate(Surface):
         for idx_pol, surface in enumerate(each_center):
             ax = fig.add_subplot(nb_polarities, nb_center,
                                  idx_center+idx_pol*nb_center+1)
 
-            cmin = 0
-            cmax = np.max(surface)
+            if not(full_normalize) : cmax = surface.max()
             # print(cmax)
-            ax.imshow(surface.reshape((dim_patch, dim_patch)), cmap=plt.cm.gray, vmin=cmin, vmax=cmax,
-                      interpolation='nearest')
+            ax.imshow(surface.reshape((dim_patch, dim_patch)),
+                        cmap=cmap, vmin=cmin,
+                        vmax=cmax, interpolation='nearest')
             ax.set_xticks(())
             ax.set_yticks(())
             #ax.set_title('Cl {0} - Pol {1}'.format(idx_center,idx_pol),fontsize= 6)
-            idx = idx+1
 
 
 def GenerateActivationMap(Event, Cluster, mode='separate'):
