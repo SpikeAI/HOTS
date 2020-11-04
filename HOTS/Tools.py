@@ -23,11 +23,11 @@ def prediction(to_predict, prototype, homeo, R):
     c = (np.log(valmax)-1)/(np.log(valmax)-np.log(valmin)+N*(np.log(valmin)-1))
     b = c*np.log(valmin)
     a = np.log(valmax)*(c-1)-b
-        
+
     b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
     d = -b/np.log(valmin)
     a = -b*N
-    
+
     idx_global = 0
     if homeo==True:
         nb_proto = np.zeros(prototype.shape[0])
@@ -115,11 +115,13 @@ def NormalizedNorm(Hist, Histo_proto):
     summation = np.sum(Histo_proto, axis=1)
     return np.sqrt(np.sum((Hist/np.sum(Hist) - Histo_proto/summation[:, None])**2, axis=1))
 
-
 def BattachaNorm(Hist, Histo_proto):
     summation = np.sum(Histo_proto, axis=1)
     return -np.log(np.sum(np.sqrt(np.multiply(Histo_proto/summation[:, None], Hist/np.sum(Hist))), axis=1))
 
+# TODO add KL divergence
+
+#####################
 
 def SaveObject(obj, filename):
     with open(filename, 'wb') as file:
@@ -130,12 +132,13 @@ def LoadObject(filename):
     with open(filename, 'rb') as file:
         Clust = pickle.load(file)
     return Clust
-# def Load(filename):
 
 
+#####################
 def GenerateHistogram(event):
     '''
-    Generate an histogram for each sample.
+    Generate an histogram for each sample (that is, between two changes).
+
     INPUT :
         + event (<object event>) stream on event on which we want to create an histogram
     OUTPUT :
@@ -144,12 +147,12 @@ def GenerateHistogram(event):
         + pola = (<np.array>) of size (nb_sample,nb_clusters) representing the index of cluster activation
     '''
     last_change = 0
-    for idx, each_change in enumerate(event.ChangeIdx):
-        freq, pola = np.histogram(
-            event.polarity[last_change:each_change+1], bins=len(event.ListPolarities))
+    for idx, new_change in enumerate(event.ChangeIdx):
+        freq, polarities = np.histogram(
+            event.polarity[last_change:new_change+1], bins=len(event.ListPolarities))
         if idx != 0:
             freq_mat = np.vstack((freq_mat, freq))
         else:
             freq_mat = freq
-        last_change = each_change
-    return freq_mat, pola
+        last_change = new_change
+    return freq_mat, polarities
