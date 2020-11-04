@@ -41,7 +41,7 @@ class Network(object):
             event_i = event_o
         return ClusterList, event_o
 
-    def RunNetwork(self, event, NbClusterList, homrun):
+    def RunNetwork(self, event, NbClusterList, homrun=False):
         '''
         Method to run the network
         INPUT :
