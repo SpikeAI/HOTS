@@ -21,7 +21,6 @@ class conv2eve(object):
 		self.y = y
 		self.p = p
 
-
 class Event(object):
     '''
     Class representing an event with all its attributes
@@ -281,6 +280,9 @@ def LoadGestureDB(filepath, OutOnePolarity=False):
 def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, OneOfEach=False, Path=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
     '''
     Loads the NMNIST dataset and returns the diferent event lists and labels
+
+    The database consists of 10000 presentations with for each a listof events
+    corresponding to that presentation.
 
     '''
     # loads the pickle
