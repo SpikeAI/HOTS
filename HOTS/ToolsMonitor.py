@@ -177,9 +177,9 @@ def DisplaySurface2D(Surface, nb_polarities,
                      subplotpars=subplotpars)
 
     cmin = 0
-    if full_normalize: cmax = Surface.max()
 
     for idx_center, each_center in enumerate(Surface):
+        if full_normalize: cmax = each_center.max()
         for idx_pol, surface in enumerate(each_center):
             ax = fig.add_subplot(nb_polarities, nb_center,
                                  idx_center+idx_pol*nb_center+1)
