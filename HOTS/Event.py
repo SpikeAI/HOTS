@@ -6,8 +6,20 @@ import random
 from os import listdir
 from HOTS.Tools import LoadObject
 import HOTS.Tool_libUnpackAtis as ua
-from HOTS.conv2eve import conv2eve
 import pickle
+
+#from HOTS.conv2eve import conv2eve
+class conv2eve(object):
+	""" Transform a matrix into event type:
+                .t -> time
+                .x and .y -> spatial position
+                .p -> polarity"""
+
+	def __init__(self, t, x, y, p):
+		self.t = t
+		self.x = x
+		self.y = y
+		self.p = p
 
 class Event(object):
     '''
@@ -200,11 +212,11 @@ def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, Clu
         + OutOnePolarity : (bool), transform all polarities into 1 polarity
         + ListPolarities : (list), list of the polarity we want to keep
     OUTPUT :
-        + event_tr : (<object event>)
-        + event_te : (<object event>)
-        + event_cl : (<object event>)
-        + label_tr :
-        + label_te :
+        + event_train : (<object event>)
+        + event_test : (<object event>)
+        + event_cluster : (<object event>)
+        + label_train :
+        + label_test :
     '''
     if Path is None:
         Path = '../database/SimpleAlphabet/alphabet_ExtractedStabilized.mat'
@@ -217,37 +229,37 @@ def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, Clu
 
     if NbTrainingData+NbTestingData > 76:
         raise NameError('Overlaping between TrainingData and Testing Data')
-    event_tr = Event(ImageSize=(
+    event_train = Event(ImageSize=(
         32, 32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_te = Event(ImageSize=(
+    event_test = Event(ImageSize=(
         32, 32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_cl = Event(ImageSize=(
+    event_cluster = Event(ImageSize=(
         32, 32), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_tr.LoadFromMat(Path, image_number=list(
+    event_train.LoadFromMat(Path, image_number=list(
         np.arange(0, NbTrainingData)), verbose=verbose)
-    event_te.LoadFromMat(Path, image_number=list(
+    event_test.LoadFromMat(Path, image_number=list(
         np.arange(NbTrainingData, NbTrainingData+NbTestingData)), verbose=verbose)
 
     if ClusteringData is None:
-        event_cl = event_tr
+        event_cluster = event_train
     else:
-        event_cl.LoadFromMat(
+        event_cluster.LoadFromMat(
             Path, image_number=ClusteringData, verbose=verbose)
 
     # Generate Groud Truth Label
     for idx, img in enumerate(np.arange(0, NbTrainingData)):
         if idx != 0:
-            label_tr = np.vstack((label_tr, label_list[img][0]))
+            label_train = np.vstack((label_train, label_list[img][0]))
         else:
-            label_tr = label_list[img][0]
+            label_train = label_list[img][0]
 
     for idx, img in enumerate(np.arange(NbTrainingData, NbTrainingData+NbTestingData)):
         if idx != 0:
-            label_te = np.vstack((label_te, label_list[img][0]))
+            label_test = np.vstack((label_test, label_list[img][0]))
         else:
-            label_te = label_list[img][0]
+            label_test = label_list[img][0]
 
-    return event_tr, event_te, event_cl, label_tr, label_te
+    return event_train, event_test, event_cluster, label_train, label_test
 
 
 def LoadGestureDB(filepath, OutOnePolarity=False):
@@ -267,113 +279,117 @@ def LoadGestureDB(filepath, OutOnePolarity=False):
 
 def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, OneOfEach=False, Path=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
     '''
-    '''  
-    if Path is None:
-        Path = '/Users/joe/Documents/boulot/python/testsetnmnist.p'
-    EVE = pickle.load(open( Path, "rb" ))
+    Loads the NMNIST dataset and returns the diferent event lists and labels
 
-    event_tr = Event(ImageSize=(
-        34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_te = Event(ImageSize=(
-        34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_cl = Event(ImageSize=(
-        34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    
+    The database consists of 10000 presentations with for each a listof events
+    corresponding to that presentation.
+
+    '''
+    # loads the pickle
+    if Path is None: Path = '../Data/testsetnmnist.p'
+    EVE = pickle.load(open(Path, "rb" ))
+
+    # initializes event lists
+    opts = dict(ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
+    event_train = Event(ImageSize=(34, 34), **opts) # TRAIN
+    event_test = Event(ImageSize=(34, 34), **opts) # TEST
+    event_cluster = Event(ImageSize=(34, 34), **opts)
+
+    # select at random a training and test subsets
     listdigit = random.sample(range(10000), NbTrainingData+NbTestingData+NbClusteringData)
-    listrain = listdigit[:NbTrainingData]
-    listest = listdigit[NbTrainingData:NbTrainingData+NbTestingData]
-    listclust = listdigit[NbTrainingData+NbTestingData:]
-    
-    label_tr = np.zeros([NbTrainingData,1])
+    list_train = listdigit[:NbTrainingData]
+    list_test = listdigit[NbTrainingData:NbTrainingData+NbTestingData]
+    list_clust = listdigit[NbTrainingData+NbTestingData:]
+
+    label_train = np.zeros([NbTrainingData,1])
     changeidx = []
     sizetrain = 0
-    for idx in listrain:
+    for idx in list_train:
         size = len(EVE[idx].t)
         sizetrain += size
-    
-    event_tr.address = np.zeros((sizetrain, 2)).astype(int)
-    event_tr.time = np.zeros((sizetrain))
-    event_tr.polarity = np.zeros((sizetrain)).astype(int)
-    idg = 0 
+
+    event_train.address = np.zeros((sizetrain, 2)).astype(int)
+    event_train.time = np.zeros((sizetrain))
+    event_train.polarity = np.zeros((sizetrain)).astype(int)
+    idg = 0
     idgl = 0
     selectid = []
-    for idx in listrain:
+    for idx in list_train:
         events = EVE[idx]
         if OneOfEach is True:
             if events.l not in selectid:
                 for idev in range(len(events.t)):
-                    event_tr.time[idg] = events.t[idev]*pow(10,-6)
-                    event_tr.address[idg][0] = int(events.y[idev])
-                    event_tr.address[idg][1] = int(events.x[idev])
-                    event_tr.polarity[idg] = int(events.p[idev])
+                    event_train.time[idg] = events.t[idev]*pow(10,-6)
+                    event_train.address[idg][0] = int(events.y[idev])
+                    event_train.address[idg][1] = int(events.x[idev])
+                    event_train.polarity[idg] = int(events.p[idev])
                     idg += 1
                 changeidx.append(len(events.t))
-                label_tr[idgl][0] = events.l
+                label_train[idgl][0] = events.l
                 idgl+=1
                 selectid.append(events.l)
         else:
             for idev in range(len(events.t)):
-                event_tr.time[idg] = events.t[idev]*pow(10,-6)
-                event_tr.address[idg][0] = int(events.y[idev])
-                event_tr.address[idg][1] = int(events.x[idev])
-                event_tr.polarity[idg] = int(events.p[idev])
+                event_train.time[idg] = events.t[idev]*pow(10,-6)
+                event_train.address[idg][0] = int(events.y[idev])
+                event_train.address[idg][1] = int(events.x[idev])
+                event_train.polarity[idg] = int(events.p[idev])
                 idg += 1
             changeidx.append(len(events.t))
-            label_tr[idgl][0] = events.l
-            idgl+=1            
-    print(selectid)        
-    event_tr.ChangeIdx = changeidx
-    
-    changeidx = []
-    label_te = np.zeros([NbTestingData,1])
-    sizetrain = 0
-    for idx in listest:
-        size = len(EVE[idx].t)
-        sizetrain += size
-    
-    event_te.address = np.zeros((sizetrain, 2)).astype(int)
-    event_te.time = np.zeros((sizetrain))
-    event_te.polarity = np.zeros((sizetrain)).astype(int)
-    idg = 0 
-    idgl = 0
-    for idx in listest:
-        events = EVE[idx]
-        for idev in range(len(events.t)):
-            event_te.time[idg] = events.t[idev]*pow(10,-6)
-            event_te.address[idg][0] = int(events.y[idev])
-            event_te.address[idg][1] = int(events.x[idev])
-            event_te.polarity[idg] = int(events.p[idev])
-            idg += 1
-        changeidx.append(len(events.t))
-        label_te[idgl][0] = events.l
-        idgl+=1
-    event_te.ChangeIdx = changeidx
-    
-    changeidx = []
-    sizetrain = 0
-    for idx in listclust:
-        size = len(EVE[idx].t)
-        sizetrain += size
-    
-    event_cl.address = np.zeros((sizetrain, 2)).astype(int)
-    event_cl.time = np.zeros((sizetrain))
-    event_cl.polarity = np.zeros((sizetrain)).astype(int)
-    idg = 0 
-    idgl = 0
-    for idx in listclust:
-        events = EVE[idx]
-        for idev in range(len(events.t)):
-            event_cl.time[idg] = events.t[idev]*pow(10,-6)
-            event_cl.address[idg][0] = int(events.y[idev])
-            event_cl.address[idg][1] = int(events.x[idev])
-            event_cl.polarity[idg] = int(events.p[idev])
-            idg += 1
-        changeidx.append(len(events.t))
-    event_cl.ChangeIdx = changeidx
-    
-    event_cl.ListPolarities = np.unique(event_cl.polarity)
-    event_te.ListPolarities = np.unique(event_te.polarity)
-    event_tr.ListPolarities = np.unique(event_tr.polarity)
+            label_train[idgl][0] = events.l
+            idgl+=1
+    print(selectid)
+    event_train.ChangeIdx = changeidx
 
-    return event_tr, event_te, event_cl, label_tr, label_te
-    
+    changeidx = []
+    label_test = np.zeros([NbTestingData,1])
+    sizetrain = 0
+    for idx in list_test:
+        size = len(EVE[idx].t)
+        sizetrain += size
+
+    event_test.address = np.zeros((sizetrain, 2)).astype(int)
+    event_test.time = np.zeros((sizetrain))
+    event_test.polarity = np.zeros((sizetrain)).astype(int)
+    idg = 0
+    idgl = 0
+    for idx in list_test:
+        events = EVE[idx]
+        for idev in range(len(events.t)):
+            event_test.time[idg] = events.t[idev]*pow(10,-6)
+            event_test.address[idg][0] = int(events.y[idev])
+            event_test.address[idg][1] = int(events.x[idev])
+            event_test.polarity[idg] = int(events.p[idev])
+            idg += 1
+        changeidx.append(len(events.t))
+        label_test[idgl][0] = events.l
+        idgl+=1
+    event_test.ChangeIdx = changeidx
+
+    changeidx = []
+    sizetrain = 0
+    for idx in list_clust:
+        size = len(EVE[idx].t)
+        sizetrain += size
+
+    event_cluster.address = np.zeros((sizetrain, 2)).astype(int)
+    event_cluster.time = np.zeros((sizetrain))
+    event_cluster.polarity = np.zeros((sizetrain)).astype(int)
+    idg = 0
+    idgl = 0
+    for idx in list_clust:
+        events = EVE[idx]
+        for idev in range(len(events.t)):
+            event_cluster.time[idg] = events.t[idev]*pow(10,-6)
+            event_cluster.address[idg][0] = int(events.y[idev])
+            event_cluster.address[idg][1] = int(events.x[idev])
+            event_cluster.polarity[idg] = int(events.p[idev])
+            idg += 1
+        changeidx.append(len(events.t))
+    event_cluster.ChangeIdx = changeidx
+
+    event_cluster.ListPolarities = np.unique(event_cluster.polarity)
+    event_test.ListPolarities = np.unique(event_test.polarity)
+    event_train.ListPolarities = np.unique(event_train.polarity)
+
+    return event_train, event_test, event_cluster, label_train, label_test

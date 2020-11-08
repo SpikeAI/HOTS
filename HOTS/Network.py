@@ -15,6 +15,7 @@ class Network(object):
     def TrainCluster(self, event, NbClusterList, to_record=False, NbCycle=1):
         '''
         Method to train all the layers of the network
+
         INPUT :
             + event : (<obect event>) the input event of the network
             + NbClusterList : (<list>) of int, stacking the number of cluster of each Clustering Layers
@@ -40,7 +41,7 @@ class Network(object):
                 print(type(each_Layer))
             event_i = event_o
         return ClusterList, event_o
-    
+
     def RunNetwork(self, event, NbClusterList, homrun=False):
         '''
         Method to run the network

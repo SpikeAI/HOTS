@@ -6,6 +6,7 @@ import pickle
 def prediction(to_predict, prototype, homeo, R):
     '''
     function to predict polarities
+
     INPUT :
         + to_predict : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1)) representing the
             spatiotemporal surface to cluster
@@ -23,11 +24,11 @@ def prediction(to_predict, prototype, homeo, R):
     c = (np.log(valmax)-1)/(np.log(valmax)-np.log(valmin)+N*(np.log(valmin)-1))
     b = c*np.log(valmin)
     a = np.log(valmax)*(c-1)-b
-        
+
     b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
     d = -b/np.log(valmin)
     a = -b*N
-    
+
     idx_global = 0
     if homeo==True:
         nb_proto = np.zeros(prototype.shape[0])
@@ -55,6 +56,7 @@ def prediction(to_predict, prototype, homeo, R):
 def predictioncosine(to_predict, prototype, homeo, R):
     '''
     function to predict polarities
+
     INPUT :
         + to_predict : (<np.array>) array of size (nb_of_event,nb_polarity*(2*R+1)*(2*R+1)) representing the
             spatiotemporal surface to cluster
@@ -87,39 +89,64 @@ def predictioncosine(to_predict, prototype, homeo, R):
             output_distance[idx] = np.amax(Euclidian_distance)
     return output_distance, polarity.astype(int)
 
+#####################
+def GenerateHistogram(event):
+    '''
+    Generate an histogram for each sample (that is, between two changes).
+
+    INPUT :
+        + event (<object event>) stream on event on which we want to create an histogram
+    OUTPUT :
+        + freq = (<np.array>) of size (nb_samples,nb_clusters) representing the histrogram of cluster
+            activation for each sample
+        + pola = (<np.array>) of size (nb_sample,nb_clusters) representing the index of cluster activation
+    '''
+    last_change = 0
+    for idx, new_change in enumerate(event.ChangeIdx):
+        freq, polarities = np.histogram(
+            event.polarity[last_change:new_change+1], bins=len(event.ListPolarities))
+        if idx != 0:
+            freq_mat = np.vstack((freq_mat, freq))
+        else:
+            freq_mat = freq
+        last_change = new_change
+    return freq_mat, polarities
+
+
 def Norm(Hist, Histo_proto, method):
     '''
-    One function to pack all the norm
+    One function to pack all the histogram norms.
+
     INPUT :
-        + Hist : (<np.array>) matrix of size (nb_sample,nb_polarity) representing the histogram for each sample
-        + Histo_proto : (<np.array>) matrix of size (nb_cluster,nb_polarity) representing the histogram for each
-            prototype
+        + Hist : (<np.array>) matrix of size (nb_sample, nb_polarity) representing the histogram for each sample
+        + Histo_proto : (<np.array>) matrix of size (nb_cluster, nb_polarity) representing the histogram for each prototype
     OUTPUT :
-        + to_return : (<np.array>)  of size (nb_sample,nb_Cluster) representing the euclidian distance from the samples histogram
-            to the prototype histo
+        + to_return : (<np.array>)  of size (nb_sample, nb_Cluster) representing the distance from the samples histogram to the prototype histo
+
     '''
     if method == 'euclidian':
-        to_return = EuclidianNorm(Hist, Histo_proto)
+        return EuclidianNorm(Hist, Histo_proto)
     elif method == 'normalized':
-        to_return = NormalizedNorm(Hist, Histo_proto)
+        return NormalizedNorm(Hist, Histo_proto)
     elif method == 'battacha':
-        to_return = BattachaNorm(Hist, Histo_proto)
-    return to_return
-
+        return BattachaNorm(Hist, Histo_proto)
+    else:
+        return f'computing with {method} norm is not implemented yet'
 
 def EuclidianNorm(Hist, Histo_proto):
     return np.sqrt(np.sum((Hist - Histo_proto)**2, axis=1))
-
 
 def NormalizedNorm(Hist, Histo_proto):
     summation = np.sum(Histo_proto, axis=1)
     return np.sqrt(np.sum((Hist/np.sum(Hist) - Histo_proto/summation[:, None])**2, axis=1))
 
-
 def BattachaNorm(Hist, Histo_proto):
     summation = np.sum(Histo_proto, axis=1)
     return -np.log(np.sum(np.sqrt(np.multiply(Histo_proto/summation[:, None], Hist/np.sum(Hist))), axis=1))
 
+# TODO add KL divergence
+
+#####################
 
 def SaveObject(obj, filename):
     with open(filename, 'wb') as file:
@@ -130,26 +157,3 @@ def LoadObject(filename):
     with open(filename, 'rb') as file:
         Clust = pickle.load(file)
     return Clust
-# def Load(filename):
-
-
-def GenerateHistogram(event):
-    '''
-    Generate an histogram for each sample.
-    INPUT :
-        + event (<object event>) stream on event on which we want to create an histogram
-    OUTPUT :
-        + freq = (<np.array>) of size (nb_samples,nb_clusters) representing the histrogram of cluster
-            activation for each sample
-        + pola = (<np.array>) of size (nb_sample,nb_clusters) representing the index of cluster activation
-    '''
-    last_change = 0
-    for idx, each_change in enumerate(event.ChangeIdx):
-        freq, pola = np.histogram(
-            event.polarity[last_change:each_change+1], bins=len(event.ListPolarities))
-        if idx != 0:
-            freq_mat = np.vstack((freq_mat, freq))
-        else:
-            freq_mat = freq
-        last_change = each_change
-    return freq_mat, pola

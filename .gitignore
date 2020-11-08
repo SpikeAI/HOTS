@@ -6,3 +6,6 @@ __pycache__
 HOTS/__pycache__
 Records
 data/testsetnmnist.p
+vecthistLR.pkl
+vectorzLR.pkl
+notebooks/NEW_HOTS_05_LR_draft-Copy1.ipynb
