@@ -1,19 +1,27 @@
-default: D
+default: A B C D E
+
+J=jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute 
+JN=$(J) --to notebook --inplace 
+
 A:
-	jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute --to notebook --inplace 2020-11-06_NEW_HOTS_05_LogisticRegression-A.ipynb
+	$(JN) 2020-11-06_NEW_HOTS_05_LogisticRegression-A.ipynb
 	git commit -m' LR results : A ' -a
 	git push
 B:
-	jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute --to notebook --inplace 2020-11-06_NEW_HOTS_05_LogisticRegression-B.ipynb
+	$(JN) 2020-11-06_NEW_HOTS_05_LogisticRegression-B.ipynb
 	git commit -m' LR results : B ' -a
 	git push
 C:
-	jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute --to notebook --inplace 2020-11-06_NEW_HOTS_05_LogisticRegression-C.ipynb
+	$(JN) 2020-11-06_NEW_HOTS_05_LogisticRegression-C.ipynb
 	git commit -m' LR results : C ' -a
 	git push
 D:
-	jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute --to notebook --inplace 2020-11-06_NEW_HOTS_05_LogisticRegression-D.ipynb
+	$(JN) 2020-11-06_NEW_HOTS_05_LogisticRegression-D.ipynb
 	git commit -m' LR results : D ' -a
+	git push
+E:
+	$(JN) 2020-11-06_NEW_HOTS_05_LogisticRegression-E.ipynb
+	git commit -m' LR results : E ' -a
 	git push
 
 
@@ -23,10 +31,10 @@ PYTHON=ipython
 # RUNNING
 
 %.ipynb:
-	jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute --to notebook --inplace  $@
+	$(JN) $@
 
 %.html:
-	jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute --to html  $@
+	$(J) --to html  $@
 
 weigth:
 	du -h . --max-depth=1
