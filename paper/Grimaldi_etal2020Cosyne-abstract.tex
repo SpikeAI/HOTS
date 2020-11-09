@@ -91,6 +91,11 @@ sortcites=false,
 \newcommand{\citet}[1]{\textcite{#1}}
 \bibliography{biblio.bib} % the ref.bib file
 
+
+\usepackage{siunitx}
+%\renewcommand{\cite}{\citep}%
+\newcommand{\ms}{\si{\milli\second}}%
+
 %%%%%%%%%%% BEGIN METADATA %%%%%%%%%%%%
 \newcommand{\AuthorAG}{Antoine Grimaldi}
 
@@ -133,7 +138,7 @@ A Spiking Neural Network model for image classification
 \paragraph*{Summary}
 \Summary
 %%END OF SUMMARY
-
+%
 \paragraph*{From event-based computing to Spiking Neural Networks}
 % Introduction : event-based computing and engineering -> Spiking Neural Network
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
@@ -148,12 +153,9 @@ Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah bl
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 
 \begin{figure}[!ht]%[!ht][!b]%
-\includegraphics[width=.99\linewidth, height=.3\linewidth]{figure1.pdf}
+\includegraphics[width=.99\linewidth, height=.25\linewidth]{figure1.pdf}
 \caption
 {
 \textbf{Kernels obtained in the self-supervised learning algorithm}: After convergence, we show the second layer receptive fields (a) without or (b) with homeostasis.  (c) The histogram shows that homeostasis allows to equalize the probability of activation of filters.
@@ -171,15 +173,12 @@ Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah bl
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 % there is an imbablance, we add homeostasis and obtain filters see Fig1 b
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-
-
+Blah blahblah blah blah ah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah bl blah blah blah.
+%
 \paragraph*{Classifying using spikes}
 \begin{figure}[!ht]%[!ht][!b]%
 \includegraphics[width=.99\linewidth, height=.15\linewidth]{figure1.pdf}
@@ -193,20 +192,19 @@ Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah bl
 In the original HOTS algorithm~\citet{Lagorce17}, final classification is performed by computing the histogram of activation within the last layer of the network. By comparing this histogram with that obtained on the training set, one could find the class which is closest to the current histogram. While this method performed well for original dataset (a set of digits and letters), it gives a rather poor performance of $7X.X\%$ for the N-MNIST dataset. Using the features obtained using the homeostasis did not improve the results by much, with $8X.X\%$ classification accuracy. 
 % we introduce an event-based logistic / state-of-the art classification
 Instead of this method we introduce a simple classification scheme based on logistic regression. Indeed, following the same strategy as for the construction of the time surfaces, each post-synaptic output of the network could integrate each output spike using a time constant that we set here to $\tau=300~\ms$. Each input spike is thus related to an output spike and therefore to an analog vector. We used this vector to introduce a model of classification which is equivalent to logistic regression~\citep{Berens12} and which is compatible with a neural representation. We found that after learning on the training subset, the network reached an accuracy of $98.X\%$ of the test subset, on par with state-of-the art algorithms.
-
+%
 \paragraph*{Perspectives}
 % open-source HOTS / predictive coding / neuroscience
+In this work, we have presented the implementation of a Spiking Neural Network model able to perform digit classification at a state-of-the-art performance. Its implementation is available at \url{https://github.com/XXX/YYY} and allows to reproduce all results presented here. % https://github.com/SpikeAI/HOTS
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-
-
-\section*{References}
+%
+\paragraph*{References}
 {
-%\small
-\footnotesize
+\small
+%\footnotesize
 %\begingroup
 %\setstretch{0.75}
 %\setlength\bibitemsep{1pt}
