@@ -75,7 +75,7 @@
 \newcommand{\orcidRB}{0000-0003-0243-944X}%
 \newcommand{\AddressRB}{Sorbonne Université, INSERM, CNRS, Institut de la Vision, France;}%
 \newcommand{\Summary}{
-Reverse engineering is the art of looking at an existing device in order to understand its concepts and operation. We used this approach to link innovative methods used in computer vision to computational neuroscience. In Lagorce et al (2017), an event-based algorithm introduced novel spatio-temporal features: time-surfaces. Built from asynchronous events acquired by a neuromorphic camera, these time-surfaces allow to code the local dynamics of a visual scene and to create an efficient hierarchical event-based pattern recognition architecture. This work is three-fold, first through the analysis of this existing method we were able to adapt its formalism in the computational neuroscience domain with a Spiking Neural Network of leaky integrate-and-fire models and Hebbian learning. Then, after reproduction of their results, generalization of the classification task with a more complex and widely used dataset (N-MNIST) was performed using logistic regression. A significant contribution was to achieve online classification of the N-MNIST dataset reaching state of the art performances. To our knowledge, it is the first end-to-end event-based online classification network of this kind. The third contribution came by adding an homeostatic regulation rule for neural activity. According to the efficient coding hypothesis, neural activity should be equally distributed between neurons. We used this principle to force neurons in the same layer to spike with an equivalent probability by adding a gain depending on their past activity. Efficiency of this technique was demonstrated through an improvement in learning spatio-temporal patterns during the training phase and an improvement in classification performance reaching $97,8\% accuracy$. As a summary, by using a method used in a different field, we were able to develop an efficient SNN model for online digit classification. We aim at pursuing the study of this architecture through unsupervised learning of natural scene and hope to get hints about efficient neural coding.
+Reverse engineering is the art of looking at an existing device in order to understand its concepts and operation. We used this approach to link innovative methods used in computer vision to computational neuroscience. In Lagorce et al (2017), an event-based algorithm introduced novel spatio-temporal features: time-surfaces. Built from asynchronous events acquired by a neuromorphic camera, these time-surfaces allow to code the local dynamics of a visual scene and to create an efficient hierarchical event-based pattern recognition architecture. This work is three-fold, first through the analysis of this existing method we were able to adapt its formalism in the computational neuroscience domain with a Spiking Neural Network of leaky integrate-and-fire models and Hebbian learning. Then, after reproduction of their results, generalization of the classification task with a more complex and widely used dataset (N-MNIST) was performed using logistic regression. A significant contribution was to achieve online classification of the N-MNIST dataset reaching state of the art performances. To our knowledge, it is the first end-to-end event-based online classification network of this kind. The third contribution came by adding an homeostatic regulation rule for neural activity. According to the efficient coding hypothesis, neural activity should be equally distributed between neurons. We used this principle to force neurons in the same layer to spike with an equivalent probability by adding a gain depending on their past activity. Efficiency of this technique was demonstrated through an improvement in learning spatio-temporal patterns during the training phase and an improvement in classification performance reaching $97,8\%$ accuracy. As a summary, by using a method used in a different field, we were able to develop an efficient SNN model for online digit classification. We aim at pursuing the study of this architecture through unsupervised learning of natural scene and hope to get hints about efficient neural coding.
 }
 
 \begin{document}
@@ -99,19 +99,95 @@ $\ddagger$ \AddressRB
 
 \parindent 12pt
 
-\textbf{Summary}.
-
-
+\paragraph*{Summary}
+\Summary
 %%END OF SUMMARY
 
+\paragraph*{From event-based computing to Spiking Neural Networks}
+% Introduction : event-based computing and engineering -> Spiking Neural Network
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+
+% In fact HOTS can be written as a (convolutional, hierarchical) network of IF neurons
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+
+% and thus the learning could be seen as a form of STDP with a competition
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+
+\begin{figure}[!ht]%[!ht][!b]%
+\includegraphics[width=.99\linewidth, height=.3\linewidth]{figure1.pdf}
+\caption
+{
+\textbf{Kernels obtained in the self-supervised learning algorithm}: (a) 
+\label{fig:fig1}
+}
+\end{figure}
+
+\paragraph*{Hebbian Learning and the role of homeaostasis}
+% we apply it to the N-MNIST dataset : prtesentation of this dataset
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+
+% we perform self-supervised learning as in Lagorce and obtain filters see Fig1 a
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+
+% there is an imbablance, we add homeostasis and obtain filters see Fig1 b
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+
+
+\paragraph*{Classifying using spikes}
+% HOTS uses histograms : for N-MNIST it performs quite poorly
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+
+
+% Introduction 
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 
 
 \begin{figure}[!ht]%[!ht][!b]%
-\includegraphics[width=.4\linewidth]{figure1.pdf}
+\includegraphics[width=.99\linewidth, height=.3\linewidth]{figure1.pdf}
 \caption
 {
-\textbf{Figure 1}: (a)
-%\label{fig:fig1}
+\textbf{Temporal dynamics of the dynamics}: The final SNN can perform classification on an event-by-event basis. 
+\label{fig:fig2}
 }
 \end{figure}
 
