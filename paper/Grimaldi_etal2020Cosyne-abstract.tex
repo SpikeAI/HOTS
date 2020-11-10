@@ -134,7 +134,7 @@ we were able to develop a neuromimetic SNN model for online digit classification
   0.0\baselineskip}{% space before (vertical)
   1em}%               space after (horizontal)
 
-
+\usepackage{setspace}
 
 \begin{document}
 
@@ -229,11 +229,8 @@ Instead of this method we introduce a simple classification scheme based on logi
 %
 \paragraph*{Perspectives}
 % open-source HOTS / predictive coding / neuroscience
-In this work, we have presented the implementation of a Spiking Neural Network model able to perform digit classification at a state-of-the-art performance. Its implementation is available at \url{https://github.com/XXX/YYY} and allows to reproduce all results presented here. % https://github.com/SpikeAI/HOTS
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+In this work, we have presented the implementation of a neuromimetic Spiking Neural Network model which is capable to perform digit classification at a state-of-the-art performance. Its implementation is available at \url{https://github.com/XXX/YYY} and allows to reproduce all results presented here. % https://github.com/SpikeAI/HOTS
+This implementation is different from classical learning algorithms in SNN using for instance Spike-Time Dependent Plasticity mainly thanks to the competition between features which routes the information through the network. Yet it produces in practice an unmatched classification accuracy, demonstrating the role of competition and cooperation in models of neural computations.
 %
 \paragraph*{References}
 {
@@ -242,7 +239,12 @@ Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah bl
 %\begingroup
 %\setstretch{0.75}
 %\setlength\bibitemsep{1pt}
+\begingroup
+\setstretch{0.75}
+\setlength\bibitemsep{1pt}
 \printbibliography[heading=none]
+%\printbibliography
+\endgroup
 %\endgroup
 }
 
