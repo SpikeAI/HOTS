@@ -167,7 +167,7 @@ Anonymous submission for double-blind review.
 %\parindent 12pt
 %\begin{figure}[!ht]%[!ht][!b]%
 \begin{wrapfigure}{R}{.5\textwidth}
-\includegraphics[width=.99\linewidth]{../notebooks/fig/hots.png}
+\includegraphics[width=.9\linewidth]{../notebooks/fig/hots.png}
 \caption
 {
 \textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}).} The N-MNIST dataset consists of (a) digits presented to (b) the (possibly moving) event-based camera. It produces (c) ON and OFF events which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field %of side-length $2R1+1$, 
@@ -177,12 +177,10 @@ known as \emph{time-surfaces}. These time-surfaces are clustered into $N_1=4$ fe
 \end{wrapfigure}
 %\end{figure}
 %
-
-
 \paragraph*{From event-based computing to Spiking Neural Networks}
 The output of an event-based camera is a stream of events: $ev_i = [t_i,X_i,p_i]^T$ where $t_i$ is the time of the event, $X_i=[x_i,y_i]^T$ its pixel address and $p_i$ its polarity. In order to use spatio-temporal information, ~\citep{Lagorce17} apply an exponential decay to each event. Therefore, at event $ev_k$, the analog value in pixel $X_p$ is $s_p(t_k) = e^\frac{-(t_k-t_{last}(X_p))}{\tau}$ with $t_{last}(p)$ the time recorded for the last event on pixel $p$. In terms of neuronal dynamics, $s_p$ corresponds to the membrane potential evolution of a LIF model. A time-surface $S_k$ gathers $s_i(t_k)$ values for all $i$ within a spatial window surrounding $X_k$. It is compared to the different features of a layer with euclidian distance $ \beta_k = \frac{\langle C_j,S_k\rangle}{\|C_j\|\|S_k\|}$ where $C_j$ is feature number $j$. We can easily find that $ \beta_k(t) = \sum_{n=1}^{(2R+1)^2}s_{n}(t)c_{kn} = \sum_{n=1}^{(2R+1)^2}e^\frac{-(t_i-t_n)}{\tau}c_{kn}$, $R$ being the spatial window parameter of the time-surface and $c_{kn}$ the value stored in feature $k$ at address $n$. In the computational neuroscience framework, $c_{kn}$ represent pre-synaptic weights for neuron $k$ and the hierarchical networks presented in ~\citep{Lagorce17} corresponds to an end-to-end SNN of LIF models. 
 %\begin{figure}[!ht]%[!ht][!b]%
-\begin{wrapfigure}{l}{.52\textwidth}
+\begin{wrapfigure}{l}{.5\textwidth}
 \centering
 \includegraphics[width=.95\linewidth]{layerz.png}
 \caption
@@ -192,21 +190,7 @@ The output of an event-based camera is a stream of events: $ev_i = [t_i,X_i,p_i]
 \end{wrapfigure}
 %\end{figure}
 \paragraph*{Hebbian Learning and the role of homeostasis}
-
-% we apply it to the N-MNIST dataset : presentation of this dataset
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-% we perform self-supervised learning as in Lagorce and obtain filters see Fig1 a
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-% there is an imbablance, we add homeostasis and obtain filters see Fig1 b
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah ah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah bl blah blah blah.
+Our SNN learns with the following rule when a feature or neuron $j$ is matched: $C_j \leftarrow C_j + \alpha(S_k-\beta_j C_j)$ where $ \alpha = \frac{0.01}{1+\frac{p_j}{2000}}$, $p_j$ being the number of times feature $j$ was activated. This weight change between neurons refers to Hebbian learning, our network is a simple feedforward SNN with Hebbian learning rule. Neurons will learn patterns from spiking input aka time-surfaces. When observing \ref{fig:fig2}(A), we can see that activation of the neurons is unbalanced. In some cases, learning can lead to grandmother cells and penalize the generalization of the network as well as learning when some neurons are hardly matched. As observed in \ref{fig:fig2}(D) adding an homeostatic gain favoring rarely activated neurons can improve learning of the weights and make a more efficient coding of the spiking input. 
 %
 
 \paragraph*{Classifying using spikes}
