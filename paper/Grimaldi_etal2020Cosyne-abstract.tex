@@ -120,6 +120,22 @@ generalization of the classification task with a more complex and widely used da
 we were able to develop a neuromimetic SNN model for online digit classification. We aim at pursuing the study of this architecture through unsupervised learning of natural scene and hope to offer insights on the efficiency of the processing in neural tissues.
 }
 
+
+\usepackage{titlesec}
+% \titlespacing*{<command>}{<left>}{<before-sep>}{<after-sep>}
+\titlespacing*{\section}
+{0pt}{1.5ex}{0.8ex}
+\titlespacing*{\subsection}
+{0pt}{0.9ex}{0.4ex}
+\titlespacing*{\subsubsection}
+{0pt}{0.5ex}{0.3ex}
+\titlespacing*{\paragraph}{%
+  0pt}{%              left margin
+  0.0\baselineskip}{% space before (vertical)
+  1em}%               space after (horizontal)
+
+
+
 \begin{document}
 
 %%%-----------------------------------------------------------------
@@ -151,15 +167,17 @@ pattern recognition
 %%END OF SUMMARY
 %
 %\begin{figure}[!ht]%[!ht][!b]%
-\begin{wrapfigure}{l}{.6\textwidth}
+\begin{wrapfigure}{R}{.6\textwidth}
 \includegraphics[width=.99\linewidth]{../notebooks/fig/hots.png}
 \caption
 {
-\textbf{(extracted from~\citep{Lagorce17}) } A moving digit (a) is presented to the event-based camera (b) which produces ON and OFF events (c) which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field of side-length $2R1+1$, aka time-surfaces. These time-surfaces are clustered into N1 features (e). When a feature gets the smallest euclidian distance with the input it is matched and produces an event (f). Events from the N1 features constitute the output of the layer (g). Each layer k takes input from its previous layer and feeds the next by reproducing steps (d)-(g). The output (i) of the last layer is then fed to the classifier (j) which will recognize the object.
+\textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}) } A moving digit (a) is presented to the event-based camera (b) which produces ON and OFF events (c) which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field %of side-length $2R1+1$, 
+aka time-surfaces. These time-surfaces are clustered into $N_1=4$ features (e). When a feature gets the smallest euclidian distance with the input it is matched and produces an event (f). Events from the $N_1=4$ features constitute the output of the layer (g). Each layer k takes input from its previous layer and feeds the next by reproducing steps (d)-(g). The output (i) of the last layer is then fed to the classifier (j) which will recognize the object.
 \label{fig:fig1}
 }
 \end{wrapfigure}
 %\end{figure}
+% <<<<<< Laurent is here
 \paragraph*{From event-based computing to Spiking Neural Networks}
 % Introduction : event-based computing and engineering -> Spiking Neural Network
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
@@ -168,15 +186,13 @@ Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah bl
 % In fact HOTS can be written as a (convolutional, hierarchical) network of IF neurons
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
+Blah blahblah blah blah blah. Blah  blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 % and thus the learning could be seen as a form of STDP with a competition
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
 Blah blahblah blah blah blah. Blah blahblah blah blah blah Blah blahblah blah blah blah.
-
-
-
+% Laurent is here >>>>>>>
 
 
 \paragraph*{Hebbian Learning and the role of homeaostasis}
