@@ -301,8 +301,43 @@ def DisplayConvergence(ClusterLayer, to_display=['error'], eta=None, eta_homeo=N
                     ax.set_title(
                         'Histogram of activation at Layer {0}'.format(idx+1), fontsize=8)
             location += 1
+            
+            
+def DisplayLayerKernels(ClusterLayer):
+    '''
 
+    '''
+    if type(ClusterLayer) is not list:
+        ClusterLayer = [ClusterLayer]
+    
+    fig = plt.figure(figsize=(10,3), constrained_layout=True)
+    gs = fig.add_gridspec(2, 3)
+    
+    location = 1
+    for idx, each_Layer in enumerate(ClusterLayer):
+        ax = fig.add_subplot(gs[0,idx])
+        to_plot = plt.bar(np.arange(each_Layer.nb_cluster), each_Layer.record['histo'].values[-1]/np.sum(each_Layer.record['histo'].values[-1]),
+                                  width=np.diff(np.arange(each_Layer.nb_cluster+1)), ec="k", align="edge")
+        ax.set_title('Histogram of activation at Layer {0}'.format(idx+1), fontsize=8)
+        
+        if idx == 0:
+            nb_polarities = 2
+        else:
+            nb_polarities = each_Layer[idx-1].nb_cluster
+        nb_center = each_Layer.prototype.shape[0]
+        if len(each_Layer.prototype.shape) == 2:
+            area = int(each_Layer.prototype.shape[1]/nb_polarities)
+            Surface = each_Layer.prototype.reshape((nb_center, nb_polarities, area))
+        else:
+            area = int(each_Layer.prototype.shape[2])
+        dim = int(np.sqrt(area))
+        print(nb_center, nb_polarities, dim, each_Layer.prototype.shape)
+        ax2 = fig.add_subplot(gs[1,idx])
+        ax2.imshow(each_Layer.prototype.reshape((dim,dim)), cmap=plt.cm.plasma, interpolation='nearest') 
+        
+        location += 1
 
+        
 def roundup(x, step):
     return int(math.ceil(x / step)) * step
 
