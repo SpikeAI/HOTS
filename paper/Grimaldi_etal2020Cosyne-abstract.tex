@@ -56,6 +56,8 @@
 \usepackage{subfigure}
 \usepackage{tikz}
 \usepackage{csquotes}
+\usepackage{caption}
+%\usepackage{floatrow}
 %\usepackage[footnotesize]{caption}
 
 \usepackage[
@@ -120,7 +122,6 @@ generalization of the classification task with a more complex and widely used da
 we were able to develop a neuromimetic SNN model for online digit classification. We aim at pursuing the study of this architecture through unsupervised learning of natural scene and hope to offer insights on the efficiency of the processing in neural tissues.
 }
 
-
 \usepackage{titlesec}
 % \titlespacing*{<command>}{<left>}{<before-sep>}{<after-sep>}
 \titlespacing*{\section}
@@ -163,36 +164,71 @@ Anonymous submission for double-blind review.
 \paragraph*{Summary}
 \Summary
 %%END OF SUMMARY
+%
+\begin{wrapfigure}{L}{.7\textwidth}
+\includegraphics[width=.99\linewidth]{../notebooks/fig/hots.png}
+\caption*
+{\label{fig:fig1}
+}
+\end{wrapfigure}
+
+
+\paragraph*{Figure 1 : }
+\textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}).} The N-MNIST dataset consists of (a) digits presented to (b) the (possibly moving) event-based camera. It produces (c) ON and OFF events which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field %of side-length $2R1+1$, 
+known as \emph{time-surfaces}. These time-surfaces are clustered into $N_1=4$ features (e). When a feature gets the smallest euclidian distance with the input, it produces an event in the channel corresponding to the matched feature (f). Events from the $N_1=4$ features constitute the output of the layer (g). Each layer takes input from its previous layer and feeds the next by reproducing steps (d)-(g). The output (i) of the last layer is then fed to the classifier (j) which will recognize the object in the input.
+
+%\begin{figure}
+%  \begin{minipage}[c]{0.65\textwidth}
+%    \includegraphics[width=\textwidth]{../notebooks/fig/hots.png}
+%  \end{minipage}\hfill
+%  \begin{minipage}[c]{0.35\textwidth}
+%    \caption{
+%\textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}).} The N-MNIST dataset consists of (a) digits presented to (b) the (possibly moving) event-based camera. It produces (c) ON and OFF events which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field of side-length $2R1+1$, known as \emph{time-surfaces}. These time-surfaces are clustered into $N_1=4$ features (e). When a feature gets the smallest euclidian distance with the input, it produces an event in the channel corresponding to the matched feature (f). Events from the $N_1=4$ features constitute the output of the layer (g). Each layer takes input from its previous layer and feeds the next by reproducing steps (d)-(g). The output (i) of the last layer is then fed to the classifier (j) which will recognize the object in the input.
+%    } \label{fig:fi1}
+%  \end{minipage}
+%\end{figure}
+
+
+%\begin{figure}
+%\floatbox[{\capbeside\thisfloatsetup{capbesideposition={left,top},capbesidewidth=.2\linewidth}}]{figure}
+%{\caption{\textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}).} The N-MNIST dataset consists of (a) digits presented to (b) the (possibly moving) event-based camera. It produces (c) ON and OFF events which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field of side-length $2R1+1$, known as \emph{time-surfaces}. These time-surfaces are clustered into $N_1=4$ features (e). When a feature gets the smallest euclidian distance with the input, it produces an event in the channel corresponding to the matched feature (f). Events from the $N_1=4$ features constitute the output of the layer (g). Each layer takes input from its previous layer and feeds the next by reproducing steps (d)-(g). The output (i) of the last layer is then fed to the classifier (j) which will recognize the object in the input.
+%}\label{fig:fig1}}
+%{\includegraphics{../notebooks/fig/hots.png}}
+%\end{figure}
 
 %\parindent 12pt
 %\begin{figure}[!ht]%[!ht][!b]%
-\begin{wrapfigure}{R}{.5\textwidth}
-\includegraphics[width=.9\linewidth]{../notebooks/fig/hots.png}
-\caption
-{
-\textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}).} The N-MNIST dataset consists of (a) digits presented to (b) the (possibly moving) event-based camera. It produces (c) ON and OFF events which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field %of side-length $2R1+1$, 
-known as \emph{time-surfaces}. These time-surfaces are clustered into $N_1=4$ features (e). When a feature gets the smallest euclidian distance with the input, it produces an event in the channel corresponding to the matched feature (f). Events from the $N_1=4$ features constitute the output of the layer (g). Each layer takes input from its previous layer and feeds the next by reproducing steps (d)-(g). The output (i) of the last layer is then fed to the classifier (j) which will recognize the object in the input.
-\label{fig:fig1}
-}
-\end{wrapfigure}
+%\begin{figure}{R}{.5\textwidth}
+%\floatbox[{\capbeside\thisfloatsetup{capbesideposition={right,top},capbesidewidth=4cm}}]{figure}[\FBwidth]
+%\includegraphics[width=.9\linewidth]{../notebooks/fig/hots.png}
+%\caption
+%{
+%\textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}).} The N-MNIST dataset consists of (a) digits presented to (b) the (possibly moving) event-based camera. It produces (c) ON and OFF events which are fed into Layer 1. The events are convolved with exponential kernels (d) to build event contexts from spatial receptive field %of side-length $2R1+1$, 
+%known as \emph{time-surfaces}. These time-surfaces are clustered into $N_1=4$ features (e). When a feature gets the smallest euclidian distance with the input, it produces an event in the channel corresponding to the matched feature (f). Events from the $N_1=4$ features constitute the output of the layer (g). Each layer takes input from its previous layer and feeds the next by reproducing steps (d)-(g). The output (i) of the last layer is then fed to the classifier (j) which will recognize the object in the input.
+%\label{fig:fig1}
+%}
+%\end{figure}
 %\end{figure}
 %
 \paragraph*{From event-based computing to Spiking Neural Networks}
 The output of an event-based camera is a stream of events: $ev_i = [t_i,X_i,p_i]^T$ where $t_i$ is the time of the event, $X_i=[x_i,y_i]^T$ its pixel address and $p_i$ its polarity. In order to use spatio-temporal information, ~\citep{Lagorce17} apply an exponential decay to each event. Therefore, at event $ev_k$, the analog value in pixel $X_p$ is $s_p(t_k) = e^\frac{-(t_k-t_{last}(X_p))}{\tau}$ with $t_{last}(p)$ the time recorded for the last event on pixel $p$. In terms of neuronal dynamics, $s_p$ corresponds to the membrane potential evolution of a LIF model. A time-surface $S_k$ gathers $s_i(t_k)$ values for all $i$ within a spatial window surrounding $X_k$. It is compared to the different features of a layer with euclidian distance $ \beta_k = \frac{\langle C_j,S_k\rangle}{\|C_j\|\|S_k\|}$ where $C_j$ is feature number $j$. We can easily find that $ \beta_k(t) = \sum_{n=1}^{(2R+1)^2}s_{n}(t)c_{kn} = \sum_{n=1}^{(2R+1)^2}e^\frac{-(t_i-t_n)}{\tau}c_{kn}$, $R$ being the spatial window parameter of the time-surface and $c_{kn}$ the value stored in feature $k$ at address $n$. In the computational neuroscience framework, $c_{kn}$ represent pre-synaptic weights for neuron $k$ and the hierarchical networks presented in ~\citep{Lagorce17} corresponds to an end-to-end SNN of LIF models. 
 %\begin{figure}[!ht]%[!ht][!b]%
-\begin{wrapfigure}{l}{.5\textwidth}
-\centering
-\includegraphics[width=.95\linewidth]{layerz.png}
-\caption
-{Features and activation histograms obtained in the self-supervised learning algorithm. (A) and (C) represent the activation histograms for each features within the different layers of the network respectively with and without homeostasis. (B) and (D) are representations of the features learned during the training of the SNN respectively with an without homeostasis. Columns corresponds to the different polarities (ON and OFF for the first layer, output channels of the previous layer for the others) and lines are the features. In the third layer, only 10 features and 6 polarities are presented for the sake of clarity and space use.
+
+\begin{wrapfigure}{l}{.7\textwidth}
+\includegraphics[width=.99\linewidth]{layerz.png}
+\caption*
+{
 \label{fig:fig2}
 }
 \end{wrapfigure}
+
+\paragraph*{Figure 2 : }
+Features and activation histograms obtained in the self-supervised learning algorithm. (A) and (C) represent the activation histograms for each features within the different layers of the network respectively with and without homeostasis. (B) and (D) are representations of the features learned during the training of the SNN respectively with an without homeostasis. Columns corresponds to the different polarities (ON and OFF for the first layer, output channels of the previous layer for the others) and lines are the features. In the third layer, only 10 features and 6 polarities are presented for the sake of clarity and space use.
+
 %\end{figure}
 \paragraph*{Hebbian Learning and the role of homeostasis}
 Our SNN learns with the following rule when a feature or neuron $j$ is matched: $C_j \leftarrow C_j + \alpha(S_k-\beta_j C_j)$ where $ \alpha = \frac{0.01}{1+\frac{p_j}{2000}}$, $p_j$ being the number of times feature $j$ was activated. This weight change between neurons refers to Hebbian learning, our network is a simple feedforward SNN with Hebbian learning rule. Neurons will learn patterns from spiking input aka time-surfaces. When observing \ref{fig:fig2}(A), we can see that activation of the neurons is unbalanced. In some cases, learning can lead to grandmother cells and penalize the generalization of the network as well as learning when some neurons are hardly matched. As observed in \ref{fig:fig2}(D) adding an homeostatic gain favoring rarely activated neurons can improve learning of the weights and make a more efficient coding of the spiking input. 
 %
-
 \paragraph*{Classifying using spikes}
 % HOTS uses histograms : for N-MNIST it performs quite poorly
 In the original HOTS algorithm~\citet{Lagorce17}, final classification is performed by computing the histogram of activation within the last layer of the network. By comparing this histogram with that obtained on the training set, one could find the class which is closest to the current histogram. While this method performed well for original dataset (a set of digits and letters), it gives a rather poor performance of $7X.X\%$ for the N-MNIST dataset. Using the features obtained using the homeostasis did not improve the results by much, with $8X.X\%$ classification accuracy. 
