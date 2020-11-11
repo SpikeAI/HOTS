@@ -165,7 +165,7 @@ class ClusteringLayer(Layer):
                               verbose=self.verbose, sigma=self.sigma)
         Surface_Layer = self.SpTe_Layer.create(
             event=self.input, kernel=self.kernel)
-
+ 
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.ClusterLayer.nb_cluster, self.ClusterLayer.to_record = nb_cluster, to_record

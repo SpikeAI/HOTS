@@ -303,39 +303,43 @@ def DisplayConvergence(ClusterLayer, to_display=['error'], eta=None, eta_homeo=N
             location += 1
             
             
-def DisplayLayerKernels(ClusterLayer):
+def DisplayLayer(ClusterLayer, maxpol, hisiz, yhis):
     '''
+    '''
+    N = []
+    P = [2]
+    R2 = []
+    for i in range(len(ClusterLayer)):
+        N.append(int(ClusterLayer[i].nb_cluster))
+        if i>0:
+            P.append(int(ClusterLayer[i-1].nb_cluster))
+        R2.append(int(ClusterLayer[i].prototype.shape[1]/P[i]))
+    
+    fig = plt.figure(figsize=(16,9))
+    gs = fig.add_gridspec(np.sum(P)+hisiz, np.sum(N)+len(ClusterLayer)-1, wspace=0.05, hspace=0.05)
+    fig.suptitle('Activation histograms and associated features without homeostasis', size=20, y=0.95)
+    
+    for i in range(len(ClusterLayer)):
+        ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
+        plt.bar(np.arange(N[i]), ClusterLayer[i].record['histo'].values[-1]/np.sum(ClusterLayer[i].record['histo'].values[-1]), width=1, align='edge', ec="k")
+        ax.set_xticks(())
+        if i>0:
+            ax.set_yticks(())
+        ax.set_title('Layer '+str(i+1), fontsize=16)
+        plt.xlim([0,N[i]])
+        plt.ylim([0,yhis])
 
-    '''
-    if type(ClusterLayer) is not list:
-        ClusterLayer = [ClusterLayer]
-    
-    fig = plt.figure(figsize=(10,3), constrained_layout=True)
-    gs = fig.add_gridspec(2, 3)
-    
-    location = 1
-    for idx, each_Layer in enumerate(ClusterLayer):
-        ax = fig.add_subplot(gs[0,idx])
-        to_plot = plt.bar(np.arange(each_Layer.nb_cluster), each_Layer.record['histo'].values[-1]/np.sum(each_Layer.record['histo'].values[-1]),
-                                  width=np.diff(np.arange(each_Layer.nb_cluster+1)), ec="k", align="edge")
-        ax.set_title('Histogram of activation at Layer {0}'.format(idx+1), fontsize=8)
-        
-        if idx == 0:
-            nb_polarities = 2
-        else:
-            nb_polarities = each_Layer[idx-1].nb_cluster
-        nb_center = each_Layer.prototype.shape[0]
-        if len(each_Layer.prototype.shape) == 2:
-            area = int(each_Layer.prototype.shape[1]/nb_polarities)
-            Surface = each_Layer.prototype.reshape((nb_center, nb_polarities, area))
-        else:
-            area = int(each_Layer.prototype.shape[2])
-        dim = int(np.sqrt(area))
-        print(nb_center, nb_polarities, dim, each_Layer.prototype.shape)
-        ax2 = fig.add_subplot(gs[1,idx])
-        ax2.imshow(each_Layer.prototype.reshape((dim,dim)), cmap=plt.cm.plasma, interpolation='nearest') 
-        
-        location += 1
+    #f3_ax1.set_title('gs[0, :]')
+        for k in range(N[i]):
+            for j in range(P[i]):
+                if j>maxpol-1:
+                    pass
+                else:
+                    axi = fig.add_subplot(gs[j+hisiz,k+1*i+int(np.sum(N[:i]))])
+                    krnl = ClusterLayer[i].prototype[k][j*R2[i]:(j+1)*R2[i]].reshape((int(np.sqrt(R2[i])), int(np.sqrt(R2[i]))))
+                    axi.imshow(krnl, cmap=plt.cm.plasma, interpolation='nearest')
+                    axi.set_xticks(())
+                    axi.set_yticks(())
 
         
 def roundup(x, step):
