@@ -124,13 +124,13 @@ sortcites=false,
 %Your work is interesting, but it has the problem of being at one end of the spectrum of what is usually presented at Cosyne. It is a purely computational work, whose links with biology are not immediate to see. 
 %Because of this, I think there you might have to change your abstract quite a bit to increase your chances! In particular, I suggest rewriting the introduction section completely (until "Our work is..."). The way it is now, it has almost no explicit link to neuroscience. You should somehow convince the reader that the problem of online pattern recognition with spiking neurons has a biological relevance. Sorry I don't have a concrete proposition, but I guess you should try to talk about how biological circuits are able to accomplish this remarkably and how we don't really know how they do this. This will also give you the opportunity to clarify what is the question/problem that you're trying to answer, which at the moment is not so clear!  
 %%%-----------------------------------------------------------------
-%%%-----------------------------------------------------------------sam_2
+%%%-----------------------------------------------------------------sam_2_done
 %Reverse engineering is the art of looking at an existing device in order to understand its concepts and operation. -> I think there is no need to explain the meaning of reverse engineering.
 %%%-----------------------------------------------------------------
-%%%-----------------------------------------------------------------sam_3
+%%%-----------------------------------------------------------------sam_3_done
 %We used this approach to link innovative methods used in computer vision to computational neuroscience. This sentence is not really necessary. If you have space, you could include it towards the end of the abstract, when summarizing the results.
 %%%-----------------------------------------------------------------
-%%%-----------------------------------------------------------------sam_4
+%%%-----------------------------------------------------------------sam_4_done
 %In Lagorce et al. [1], an event-based algorithm introduced novel spatio-temporal features: time-surfaces. Built from asynchronous events acquired by a neuromorphic camera, these time-surfaces allow to code the local dynamics of a visual scene and to create an efficient hierarchical event-based pattern recognition architecture. While this sentence is in itself good and useful, it might not be the optimal use of the abstract space (see above)
 %Here, we propose a spiking neural model able to perform pattern recognition in an end-to-end, event-based way. To achieve this, we extended the algorithm presented in [1] .... 
 %%%-----------------------------------------------------------------
@@ -142,7 +142,7 @@ Our work is three-fold. First, through the analysis of this existing method we w
 %%%-----------------------------------------------------------------
 % see http://ufldl.stanford.edu/tutorial/supervised/SoftmaxRegression/
 Then, the classification was performed using multinomial logistic regression %after reproduction of their results,
-%%%-----------------------------------------------------------------chris_3.a
+%%%-----------------------------------------------------------------chris_3.a_done
 %You wrote that classification "was performed using logistic regression". Why are you using a binary logistic regression classifier on the 10-class N-MNIST dataset? Do you mean you used a softmax classifier?
 %%%-----------------------------------------------------------------
 and we validated it with a more complex and widely used dataset (N-MNIST,~\citet{Orchard15}).
@@ -150,21 +150,21 @@ and we validated it with a more complex and widely used dataset (N-MNIST,~\citet
 %Include a reference for the N-MNIST dataset in case readers want more information about this dataset.
 %%%-----------------------------------------------------------------
 A significant contribution was to achieve online classification of the N-MNIST dataset reaching state of the art performances. % To our knowledge, it is the first end-to-end event-based online classification network of this kind.
-%%%-----------------------------------------------------------------chris_4.a
+%%%-----------------------------------------------------------------chris_4.a (see after)
 %You wrote that your classifier reaches "state of the art performances". It would be helpful to show the performance of other similar approaches alongside your results.
 %%%-----------------------------------------------------------------
 %%%-----------------------------------------------------------------chris_5
 %You wrote that your model "is the first end-to-end event-based online classification network of this kind". It would be helpful to understand how your work is different than other online approaches. See, for example, Lobo et al. 2020 "Spiking Neural Networks and online learning: An overview and Perspectives".
 %%%-----------------------------------------------------------------
 The third contribution came by adding an homeostatic regulation rule to Hebbian learning as inspired by biological findings.
-%%%-----------------------------------------------------------------sam_6
+%%%-----------------------------------------------------------------sam_6_done
 %This is one of the more direct pointers to neuroscience. Maybe we could try to stress the implications.
 %%%-----------------------------------------------------------------
  According to the efficient coding hypothesis, neural activity should be equally distributed between neurons. 
  %%%-----------------------------------------------------------------sam_7
 %this is approximately correct, but it might annoy some purist!
 %%%-----------------------------------------------------------------
-We used this principle to force neurons in the same layer to spike on average with balanced firing rates by setting for each neuron a gain depending on their past activity. Efficiency of this technique was demonstrated through an improvement in spatio-temporal patterns which were learned during the training phase and a classification performance reaching $97,8\%$ accuracy. As a summary, %by using a method used in a different field,
+We used this principle to force neurons within the same layer to spike on average with balanced firing rates by setting for each neuron a gain depending on their past activity. Efficiency of this technique was demonstrated through an improvement in spatio-temporal patterns which were learned during the training phase and a classification performance reaching $97,8\%$ accuracy. As a summary, %by using a method used in a different field,
 we were able to develop a neuromimetic SNN model for online digit classification. We aim at pursuing the study of this architecture for natural scenes and hope to offer insights on the efficiency of neural computations.
 }
 
@@ -221,7 +221,7 @@ Anonymous submission for double-blind review.
 
 
 \paragraph*{Figure 1 : }
-%%%-----------------------------------------------------------------chris_6
+%%%-----------------------------------------------------------------chris_6_done (in classification part)
 %Given that one of your main figures is from Lagorce et al. 2017 it would be helpful to have a sentence or two describing how your model is different. Their figure (figure 1 in your abstract) shows digits as the input to the model. Are these similar to the N-MNIST digits you used?
 %%%-----------------------------------------------------------------
 \textbf{The HOTS algorithm (extracted from~\citep{Lagorce17}).}
@@ -261,7 +261,7 @@ In \textit{Figure 2(B)} adding an homeostatic gain favoring rarely activated neu
 %
 \paragraph*{Classifying using spikes}
 % HOTS uses histograms : for N-MNIST it performs quite poorly
-In the original HOTS algorithm~\citet{Lagorce17}, final classification is performed by computing and comparing the histogram of activation within the last layer of the network. %By comparing this histogram with that obtained on the training set, one could find the class which is closest to the current histogram.
+In the original HOTS algorithm~\citep{Lagorce17}, final classification is performed by computing and comparing histograms of activation within the last layer of the network. %By comparing this histogram with that obtained on the training set, one could find the class which is closest to the current histogram.
 While this method performed well for original dataset (a set of digits and letters), it gives a rather poor performance of $72.5\%$ for the N-MNIST dataset.
 %Using the features obtained using the homeostasis did not improve the results by much, with $8X.X\%$ classification accuracy.
 %les résultats étaient encore moins bons avec l'homéostasie (on avait 70 % au max). Mais je n'avais pas appris beaucoup de digits, seulement 15 sur la dataset pour reproduire les résultats. J'essayerai de faire tourner sur un trainset plus grand
@@ -269,7 +269,7 @@ Here, we introduce a simple classification scheme based on multinomial logistic 
 %%%-----------------------------------------------------------------chris_3.b
 %You wrote that classification "was performed using logistic regression". Why are you using a binary logistic regression classifier on the 10-class N-MNIST dataset? Do you mean you used a softmax classifier?
 %%%-----------------------------------------------------------------
-Indeed, following the same strategy as for the construction of the time surfaces, each post-synaptic output of the network could integrate each output spike using a time constant (that we set here to $\tau=300~\ms$). Each input spike is thus directly related to an output spike and to an analog vector of the presynaptic input to the classifier layer. We used this vector and which is compatible with a neural computation~\citep{Berens12}. We found that after learning on the training subset, the network reached an accuracy of $98.X\%$ of the test subset, on par with state-of-the art algorithms, see~\citet{He20} for a comparison of different SNN performances on N-MNIST classification.
+Indeed, following the same strategy as for the construction of the time surfaces, each post-synaptic output of the network could integrate each output spike using a time constant (that we set here to $\tau=300~\ms$). Each input spike is thus directly related to an output spike and to an analog vector of the presynaptic input to the classifier layer. We used this vector and which is compatible with a neural computation~\citep{Berens12}. We found that after learning on the training subset, the network reached an accuracy of $98.X\%$ of the test subset, on par with state-of-the art algorithms, see~\citet{He20} for a comparison of different SNN classification performances on N-MNIST dataset.
 %%%-----------------------------------------------------------------chris_4.b
 %You wrote that your classifier reaches "state of the art performances". It would be helpful to show the performance of other similar approaches alongside your results. To our knowledge, it is the first end-to-end event-based online classification network of this kind.
 %%%-----------------------------------------------------------------
