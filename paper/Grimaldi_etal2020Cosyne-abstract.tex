@@ -153,7 +153,7 @@ A significant contribution was to achieve online classification of the N-MNIST d
 %%%-----------------------------------------------------------------chris_4.a (see after)
 %You wrote that your classifier reaches "state of the art performances". It would be helpful to show the performance of other similar approaches alongside your results.
 %%%-----------------------------------------------------------------
-%%%-----------------------------------------------------------------chris_5
+%%%-----------------------------------------------------------------chris_5_done (see perspectives)
 %You wrote that your model "is the first end-to-end event-based online classification network of this kind". It would be helpful to understand how your work is different than other online approaches. See, for example, Lobo et al. 2020 "Spiking Neural Networks and online learning: An overview and Perspectives".
 %%%-----------------------------------------------------------------
 The third contribution came by adding an homeostatic regulation rule to Hebbian learning as inspired by biological findings.
@@ -255,7 +255,7 @@ With a simple Hebbian learning rule, neurons learn patterns from spiking input a
 When observing \textit{Figure 2(A)}, we can see that activation of the neurons is unbalanced. It leads to different speeds in learning with unmatured features which are hardly activated.
 %In some cases, learning can lead to grandmother cells and penalize the generalization of the network as well as learning when some neurons are hardly matched.
 In \textit{Figure 2(B)} adding an homeostatic gain favoring rarely activated neurons can improve learning of the weights and make a more efficient coding of the spiking input.
-%%%-----------------------------------------------------------------chris_7
+%%%-----------------------------------------------------------------chris_7_done (no space for other figure)
 %It's an interesting idea to include homeostatic regulation for neural activity. It would be nice to understand how this affects the performance of the network. For example, by showing test accuracy with and without the homeostatic regulation. Or perhaps the homeostatic regulation allows the network to solve the task with fewer units, in which case, you could show a plot of test accuracy as you decrease the number of units in the model.
 %%%-----------------------------------------------------------------
 %
@@ -266,7 +266,7 @@ While this method performed well for original dataset (a set of digits and lette
 %Using the features obtained using the homeostasis did not improve the results by much, with $8X.X\%$ classification accuracy.
 %les résultats étaient encore moins bons avec l'homéostasie (on avait 70 % au max). Mais je n'avais pas appris beaucoup de digits, seulement 15 sur la dataset pour reproduire les résultats. J'essayerai de faire tourner sur un trainset plus grand
 Here, we introduce a simple classification scheme based on multinomial logistic regression.
-%%%-----------------------------------------------------------------chris_3.b
+%%%-----------------------------------------------------------------chris_3.b_done
 %You wrote that classification "was performed using logistic regression". Why are you using a binary logistic regression classifier on the 10-class N-MNIST dataset? Do you mean you used a softmax classifier?
 %%%-----------------------------------------------------------------
 Indeed, following the same strategy as for the construction of the time surfaces, each post-synaptic output of the network could integrate each output spike using a time constant (that we set here to $\tau=300~\ms$). Each input spike is thus directly related to an output spike and to an analog vector of the presynaptic input to the classifier layer. We used this vector and which is compatible with a neural computation~\citep{Berens12}. We found that after learning on the training subset, the network reached an accuracy of $98.X\%$ of the test subset, on par with state-of-the art algorithms, see~\citet{He20} for a comparison of different SNN classification performances on N-MNIST dataset.
