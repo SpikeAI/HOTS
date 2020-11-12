@@ -251,14 +251,22 @@ In the original HOTS algorithm~\citet{Lagorce17}, final classification is perfor
 While this method performed well for original dataset (a set of digits and letters), it gives a rather poor performance of $72.5\%$ for the N-MNIST dataset. 
 %Using the features obtained using the homeostasis did not improve the results by much, with $8X.X\%$ classification accuracy. 
 %les résultats étaient encore moins bons avec l'homéostasie (on avait 70 % au max). Mais je n'avais pas appris beaucoup de digits, seulement 15 sur la dataset pour reproduire les résultats. J'essayerai de faire tourner sur un trainset plus grand
-Instead of this method we introduce a simple classification scheme based on logistic regression. Indeed, following the same strategy as for the construction of the time surfaces, each post-synaptic output of the network could integrate each output spike using a time constant that we set here to $\tau=300~\ms$. Each input spike is thus related to an output spike and therefore to an analog vector. We used this vector to introduce a model of classification which is equivalent to logistic regression~\citep{Berens12} and which is compatible with a neural representation. We found that after learning on the training subset, the network reached an accuracy of $98.X\%$ of the test subset, on par with state-of-the art algorithms, see ~\citet{He20} for a comparison of different SNN performances about N-MNIST classification.
+Instead of this method we introduce a simple classification scheme based on logistic regression. Indeed, following the same strategy as for the construction of the time surfaces, each post-synaptic output of the network could integrate each output spike using a time constant that we set here to $\tau=300~\ms$. Each input spike is thus related to an output spike and therefore to an analog vector. We used this vector to introduce a model of classification which is equivalent to logistic regression~\citep{Berens12} and which is compatible with a neural representation. We found that after learning on the training subset, the network reached an accuracy of $98.X\%$ of the test subset, on par with state-of-the art algorithms, see ~\citet{He20} for a comparison of different SNN performances on N-MNIST classification.
 %
 \paragraph*{Perspectives}
 % open-source HOTS / predictive coding / neuroscience
 In this work, we have presented the implementation of a neuromimetic SNN model which is capable to perform digit classification at a state-of-the-art performance. Its implementation is available at \url{https://github.com/XXX/YYY} and allows to reproduce all results presented here. % https://github.com/SpikeAI/HOTS
 This implementation is different from classical learning algorithms in SNN using for instance Spike-Time Dependent Plasticity mainly thanks to the competition between features which routes the information through the network. Yet it produces in practice an unmatched classification accuracy, demonstrating the role of competition and cooperation in models of neural computations.
 %
-\paragraph*{References}
+
+%\defbibheading{myheading}[References]{
+%	\subsubsection*{References}
+ % 	\vspace{-20pt}
+%}
+
+%\paragraph*{References}
+\subsubsection*{References}
+  \vspace{-15pt}
 {
 \small
 %\footnotesize
@@ -273,6 +281,7 @@ This implementation is different from classical learning algorithms in SNN using
 \endgroup
 %\endgroup
 }
+
 
 
 %%%-----------------------------------------------------------------
