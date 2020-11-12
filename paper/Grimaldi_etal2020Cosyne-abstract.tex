@@ -223,7 +223,7 @@ The input of the network is a stream of ON and OFF events (c) $ev_i = [t_i,X_i,p
 %The output of an event-based camera is a stream of events $ev_i = [t_i,X_i,p_i]^T$ where $t_i$ is the time of the event, $X_i=[x_i,y_i]^T$ its pixel address and $p_i$ its polarity. In order to use spatio-temporal information,~\citep{Lagorce17} apply an exponential decay to each event. Therefore, at event $ev_k$, the analog value in pixel $X_p$ is $s_p(t_k) = e^\frac{-(t_k-t_{last}(X_p))}{\tau}$ with $t_{last}(p)$ the time recorded for the last event on pixel $p$. In terms of neuronal dynamics, $s_p$ corresponds to the membrane potential evolution of a LIF model. A time-surface $S_k$ gathers $s_i(t_k)$ values for all $i$ within a spatial window surrounding $X_k$. It is compared to the different features of a layer with euclidian distance $ \beta_k = \frac{\langle C_j,S_k\rangle}{\|C_j\|\|S_k\|}$ where $C_j$ is feature number $j$. We can easily find that $ \beta_k(t) =  \sum_{n=1}^{(2R+1)^2}e^\frac{-(t_i-t_n)}{\tau}c_{kn}$, $R$ being the spatial window parameter of the time-surface and $c_{kn}$ the value stored in feature $k$ at address $n$. In the computational neuroscience framework, $c_{kn}$ represent pre-synaptic weights for neuron $k$ and the hierarchical networks presented in~\citep{Lagorce17} corresponds to an end-to-end SNN of LIF models. It should be noted that for each event the feature closest to the input spikes. It makes neurons within the same layer spike in a competitive fashion. 
 %\begin{figure}[!ht]%[!ht][!b]%
 
-\begin{wrapfigure}{l}{.72\textwidth}
+\begin{wrapfigure}{l}{.71\textwidth}
 \vspace{-20pt}
 \includegraphics[width=1.03\linewidth]{../notebooks/fig/layerz.png}
 \vspace{-55pt}
