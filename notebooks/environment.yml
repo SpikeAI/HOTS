@@ -1,0 +1,14 @@
+name: hots
+channels:
+    - conda-forge
+dependencies:
+   - pip
+   - ipykernel
+   - matplotlib
+   - numpy
+   - pandas
+   - jupyter
+   - notebook
+   - nbconvert
+   - scikit-learn
+   - jupyter_contrib_nbextensions
