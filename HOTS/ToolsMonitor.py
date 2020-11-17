@@ -317,7 +317,7 @@ def DisplayLayer(ClusterLayer, maxpol, hisiz, yhis):
     
     fig = plt.figure(figsize=(16,9))
     gs = fig.add_gridspec(np.sum(P)+hisiz, np.sum(N)+len(ClusterLayer)-1, wspace=0.05, hspace=0.05)
-    fig.suptitle('Activation histograms and associated features without homeostasis', size=20, y=0.95)
+    fig.suptitle('Activation histograms and associated features with homeostasis', size=20, y=0.95)
     
     for i in range(len(ClusterLayer)):
         ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
