@@ -256,11 +256,18 @@ When a feature is the most similar to the input, it produces an event in the cha
 \end{wrapfigure}
 
 \paragraph*{Figure 2 : }
+%%%-----------------------------------------------------------------gregor_1
+%your results are nice. But visual comparison is a bit difficult. Check Figure 8 in this paper: https://www.frontiersin.org/articles/10.3389/fnins.2018.01047/full
+%they sort the features to make comparison easier
+%%%-----------------------------------------------------------------
 Activation histograms and features obtained in the self-supervised learning algorithm with (A) and without homeostasis (B). Below histograms are plotted corresponding features. The different lines are the different polarities of the features, ON and OFF for the first layer, output channels of the previous layer for the others. In the last layer, only 5 polarities over 8 are displayed to preserve space and clarity.
 %Features and activation histograms obtained in the self-supervised learning algorithm. (A) and (C) represent the activation histograms for each features within the different layers of the network respectively with and without homeostasis. (B) and (D) are representations of the features learned during the training of the SNN respectively with an without homeostasis. Columns corresponds to the different polarities (ON and OFF for the first layer, output channels of the previous layer for the others) and lines are the features. In the third layer, only 10 features and 6 polarities are presented for the sake of clarity and space use.
 
 \paragraph*{Hebbian learning and the role of homeostasis}
 With a simple Hebbian learning rule, neurons learn patterns from spiking input, aka time-surfaces, in an unsupervised way~\citep{Lagorce17}.
+%%%-----------------------------------------------------------------gregor_2
+%'aka' is too informal. Also, surfaces are maybe derived from spiking input, they are not equivalent
+%%%-----------------------------------------------------------------
 %with the following rule when a feature or neuron $j$ is matched: $C_j \leftarrow C_j + \alpha(S_k-\beta_j C_j)$ where $ \alpha = \frac{0.01}{1+\frac{p_j}{2000}}$, $p_j$ being the number of times feature $j$ was activated. This weight change between neurons refers to Hebbian learning, our network is a simple feedforward SNN with Hebbian learning rule. Neurons will learn patterns from spiking input aka time-surfaces.
 When observing \textit{Figure 2(A)}, we can see that activation of the neurons is unbalanced. It leads to different speeds in learning with unmatured features which are hardly activated.
 %In some cases, learning can lead to grandmother cells and penalize the generalization of the network as well as learning when some neurons are hardly matched.
@@ -286,6 +293,9 @@ Indeed, following the same strategy as for the construction of the time surfaces
 %%%-----------------------------------------------------------------chris_4.b
 %You wrote that your classifier reaches "state of the art performances". It would be helpful to show the performance of other similar approaches alongside your results. To our knowledge, it is the first end-to-end event-based online classification network of this kind.
 %%%-----------------------------------------------------------------
+%%%-----------------------------------------------------------------gregor_3
+%put the comparison of results in here. if you lack space, write them in text
+%%%-----------------------------------------------------------------
 %
 \paragraph*{Perspectives}
 % open-source HOTS / predictive coding / neuroscience
@@ -294,7 +304,9 @@ This implementation is different from classical learning algorithms in SNN using
 %%%-----------------------------------------------------------------angelo_2
 %is competition a way of implementing homeostasis? it might be not clear...
 %%%-----------------------------------------------------------------
-
+%%%-----------------------------------------------------------------gregor_4
+%Nice summary overall. It would be nice if you could explain how time surfaces have a connection to neuroscience (if there is one). It would further be nice to compare to other works in terms of classification accuracy, # of neurons, # of spikes, latency,... etc to make it easier for people to know where this work stands in comparison to other methods.
+%%%-----------------------------------------------------------------
 %Yet it produces in practice an unmatched classification accuracy, demonstrating the role of competition and cooperation in models of neural computations.
 %
 
