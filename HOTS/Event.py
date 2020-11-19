@@ -295,28 +295,32 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData,
         event = Event(**opts) # TRAIN
 
         # generate train
-        label = np.zeros((NbData, ))
-        event.ChangeIdx = []
+        #event.ChangeIdx = []
         size = 0
         for idx in list_digits_idx:
             size += len(EVE[idx].t)
 
         event.address = np.zeros((size, 2)).astype(int)
-        event.time = np.zeros((size))
-        event.polarity = np.zeros((size)).astype(int)
-        
+        event.time = np.zeros((size, ))
+        event.polarity = np.zeros((size, )).astype(int)
+
+        label = np.zeros((size, )).astype(int)
+
+        t = 0 # absolute time
         idg = 0 # index for events
         idgl = 0 # index for digits
         for idx in list_digits_idx:
             events_digit = EVE[idx] # this digit
-            for idev in range(len(events_digit.t)):
-                event.time[idg] = events_digit.t[idev]*pow(10,-6) # from micro-seconds to seconds
+            N_events_digit = len(events_digit.t)
+            for idev in range(N_events_digit):
+                event.time[idg] = t + events_digit.t[idev]*pow(10,-6) # from micro-seconds to seconds
                 event.address[idg][0] = int(events_digit.y[idev])
                 event.address[idg][1] = int(events_digit.x[idev])
                 event.polarity[idg] = int(events_digit.p[idev])
+                label[idg] = events_digit.l
                 idg += 1
-            event.ChangeIdx.append(len(events_digit.t))
-            label[idgl] = events_digit.l
+            #event.ChangeIdx.append(len(events_digit.t))
+            t += events_digit.t[idev]*pow(10,-6) # from micro-seconds to seconds
             idgl += 1
         
         event.ListPolarities = np.unique(event.polarity)
@@ -324,15 +328,15 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData,
     
     # shuffle digits
     assert(NbTrainingData+NbTestingData+NbClusteringData <= len(EVE))
-    listdigit = np.random.permutation(len(EVE))
+    list_digits_idx = np.random.permutation(len(EVE))
 
-    list_train = listdigit[:NbTrainingData]
-    event_train, label_train = make_events(list_train, NbTrainingData, OutOnePolarity=OutOnePolarity)
+    list_digits_idx_train = list_digits_idx[:NbTrainingData]
+    event_train, label_train = make_events(list_digits_idx_train, NbTrainingData, OutOnePolarity=OutOnePolarity)
     
-    list_test = listdigit[NbTrainingData:NbTrainingData+NbTestingData]
-    event_test, label_test = make_events(list_test, NbTestingData, OutOnePolarity=OutOnePolarity)
+    list_digits_idx_test = list_digits_idx[NbTrainingData:(NbTrainingData+NbTestingData)]
+    event_test, label_test = make_events(list_digits_idx_test, NbTestingData, OutOnePolarity=OutOnePolarity)
 
-    list_clust = listdigit[NbTrainingData+NbTestingData:NbTrainingData+NbTestingData+NbClusteringData]
-    event_cluster, _ = make_events(list_clust, NbClusteringData, OutOnePolarity=OutOnePolarity)
+    list_digits_idx_clust = list_digits_idx[(NbTrainingData+NbTestingData):(NbTrainingData+NbTestingData+NbClusteringData)]
+    event_cluster, _ = make_events(list_digits_idx_clust, NbClusteringData, OutOnePolarity=OutOnePolarity)
 
     return event_train, event_test, event_cluster, label_train, label_test
