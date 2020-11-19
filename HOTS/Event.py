@@ -277,7 +277,8 @@ def LoadGestureDB(filepath, OutOnePolarity=False):
     return event
 
 
-def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, OneOfEach=False, Path=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
+def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, 
+               OneOfEach=False, Path=None, OutOnePolarity=False, ListPolarities=None, verbose=0):
     '''
     Loads the NMNIST dataset and returns the diferent event lists and labels
 
@@ -289,107 +290,64 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData, OneOfEach=False,
     if Path is None: Path = '../Data/testsetnmnist.p'
     EVE = pickle.load(open(Path, "rb" ))
 
-    # initializes event lists
-    opts = dict(ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
-    event_train = Event(ImageSize=(34, 34), **opts) # TRAIN
-    event_test = Event(ImageSize=(34, 34), **opts) # TEST
-    event_cluster = Event(ImageSize=(34, 34), **opts)
+    def make_events(list_events, NbData, ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity):
+        # initializes event lists
+        opts = dict(ImageSize=(34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
+        event = Event(**opts) # TRAIN
 
-    # select at random a training and test subsets
+        # generate train
+        label = np.zeros((NbData, 1))
+        changeidx = []
+        size = 0
+        for idx in list_events:
+            size += len(EVE[idx].t)
+
+        event.address = np.zeros((size, 2)).astype(int)
+        event.time = np.zeros((size))
+        event.polarity = np.zeros((size)).astype(int)
+        
+        idg = 0
+        idgl = 0
+        selectid = []
+        for idx in list_events:
+            events_digit = EVE[idx] # this digit
+            if OneOfEach:
+                if events_digit.l not in selectid:
+                    for idev in range(len(events_digit.t)):
+                        event.time[idg] = events_digit.t[idev]*pow(10,-6)
+                        event.address[idg][0] = int(events_digit.y[idev])
+                        event.address[idg][1] = int(events_digit.x[idev])
+                        event.polarity[idg] = int(events_digit.p[idev])
+                        idg += 1
+                    changeidx.append(len(events_digit.t))
+                    label[idgl][0] = events_digit.l
+                    idgl+=1
+                    selectid.append(events_digit.l)
+            else:
+                for idev in range(len(events_digit.t)):
+                    event.time[idg] = events_digit.t[idev]*pow(10,-6)
+                    event.address[idg][0] = int(events_digit.y[idev])
+                    event.address[idg][1] = int(events_digit.x[idev])
+                    event.polarity[idg] = int(events_digit.p[idev])
+                    idg += 1
+                changeidx.append(len(events_digit.t))
+                label[idgl][0] = events_digit.l
+                idgl+=1
+        # print(selectid)
+        event.ChangeIdx = changeidx
+        return event, label
+    
+    # shuffle digits
+    assert(NbTrainingData+NbTestingData+NbClusteringData <= 10000)
     listdigit = random.sample(range(10000), NbTrainingData+NbTestingData+NbClusteringData)
     list_train = listdigit[:NbTrainingData]
     list_test = listdigit[NbTrainingData:NbTrainingData+NbTestingData]
-    list_clust = listdigit[NbTrainingData+NbTestingData:]
+    list_clust = listdigit[NbTrainingData+NbTestingData:NbTrainingData+NbTestingData+NbClusteringData]
+    
+    event_train, label_train = make_events(list_train, NbTrainingData, ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
+    
+    event_test, label_test = make_events(list_test, NbTestingData, ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
 
-    label_train = np.zeros([NbTrainingData,1])
-    changeidx = []
-    sizetrain = 0
-    for idx in list_train:
-        size = len(EVE[idx].t)
-        sizetrain += size
-
-    event_train.address = np.zeros((sizetrain, 2)).astype(int)
-    event_train.time = np.zeros((sizetrain))
-    event_train.polarity = np.zeros((sizetrain)).astype(int)
-    idg = 0
-    idgl = 0
-    selectid = []
-    for idx in list_train:
-        events = EVE[idx]
-        if OneOfEach is True:
-            if events.l not in selectid:
-                for idev in range(len(events.t)):
-                    event_train.time[idg] = events.t[idev]*pow(10,-6)
-                    event_train.address[idg][0] = int(events.y[idev])
-                    event_train.address[idg][1] = int(events.x[idev])
-                    event_train.polarity[idg] = int(events.p[idev])
-                    idg += 1
-                changeidx.append(len(events.t))
-                label_train[idgl][0] = events.l
-                idgl+=1
-                selectid.append(events.l)
-        else:
-            for idev in range(len(events.t)):
-                event_train.time[idg] = events.t[idev]*pow(10,-6)
-                event_train.address[idg][0] = int(events.y[idev])
-                event_train.address[idg][1] = int(events.x[idev])
-                event_train.polarity[idg] = int(events.p[idev])
-                idg += 1
-            changeidx.append(len(events.t))
-            label_train[idgl][0] = events.l
-            idgl+=1
-    print(selectid)
-    event_train.ChangeIdx = changeidx
-
-    changeidx = []
-    label_test = np.zeros([NbTestingData,1])
-    sizetrain = 0
-    for idx in list_test:
-        size = len(EVE[idx].t)
-        sizetrain += size
-
-    event_test.address = np.zeros((sizetrain, 2)).astype(int)
-    event_test.time = np.zeros((sizetrain))
-    event_test.polarity = np.zeros((sizetrain)).astype(int)
-    idg = 0
-    idgl = 0
-    for idx in list_test:
-        events = EVE[idx]
-        for idev in range(len(events.t)):
-            event_test.time[idg] = events.t[idev]*pow(10,-6)
-            event_test.address[idg][0] = int(events.y[idev])
-            event_test.address[idg][1] = int(events.x[idev])
-            event_test.polarity[idg] = int(events.p[idev])
-            idg += 1
-        changeidx.append(len(events.t))
-        label_test[idgl][0] = events.l
-        idgl+=1
-    event_test.ChangeIdx = changeidx
-
-    changeidx = []
-    sizetrain = 0
-    for idx in list_clust:
-        size = len(EVE[idx].t)
-        sizetrain += size
-
-    event_cluster.address = np.zeros((sizetrain, 2)).astype(int)
-    event_cluster.time = np.zeros((sizetrain))
-    event_cluster.polarity = np.zeros((sizetrain)).astype(int)
-    idg = 0
-    idgl = 0
-    for idx in list_clust:
-        events = EVE[idx]
-        for idev in range(len(events.t)):
-            event_cluster.time[idg] = events.t[idev]*pow(10,-6)
-            event_cluster.address[idg][0] = int(events.y[idev])
-            event_cluster.address[idg][1] = int(events.x[idev])
-            event_cluster.polarity[idg] = int(events.p[idev])
-            idg += 1
-        changeidx.append(len(events.t))
-    event_cluster.ChangeIdx = changeidx
-
-    event_cluster.ListPolarities = np.unique(event_cluster.polarity)
-    event_test.ListPolarities = np.unique(event_test.polarity)
-    event_train.ListPolarities = np.unique(event_train.polarity)
+    event_cluster, _ = make_events(list_clust, NbClusteringData, ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
 
     return event_train, event_test, event_cluster, label_train, label_test
