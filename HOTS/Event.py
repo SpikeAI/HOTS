@@ -2,7 +2,6 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import scipy.io
 import numpy as np
-import random
 from os import listdir
 from HOTS.Tools import LoadObject
 import HOTS.Tool_libUnpackAtis as ua
@@ -290,7 +289,7 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData,
     if Path is None: Path = '../Data/testsetnmnist.p'
     EVE = pickle.load(open(Path, "rb" ))
 
-    def make_events(list_events, NbData, ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity):
+    def make_events(list_digits_idx, NbData, ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity):
         # initializes event lists
         opts = dict(ImageSize=(34, 34), ListPolarities=ListPolarities, OutOnePolarity=OutOnePolarity)
         event = Event(**opts) # TRAIN
@@ -299,7 +298,7 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData,
         label = np.zeros((NbData, ))
         event.ChangeIdx = []
         size = 0
-        for idx in list_events:
+        for idx in list_digits_idx:
             size += len(EVE[idx].t)
 
         event.address = np.zeros((size, 2)).astype(int)
@@ -308,7 +307,7 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData,
         
         idg = 0 # index for events
         idgl = 0 # index for digits
-        for idx in list_events:
+        for idx in list_digits_idx:
             events_digit = EVE[idx] # this digit
             for idev in range(len(events_digit.t)):
                 event.time[idg] = events_digit.t[idev]*pow(10,-6) # from micro-seconds to seconds
@@ -324,8 +323,8 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData,
         return event, label
     
     # shuffle digits
-    assert(NbTrainingData+NbTestingData+NbClusteringData <= 10000)
-    listdigit = random.sample(range(10000), NbTrainingData+NbTestingData+NbClusteringData)
+    assert(NbTrainingData+NbTestingData+NbClusteringData <= len(EVE))
+    listdigit = np.random.permutation(len(EVE))
 
     list_train = listdigit[:NbTrainingData]
     event_train, label_train = make_events(list_train, NbTrainingData, OutOnePolarity=OutOnePolarity)
