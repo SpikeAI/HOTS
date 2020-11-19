@@ -282,7 +282,7 @@ def LoadNMNIST(NbTrainingData, NbTestingData, NbClusteringData,
     '''
     Loads the NMNIST dataset and returns the diferent event lists and labels
 
-    The database consists of 10000 presentations with for each a listof events
+    The database consists of len(EVE)=10000 presentations with for each a listof events
     corresponding to that presentation.
 
     '''
