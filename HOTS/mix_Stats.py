@@ -3,11 +3,12 @@ import numpy as np
 class stats(object):
     """ """
 
-    def __init__(self, pol, R):
+    def __init__(self, N, camsize):
         self.nbqt = 500
         self.count = 0
         self.dist_cum = 0
         self.dist = []
+        self.actmap = np.zeros([N,camsize[0],camsize[1]])
         #self.Ddic = []
         #self.spar = []
         #self.Ddic_cum = 0

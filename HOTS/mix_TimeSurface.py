@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
 import numpy as np
 from IPython import display
 import copy
@@ -26,12 +27,12 @@ class TimeSurface(object):
                 parameters: timesurf, gamma to display events (2.2 default)
 """
 
-    def __init__(self, R, tau, camsize, nbpol, pola, filt=2):
+    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=2):
         # PARAMETERS OF THE TIME SURFACES
         self.R = R
-        self.tau = tau 
+        self.tau = tau # in ms
         self.camsize = camsize
-        self.dtemp = 2
+        self.dtemp = 0.002
         self.kthrs = 5
         self.beta = 1000
         self.pola = pola
@@ -44,7 +45,11 @@ class TimeSurface(object):
         self.spatpmat = np.zeros((nbpol,camsize[0],camsize[1]))
   
     def addevent(self, xev, yev, tev, pev):
-        timesurf = np.zeros((len(pev),2*self.R+1,2*self.R+1))
+        timesurf = np.zeros((self.spatpmat.shape[0],2*self.R+1,2*self.R+1))
+        if not pev.shape:
+            p = np.zeros((self.spatpmat.shape[0]))
+            p[pev]=1
+            pev = p.copy()
         if self.iev==0:
             self.iev += 1
             self.t = tev
@@ -53,6 +58,7 @@ class TimeSurface(object):
                 self.spatpmat[polz[i], xev, yev] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
                 timesurf[polz[i], self.R, self.R] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
         elif xev==self.x and yev==self.y and tev-self.t<self.dtemp:
+            #print('error time between 2 events on the same pixel: '+ str(tev-self.t) +' ms')
             pass # no update because camera can spike two times for 1 event
         else:
             self.iev += 1
@@ -82,6 +88,8 @@ class TimeSurface(object):
             elif self.camsize[1]-(self.y+1)<self.R:
                 temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
             timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+            #if self.camsize[1]-(self.y+1)<self.R or self.camsize[0]-(self.x+1)<self.R:
+                #self.plote()
             # reshaping timesurf as a 1D vector
         activ = False
         if self.pola == False:
@@ -100,15 +108,78 @@ class TimeSurface(object):
             activ = True
         return TS, activ
 
-    def plote(self, timesurf, gamma=2.2):
+    def plote(self, gamma=2.2):
+        
+        # making time surface
+        xshift = copy.copy(self.x)
+        yshift = copy.copy(self.y)
+            # padding for events near the edges of the pixel grid
+        temp_spatpmat = copy.copy(self.spatpmat)
+        if self.x<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(self.R+1,0),(0,0)),'symmetric')
+            xshift += self.R+1
+        elif self.camsize[0]-(self.x+1)<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,self.R+1),(0,0)),'symmetric')
+        if self.y<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(self.R+1,0)),'symmetric')
+            yshift += self.R+1
+        elif self.camsize[1]-(self.y+1)<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
+        timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+        
         fig = plt.figure(figsize=(10,5))
         sub1 = fig.add_subplot(1,3,1)
-        sub1.imshow((self.spatpmat[0].T)**gamma)
+        mapa = sub1.imshow((self.spatpmat[0].T)**gamma, cmap=plt.cm.plasma)
         sub1.plot(self.x,self.y,'r*')
+        sub1.plot([self.x-self.R, self.x-self.R], [self.y-self.R, self.y+self.R], color='red')
+        sub1.plot([self.x-self.R, self.x+self.R], [self.y-self.R, self.y-self.R], color='red')
+        sub1.plot([self.x-self.R, self.x+self.R], [self.y+self.R, self.y+self.R], color='red')
+        sub1.plot([self.x+self.R, self.x+self.R], [self.y-self.R, self.y+self.R], color='red')
+        sub1.set_title('OFF events with exponential decay')
+        cbar_ax = fig.add_axes([0.95, 0.15, 0.05, 0.7])
+        fig.colorbar(mapa, cax=cbar_ax);
         sub2 = fig.add_subplot(1,3,2)
-        sub2.imshow((timesurf[0].T)**gamma)
+        sub2.imshow((timesurf[0].T)**gamma, cmap= plt.cm.plasma)
+        sub2.set_title('OFF time-surface')
         sub3 = fig.add_subplot(1,3,3)
-        sub3.imshow((timesurf[1].T)**gamma)
+        sub3.imshow((timesurf[1].T)**gamma, cmap= plt.cm.plasma)
+        sub3.set_title('ON time-surface')
         plt.close("all")
         display.clear_output(wait=True)
         display.display(fig) 
+
+        
+    def plot3D(self, gamma=2.2):
+        
+        # making time surface
+        xshift = copy.copy(self.x)
+        yshift = copy.copy(self.y)
+            # padding for events near the edges of the pixel grid
+        temp_spatpmat = copy.copy(self.spatpmat)
+        if self.x<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(self.R+1,0),(0,0)),'symmetric')
+            xshift += self.R+1
+        elif self.camsize[0]-(self.x+1)<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,self.R+1),(0,0)),'symmetric')
+        if self.y<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(self.R+1,0)),'symmetric')
+            yshift += self.R+1
+        elif self.camsize[1]-(self.y+1)<self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
+        timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+        
+        fig = plt.figure(figsize=(10,5))
+        sub1 = fig.add_subplot(1,2,1, projection="3d")
+        x = np.linspace(int(xshift-self.R),int(xshift+self.R),2*self.R+1)
+        y = np.linspace(int(yshift-self.R),int(yshift+self.R),2*self.R+1)
+        X,Y = np.meshgrid(x,y)
+        sub1.plot_surface(X,Y,timesurf[0,:,:].T, cmap= plt.cm.plasma, alpha=0.5)
+        sub1.set_title('OFF 3D time-surface')
+        sub2 = fig.add_subplot(1,2,2, projection="3d")
+        x = np.linspace(int(xshift-self.R),int(xshift+self.R),2*self.R+1)
+        y = np.linspace(int(yshift-self.R),int(yshift+self.R),2*self.R+1)
+        X,Y = np.meshgrid(x,y)
+        sub2.plot_surface(X,Y,timesurf[1,:,:].T, cmap= plt.cm.plasma, alpha=0.5)
+        sub2.set_title('ON 3D time-surface')
+        
+        plt.show()
