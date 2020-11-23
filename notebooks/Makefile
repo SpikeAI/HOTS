@@ -1,6 +1,6 @@
 default: A B C D E
 
-J=jupyter nbconvert --ExecutePreprocessor.timeout=0 --allow-errors --execute
+J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=hots --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
 
 A:

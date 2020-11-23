@@ -1,14 +1,20 @@
 name: hots
 channels:
+    - anaconda
     - conda-forge
 dependencies:
    - pip
-   - ipykernel
-   - matplotlib
+   - tqdm # TODO
    - numpy
+   - cython
+   - dask
+   - loky
+   - joblib
+   - scikit-learn
    - pandas
    - jupyter
    - notebook
    - nbconvert
-   - scikit-learn
    - jupyter_contrib_nbextensions
+   - ipykernel
+   - matplotlib
