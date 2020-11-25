@@ -27,14 +27,14 @@ class TimeSurface(object):
                 parameters: timesurf, gamma to display events (2.2 default)
 """
 
-    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=2):
+    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=1):
         # PARAMETERS OF THE TIME SURFACES
         self.R = R
-        self.tau = tau # in ms
+        self.tau = tau*1000 # in ms
         self.camsize = camsize
         self.dtemp = 0.002
         self.kthrs = 5
-        self.beta = 1000
+        self.beta = 1
         self.pola = pola
         self.filt = filt
         # VARIABLES OF THE TIME SURFACE
@@ -101,7 +101,7 @@ class TimeSurface(object):
             n = np.argmax(pev)
             card = np.nonzero(timesurf[n])
             minact = self.filt*self.R
-        normTS = np.linalg.norm(TS)
+        normTS = np.linalg.norm(TS) 
         if np.linalg.norm(TS)>0:
             TS /= normTS
         if len(card[0])>minact:

@@ -3,8 +3,8 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 import scipy.io
 import numpy as np
 from os import listdir
-from HOTS.Tools import LoadObject
-import HOTS.Tool_libUnpackAtis as ua
+from Tools import LoadObject
+import Tool_libUnpackAtis as ua
 import pickle
 
 #from HOTS.conv2eve import conv2eve
@@ -244,7 +244,7 @@ def SimpleAlphabet(NbTrainingData, NbTestingData, Path=None, LabelPath=None, Clu
     else:
         event_cluster.LoadFromMat(
             Path, image_number=ClusteringData, verbose=verbose)
-
+    
     # Generate Groud Truth Label
     for idx, img in enumerate(np.arange(0, NbTrainingData)):
         if idx != 0:

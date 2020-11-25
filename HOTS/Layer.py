@@ -1,11 +1,12 @@
 __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Grimaldi (2020-)"
 
 import numpy as np
-from HOTS.STS import STS
-from HOTS.KmeansLagorce import KmeansLagorce
-from HOTS.KmeansMaro import KmeansMaro
-from HOTS.KmeansCompare import KmeansCompare
-from HOTS.KmeansHomeo import KmeansHomeo
+from STS import STS
+from KmeansLagorce import KmeansLagorce
+from KmeansMaro import KmeansMaro
+from KmeansCompare import KmeansCompare
+from KmeansHomeo import KmeansHomeo
+import matplotlib.pyplot as plt
 
 class Layer(object):
     '''
@@ -89,7 +90,7 @@ class ClusteringLayer(Layer):
     '''
 
     def __init__(self, tau, R, ThrFilter=0, LearningAlgo='lagorce', kernel='exponential',
-                 eta=None, homeo=False, eta_homeo=None, C=None, sigma=None, init='rdn', l0_sparseness=5, verbose=0):
+                 eta=None, homeo=False, eta_homeo=None, C=None, sigma=None, init=None, l0_sparseness=5, verbose=0):
         Layer.__init__(self, verbose)
         LearningAlgos = ['homeo', 'maro', 'lagorce', 'comp']
         self.type = 'Layer'
@@ -137,10 +138,11 @@ class ClusteringLayer(Layer):
         self.input = event
         self.SpTe_Layer = STS(tau=self.tau, R=self.R,
                               verbose=self.verbose, sigma=self.sigma)
+        
         Surface_Layer = self.SpTe_Layer.create(event=self.input, kernel=self.kernel)
-
+        
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
-
+        
         self.output, _ = Cluster.predict(
             Surface=self.SpTe_Layer.Surface, event=event_filtered, R = self.R, homrun=homrun)
 
@@ -163,9 +165,10 @@ class ClusteringLayer(Layer):
         self.input = event
         self.SpTe_Layer = STS(tau=self.tau, R=self.R,
                               verbose=self.verbose, sigma=self.sigma)
+        
         Surface_Layer = self.SpTe_Layer.create(
             event=self.input, kernel=self.kernel)
- 
+
         event_filtered, _ = self.SpTe_Layer.FilterRecent(event=self.input, threshold=self.ThrFilter)
 
         self.ClusterLayer.nb_cluster, self.ClusterLayer.to_record = nb_cluster, to_record

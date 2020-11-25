@@ -10,7 +10,7 @@ class layer(object):
     """layer aims at learning an online sparse dictionary to describe an input stimulus (here a time-surface). Given the input size (square 2R+1 matrix) it will create a (2R+1)^2 by N dictionary matrix: self.dic . compute h (output), which is the sparse map: the coefficients by which one multiply the dictionary (basis) to get the reconstructed signal.
     """
     
-    def __init__(self, R, N_clust, pola, nbpola, camsize, homeo, algo, hout, to_record):
+    def __init__(self, R, N_clust, pola, nbpola, camsize, homeo, algo, hout, krnlinit, to_record):
         self.out = False          # binary number to indicate if this layer is the last one of the network
         self.hout = hout
         self.to_record = to_record
@@ -18,6 +18,7 @@ class layer(object):
         self.algo = algo
         self.homeo = homeo        # binary number indicating if homeostasis is used or not
         self.nbtrain = 0          # number of TS sent in the layer
+        self.krnlinit = krnlinit
         
         if pola==False:
             self.kernel = np.random.rand((2*R+1)**2, N_clust)
@@ -25,6 +26,7 @@ class layer(object):
             self.kernel = np.random.rand(nbpola*(2*R+1)**2, N_clust)
         some = np.sqrt(np.sum(self.kernel**2, axis=0))
         self.kernel = self.kernel/some[None,:]
+            
         if self.to_record==True or self.homeo==True:
             self.cumhisto = np.ones([N_clust])/N_clust
         if algo == 'maro':
@@ -44,7 +46,16 @@ class layer(object):
         return gain
     
     def lagorce(self, TS, learn):
-
+        
+        if self.krnlinit=='first':
+            while self.nbtrain<self.kernel.shape[1]:
+                self.kernel[:,self.nbtrain]=TS.T
+                h = np.zeros([self.kernel.shape[1]])
+                h[self.nbtrain] = 1
+                temphisto = h.copy()
+                return h, temphisto
+                
+                
         Distance_to_proto = np.linalg.norm(TS - self.kernel, ord=2, axis=0)
         if self.homeo==1:
             gain = self.homeorule()

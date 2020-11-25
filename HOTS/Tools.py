@@ -18,17 +18,6 @@ def prediction(to_predict, prototype, homeo, R):
         + polarity : (<np.array>) vector representing the polarity of the closest prototype (argmin)
     '''
 
-    valmin = 0.7
-    valmax = 1.3
-    N = prototype.shape[0]
-    c = (np.log(valmax)-1)/(np.log(valmax)-np.log(valmin)+N*(np.log(valmin)-1))
-    b = c*np.log(valmin)
-    a = np.log(valmax)*(c-1)-b
-
-    b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
-    d = -b/np.log(valmin)
-    a = -b*N
-
     idx_global = 0
     if homeo==True:
         nb_proto = np.zeros(prototype.shape[0])

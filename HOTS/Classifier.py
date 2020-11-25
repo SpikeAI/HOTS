@@ -2,8 +2,8 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import numpy as np
 
-from HOTS.Tools import Norm
-from HOTS.Tools import GenerateHistogram
+from Tools import Norm
+from Tools import GenerateHistogram
 
 
 class Classifier(object):
@@ -59,7 +59,8 @@ class Classifier(object):
         self.GroundTruth = self.GroundTruth.astype(np.str_)
         histo_train, pola_train = GenerateHistogram(self.event_train)
         histo_test, pola_test = GenerateHistogram(self.event_test)
-
+        print(histo_test,histo_train)
+        
         prediction = list()
         allmethod = list()
         for each_method in methods:
