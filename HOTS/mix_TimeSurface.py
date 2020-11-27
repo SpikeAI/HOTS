@@ -6,21 +6,21 @@ import copy
 
 class TimeSurface(object):
     """ TimeSurface is a class created from a serie of events. It stores the events on the pixel grid and apply an exponential decay to past events when updating the time surface. It returns the timesurface defined by a spatial window. The output is a 1D vector representing the time-surface.
-    
+
     ATTRIBUTES:
-            R -> the parameter defining the length of the spatial window of the time-surface 
+            R -> the parameter defining the length of the spatial window of the time-surface
             tau -> the constant of the decay applied to events
             camsize -> the size of the pixel grid
             iev -> the indice of the reference event to build the time-surface
             spatpmat -> the spatiotemporal matrix of the whole pixel grid
             x, y, t, p -> position, time and polarity of the last event of the time surface
-            dtemp -> minimum time required between 2 events on the same pixel to avoid camera issues 
+            dtemp -> minimum time required between 2 events on the same pixel to avoid camera issues
                                         (some pixels (x>255) spike 2 times)
             kthrs -> constante*tau defining a null threshold for past events
-            beta -> is a constante to apply a temporal decay if p[pol]<1 
+            beta -> is a constante to apply a temporal decay if p[pol]<1
             pola -> boolean indicating if the network uses polarities or not
 
-    METHODS: 
+    METHODS:
             .addevent -> add an event to the time surface when event.x, event.y, event.t and p is given as input
                                 (p is a 1D vector containing different weights for all polarities)
             .plote -> plot the timesurface TimeSurface.timesurf
@@ -43,7 +43,7 @@ class TimeSurface(object):
         self.t = 0
         self.iev = 0
         self.spatpmat = np.zeros((nbpol,camsize[0],camsize[1]))
-  
+
     def addevent(self, xev, yev, tev, pev):
         timesurf = np.zeros((self.spatpmat.shape[0],2*self.R+1,2*self.R+1))
         if not pev.shape:
@@ -101,19 +101,19 @@ class TimeSurface(object):
             TS = np.reshape(timesurf[np.argmax(pev)], [(2*self.R+1)**2,1])
             card = np.nonzero(timesurf[np.argmax(pev)])
             minact = self.filt*self.R
-        else: 
+        else:
             TS = np.reshape(timesurf, [len(timesurf)*(2*self.R+1)**2,1])
             card = np.nonzero(timesurf)
             minact = self.filt*self.R
         normTS = np.linalg.norm(TS)
         if np.linalg.norm(TS)>0:
             TS /= normTS
-        if len(card[0])>minact or len(pev)>2:
+        if len(card[0])>minact:
             activ = True
         return TS, activ
 
     def plote(self, gamma=2.2):
-        
+
         # making time surface
         xshift = copy.copy(self.x)
         yshift = copy.copy(self.y)
@@ -130,7 +130,7 @@ class TimeSurface(object):
         elif self.camsize[1]-(self.y+1)<self.R:
             temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
         timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
-        
+
         fig = plt.figure(figsize=(10,5))
         sub1 = fig.add_subplot(1,3,1)
         mapa = sub1.imshow((self.spatpmat[0].T)**gamma, cmap=plt.cm.plasma)
@@ -150,11 +150,11 @@ class TimeSurface(object):
         sub3.set_title('ON time-surface')
         plt.close("all")
         display.clear_output(wait=True)
-        display.display(fig) 
+        display.display(fig)
 
-        
+
     def plot3D(self, gamma=2.2):
-        
+
         # making time surface
         xshift = copy.copy(self.x)
         yshift = copy.copy(self.y)
@@ -171,7 +171,7 @@ class TimeSurface(object):
         elif self.camsize[1]-(self.y+1)<self.R:
             temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
         timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
-        
+
         fig = plt.figure(figsize=(10,5))
         sub1 = fig.add_subplot(1,2,1, projection="3d")
         x = np.linspace(int(xshift-self.R),int(xshift+self.R),2*self.R+1)
@@ -185,5 +185,5 @@ class TimeSurface(object):
         X,Y = np.meshgrid(x,y)
         sub2.plot_surface(X,Y,timesurf[1,:,:].T, cmap= plt.cm.plasma, alpha=0.5)
         sub2.set_title('ON 3D time-surface')
-        
+
         plt.show()

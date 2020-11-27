@@ -15,7 +15,7 @@ class stats(object):
         #self.spar_cum = 0
         #self.predrcum = 0
         #self.predr = []
-        
+
     def update(self, h, dic, dicprev, X):
             self.dist_cum += np.linalg.norm(np.dot(dic,h)-X)
             #self.Ddic_cum += np.linalg.norm(dic-dicprev)/np.linalg.norm(dicprev)
