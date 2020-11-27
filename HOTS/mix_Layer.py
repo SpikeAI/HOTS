@@ -28,7 +28,7 @@ class layer(object):
         self.kernel = self.kernel/some[None,:]
             
         if self.to_record==True or self.homeo==True:
-            self.cumhisto = np.ones([N_clust])/N_clust
+            self.cumhisto = np.zeros([N_clust])
         if algo == 'maro':
             self.last_time_activated = np.zeros(N_clust).astype(int)
         
@@ -38,10 +38,12 @@ class layer(object):
         #______USED IN MP WITH COSINE SIMILARITY:
         if self.algo=='mpursuit':
             mu = 1 
-            gain = np.log(self.cumhisto)/np.log(mu/self.kernel.shape[1])
+            histo = self.cumhisto.copy()+np.ones([len(self.cumhisto)])
+            histo/=np.sum(histo)
+            gain = np.log(histo)/np.log(mu/self.kernel.shape[1])
         #______
         else:
-            gain = np.exp(self.kernel.shape[1]/4*(self.cumhisto-1/self.kernel.shape[1]))
+            gain = np.exp(self.kernel.shape[1]/4*(self.cumhisto/np.sum(self.cumhisto)-1/self.kernel.shape[1]))
         
         return gain
     
@@ -54,8 +56,9 @@ class layer(object):
                 h[self.nbtrain] = 1
                 temphisto = h.copy()
                 return h, temphisto
-                
-                
+        #if len(TS)>50 and len(TS)<350:
+            #plt.imshow(np.reshape(TS, [9,36]))
+            #plt.show()
         Distance_to_proto = np.linalg.norm(TS - self.kernel, ord=2, axis=0)
         if self.homeo==1:
             gain = self.homeorule()
@@ -63,13 +66,13 @@ class layer(object):
         else:
             closest_proto_idx = np.argmin(Distance_to_proto)
         if learn==True:
-            pk = self.nbtrain*self.cumhisto[closest_proto_idx]
+            pk = self.cumhisto[closest_proto_idx]
             Ck = self.kernel[:,closest_proto_idx]
             alpha = 0.01/(1+pk/20000)
             beta = np.dot(Ck.T, TS)[0]/(np.linalg.norm(TS)*np.linalg.norm(Ck))
             Ck_t = Ck + alpha*(TS.T[0] - beta*Ck)
             self.kernel[:,closest_proto_idx] = Ck_t
-        
+            
         h = np.zeros([self.kernel.shape[1]])
         h[closest_proto_idx] = 1
         temphisto = h.copy()
@@ -87,7 +90,7 @@ class layer(object):
             closest_proto_idx = np.argmin(Distance_to_proto)
             
         if learn==True:
-            pk = self.nbtrain*self.cumhisto[closest_proto_idx]
+            pk = self.cumhisto[closest_proto_idx]
             Ck = self.kernel[:,closest_proto_idx]
             self.last_time_activated[closest_proto_idx] = self.nbtrain
             alpha = 1/(1+pk)
@@ -96,9 +99,9 @@ class layer(object):
             self.kernel[:,closest_proto_idx] = Ck_t
             
             critere = (self.nbtrain-self.last_time_activated) > 10000
-            critere2 = self.nbtrain*self.cumhisto < 25000
+            critere2 = self.cumhisto < 25000
             if np.any(critere2*critere):
-                cri = self.nbtrain*self.cumhisto[critere] < 25000
+                cri = self.cumhisto[critere] < 25000
                 idx_critere = np.arange(0, self.kernel.shape[1])[critere][cri]
                 for idx_c in idx_critere:
                     beta = np.dot(Ck.T, TS)[0]/(np.linalg.norm(TS)*np.linalg.norm(Ck))
@@ -142,12 +145,12 @@ class layer(object):
         elif self.algo=='mpursuit':
             h, temphisto = self.mpursuit(TS, learn)
         elif self.algo=='maro':
-            h, temphisto = self.maro(TS, learn)
-          
+            h, temphisto = self.maro(TS, learn) 
+            
         if learn == True:
             self.nbtrain += 1
         if self.to_record==True or self.homeo==True:
-            self.cumhisto = np.round((1-1/(self.nbtrain+1))*self.cumhisto+1/(self.nbtrain+1)*temphisto/np.sum(temphisto),6)
+            self.cumhisto += temphisto 
         if self.hout == 1:
             p = np.ceil(h)
         elif self.hout == 2:

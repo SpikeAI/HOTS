@@ -33,7 +33,7 @@ class network(object):
                         homeo = False,
                         pola = True,
                         to_record = True,
-                        filt = 2
+                        filt = 5
                 ):
         tau *= 1000 # to enter tau in ms
         if to_record == True:
@@ -52,7 +52,8 @@ class network(object):
                 if to_record == True:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
         self.L[lay].out = 1
-
+        
+        
     # faire un merge de run et train?     
     def run(self, x, y, t, p, to_record=False):
         lay = 0
@@ -86,37 +87,59 @@ class network(object):
                 lay = len(self.TS)
                 
                 
-    def learn(self, nb_digit=None, dataset='simple', diginit=False):
+    def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
         
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
         if dataset == 'simple':
             event = Event(ImageSize=(32, 32))
-            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=[1, 32, 19, 22, 29, 1, 32, 19, 22, 29, 1, 32, 19, 22, 29])
+            digit_numbers = [1,32,19,22,29]
+            diglist = []
+            for nbd in range(nb_cycle):
+                diglist+=digit_numbers
+            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=diglist)
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
         else: 
             event = []
         
-        count = 0
         nbevent = int(event.time.shape[0])
-        pbar = tqdm(total=nbevent)
-        while count<nbevent:
-            pbar.update(1)
-            if diginit==True and event.time[count]<event.time[count-1]:
-                for i in range(len(self.TS)):
-                    self.TS[i].spatpmat[:] = 0
-                    self.TS[i].iev = 0
-            self.train(event.address[count,1],event.address[count,0],event.time[count],event.polarity[count])
-            count += 1
-        pbar.close()
+        for n in range(len(self.L)):
+            count = 0
+            pbar = tqdm(total=nbevent)
+            while count<nbevent:
+                pbar.update(1)
+                x, y, t, p = event.address[count,0],event.address[count,1],event.time[count],event.polarity[count]
+                if diginit==True and event.time[count]<event.time[count-1]:
+                    i = 0
+                    while i<n+1:
+                        self.TS[i].spatpmat[:] = 0
+                        self.TS[i].iev = 0
+                        i+=1
+                for lay in range(n+1):
+                    if lay==n:
+                        learn=True
+                    else:
+                        learn=False
+                    timesurf, activ = self.TS[lay].addevent(x, y, t, p)
+                    if lay==0:
+                        activ2=activ
+                    if filtering=='all':
+                        activ2=activ
+                    if activ2==True and np.sum(timesurf)>0:
+                        p, dicprev = self.L[lay].run(timesurf, learn)
+                
+                #self.train(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count])
+                count += 1
+            pbar.close()
         
         
-    def labelhisto(self, nb_digit=None, dataset='simple', diginit=False, to_record=False):
+    def traininglagorce(self, nb_digit=None, dataset='simple', to_record=True):
         
         if dataset == 'simple':
             event = Event(ImageSize=(32, 32))
             event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=list(
                                                                                             np.arange(0, 36)))
             label_list = LoadObject('../Data/alphabet_label.pkl')
+            label = label_list[:36]
         else:
             event = []
            
@@ -126,39 +149,43 @@ class network(object):
         nbevent = int(event.time.shape[0])
         pbar = tqdm(total=nbevent)
         idx = 0
-        digit = label_list[idx][0]
-        labmap = []
+        digit = label[idx][0]
+        labelmap = []
+        for i in range(len(self.L)):
+            self.TS[i].spatpmat[:] = 0
+            self.TS[i].iev = 0
+            self.L[i].cumhisto[:] = 0
         while count<nbevent:
             pbar.update(1)
-            if diginit==True and event.time[count]<event.time[count-1]:
-                for i in range(len(self.TS)):
+
+            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record) 
+            if count2==label[idx][1]:
+                data = (digit,self.L[-1].cumhisto.copy())
+                labelmap.append(data)
+                for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-            self.run(event.address[count,1],event.address[count,0],event.time[count], event.polarity[count], to_record) 
-            if count2==label_list[idx][1]:
-                data = (digit,self.L[-1].cumhisto)
-                labmap.append(data) 
-                
+                    self.L[i].cumhisto[:] = 0
+
                 idx += 1
-                digit = label_list[idx][0]
+                if idx<len(label):
+                    digit = label[idx][0]
                 count2=-1
-                
+   
             count += 1
             count2 += 1
             
         pbar.close()
-        return labmap
+        return labelmap
  
-    def testhisto(self, nb_digit=None, dataset='simple', diginit=False, to_record=False):
+    def testinglagorce(self, nb_digit=None, dataset='simple', to_record=True):
         
         if dataset == 'simple':
             event = Event(ImageSize=(32, 32))
             event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=list(
                                                                                             np.arange(36, 76)))
             label_list = LoadObject('../Data/alphabet_label.pkl')
-            label = []
-            for i in range(40):
-                label.append(label_list[i][0])
+            label = label_list[36:76]
         else:
             event = []
             
@@ -168,28 +195,34 @@ class network(object):
         nbevent = int(event.time.shape[0])
         pbar = tqdm(total=nbevent)
         idx = 0
-        digit = label_list[idx][0]
-        labmap = []
+        digit = label[idx][0]
+        labelmap = []
+        for i in range(len(self.L)):
+            self.TS[i].spatpmat[:] = 0
+            self.TS[i].iev = 0
+            self.L[i].cumhisto[:] = 0
         while count<nbevent:
             pbar.update(1)
-            if diginit==True and event.time[count]<event.time[count-1]:
-                for i in range(len(self.TS)):
+
+            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record) 
+            
+            if count2==label[idx][1]:
+                data = (digit,self.L[-1].cumhisto.copy())
+                labelmap.append(data) 
+                for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-            self.run(event.address[count,1],event.address[count,0],event.time[count], event.polarity[count], to_record) 
-            if count2==label_list[idx][1]:
-                data = (digit,self.L[-1].cumhisto)
-                labmap.append(data) 
-                
+                    self.L[i].cumhisto[:] = 0
                 idx += 1
-                digit = label_list[idx][0]
+                if idx<len(label):
+                    digit = label[idx][0]
                 count2=-1
                 
             count += 1
             count2 += 1
             
         pbar.close()
-        return labmap
+        return labelmap
             
     def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
         '''
@@ -214,7 +247,7 @@ class network(object):
 
         for i in range(len(self.L)):
             ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
-            plt.bar(np.arange(N[i]), self.L[i].cumhisto, width=1, align='edge', ec="k")
+            plt.bar(np.arange(N[i]), self.L[i].cumhisto/np.sum(self.L[i].cumhisto), width=1, align='edge', ec="k")
             ax.set_xticks(())
             if i>0:
                 ax.set_yticks(())

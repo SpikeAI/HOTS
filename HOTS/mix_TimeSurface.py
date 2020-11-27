@@ -27,10 +27,10 @@ class TimeSurface(object):
                 parameters: timesurf, gamma to display events (2.2 default)
 """
 
-    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=1):
+    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=2):
         # PARAMETERS OF THE TIME SURFACES
         self.R = R
-        self.tau = tau*1000 # in ms
+        self.tau = tau # in ms
         self.camsize = camsize
         self.dtemp = 0.002
         self.kthrs = 5
@@ -54,9 +54,12 @@ class TimeSurface(object):
             self.iev += 1
             self.t = tev
             polz = np.nonzero(pev)[0]
-            for i in range(len(polz)):
-                self.spatpmat[polz[i], xev, yev] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
-                timesurf[polz[i], self.R, self.R] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
+            #to change if pev has multiple polarities
+            self.spatpmat[np.argmax(pev), xev, yev] = 1
+            timesurf[np.argmax(pev), self.R, self.R] = 1
+            #for i in range(len(polz)):
+                #self.spatpmat[polz[i], xev, yev] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
+                #timesurf[polz[i], self.R, self.R] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
         elif xev==self.x and yev==self.y and tev-self.t<self.dtemp:
             #print('error time between 2 events on the same pixel: '+ str(tev-self.t) +' ms')
             pass # no update because camera can spike two times for 1 event
@@ -70,8 +73,10 @@ class TimeSurface(object):
             self.spatpmat[self.spatpmat<np.exp(-float(self.kthrs))]=0
             self.t = tev
             polz = np.nonzero(pev)[0]
-            for i in range(len(polz)):
-                self.spatpmat[polz[i], xev, yev] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
+            #to change if pev has multiple polarities
+            self.spatpmat[np.argmax(pev), xev, yev] = 1
+            #for i in range(len(polz)):
+                #self.spatpmat[polz[i], xev, yev] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
             # making time surface
             xshift = copy.copy(self.x)
             yshift = copy.copy(self.y)
@@ -94,17 +99,16 @@ class TimeSurface(object):
         activ = False
         if self.pola == False:
             TS = np.reshape(timesurf[np.argmax(pev)], [(2*self.R+1)**2,1])
-            card = np.nonzero(timesurf)
+            card = np.nonzero(timesurf[np.argmax(pev)])
             minact = self.filt*self.R
         else: 
             TS = np.reshape(timesurf, [len(timesurf)*(2*self.R+1)**2,1])
-            n = np.argmax(pev)
-            card = np.nonzero(timesurf[n])
+            card = np.nonzero(timesurf)
             minact = self.filt*self.R
-        normTS = np.linalg.norm(TS) 
+        normTS = np.linalg.norm(TS)
         if np.linalg.norm(TS)>0:
             TS /= normTS
-        if len(card[0])>minact:
+        if len(card[0])>minact or len(pev)>2:
             activ = True
         return TS, activ
 
