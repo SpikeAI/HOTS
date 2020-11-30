@@ -2,6 +2,9 @@ import numpy as np
 from mix_Layer import *
 from mix_TimeSurface import *
 from mix_Stats import *
+from Event import Event
+from Tools import LoadObject
+from tqdm import tqdm
 #from threading import Thread, Rlock
 
 #loco = Rlock()
@@ -25,31 +28,33 @@ class network(object):
                         begin = 0, #first event indice taken into account
                         # functional parameters of the network
                         algo = 'lagorce', # among ['lagorce', 'maro', 'mpursuit']
+                        krnlinit = 'rdn',
                         hout = False, #works only with mpursuit
                         homeo = False,
                         pola = True,
                         to_record = True,
+                        filt = 5
                 ):
         tau *= 1000 # to enter tau in ms
         if to_record == True:
             self.stats = [[]]*nblay
         self.TS = [[]]*nblay
         self.L = [[]]*nblay
-        self.count = 0
         for lay in range(nblay):
             if lay == 0:
-                self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola)
-                self.L[lay] = layer(R, nbclust, pola, nbpolcam, camsize, homeo, algo, hout, to_record)
+                self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt)
+                self.L[lay] = layer(R, nbclust, pola, nbpolcam, camsize, homeo, algo, hout, krnlinit, to_record)
                 if to_record == True:
                     self.stats[lay] = stats(nbclust, camsize)
             else:
-                self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola)
-                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), camsize, homeo, algo, hout, to_record)
+                self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt)
+                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), camsize, homeo, algo, hout, krnlinit, to_record)
                 if to_record == True:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
         self.L[lay].out = 1
 
-
+        
+    # faire un merge de run et train?
     def run(self, x, y, t, p, to_record=False):
         lay = 0
         learn = False
@@ -82,6 +87,144 @@ class network(object):
                 lay = len(self.TS)
 
 
+    def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
+
+        #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
+        if dataset == 'simple':
+            event = Event(ImageSize=(32, 32))
+            digit_numbers = [1,32,19,22,29]
+            diglist = []
+            for nbd in range(nb_cycle):
+                diglist+=digit_numbers
+            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=diglist)
+        #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
+        else:
+            event = []
+
+        nbevent = int(event.time.shape[0])
+        for n in range(len(self.L)):
+            count = 0
+            pbar = tqdm(total=nbevent)
+            while count<nbevent:
+                pbar.update(1)
+                x, y, t, p = event.address[count,0],event.address[count,1],event.time[count],event.polarity[count]
+                if diginit==True and event.time[count]<event.time[count-1]:
+                    i = 0
+                    while i<n+1:
+                        self.TS[i].spatpmat[:] = 0
+                        self.TS[i].iev = 0
+                        i+=1
+                lay=0
+                while lay < n+1:
+                    if lay==n:
+                        learn=True
+                    else:
+                        learn=False
+                    timesurf, activ = self.TS[lay].addevent(x, y, t, p)
+                    if lay==0 or filtering=='all':
+                        activ2=activ
+                    if activ2==True and np.sum(timesurf)>0:
+                        p, dicprev = self.L[lay].run(timesurf, learn)
+                        lay += 1
+                    else:
+                        lay = n+1
+                #self.train(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count])
+                count += 1
+            pbar.close()
+
+
+    def traininglagorce(self, nb_digit=None, dataset='simple', to_record=True):
+
+        if dataset == 'simple':
+            event = Event(ImageSize=(32, 32))
+            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=list(
+                                                                                            np.arange(0, 36)))
+            label_list = LoadObject('../Data/alphabet_label.pkl')
+            label = label_list[:36]
+        else:
+            event = []
+
+        output = []
+        count = 0
+        count2 = 0
+        nbevent = int(event.time.shape[0])
+        pbar = tqdm(total=nbevent)
+        idx = 0
+        digit = label[idx][0]
+        labelmap = []
+        for i in range(len(self.L)):
+            self.TS[i].spatpmat[:] = 0
+            self.TS[i].iev = 0
+            self.L[i].cumhisto[:] = 0
+        while count<nbevent:
+            pbar.update(1)
+
+            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record)
+            if count2==label[idx][1]:
+                data = (digit,self.L[-1].cumhisto.copy())
+                labelmap.append(data)
+                for i in range(len(self.L)):
+                    self.TS[i].spatpmat[:] = 0
+                    self.TS[i].iev = 0
+                    self.L[i].cumhisto[:] = 0
+
+                idx += 1
+                if idx<len(label):
+                    digit = label[idx][0]
+                count2=-1
+
+            count += 1
+            count2 += 1
+
+        pbar.close()
+        return labelmap
+
+    def testinglagorce(self, nb_digit=None, dataset='simple', to_record=True):
+
+        if dataset == 'simple':
+            event = Event(ImageSize=(32, 32))
+            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=list(
+                                                                                            np.arange(36, 76)))
+            label_list = LoadObject('../Data/alphabet_label.pkl')
+            label = label_list[36:76]
+        else:
+            event = []
+
+        output = []
+        count = 0
+        count2 = 0
+        nbevent = int(event.time.shape[0])
+        pbar = tqdm(total=nbevent)
+        idx = 0
+        digit = label[idx][0]
+        labelmap = []
+        for i in range(len(self.L)):
+            self.TS[i].spatpmat[:] = 0
+            self.TS[i].iev = 0
+            self.L[i].cumhisto[:] = 0
+        while count<nbevent:
+            pbar.update(1)
+
+            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record)
+
+            if count2==label[idx][1]:
+                data = (digit,self.L[-1].cumhisto.copy())
+                labelmap.append(data)
+                for i in range(len(self.L)):
+                    self.TS[i].spatpmat[:] = 0
+                    self.TS[i].iev = 0
+                    self.L[i].cumhisto[:] = 0
+                idx += 1
+                if idx<len(label):
+                    digit = label[idx][0]
+                count2=-1
+
+            count += 1
+            count2 += 1
+
+        pbar.close()
+        return labelmap
+
     def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
         '''
         '''
@@ -105,7 +248,7 @@ class network(object):
 
         for i in range(len(self.L)):
             ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
-            plt.bar(np.arange(N[i]), self.L[i].cumhisto, width=1, align='edge', ec="k")
+            plt.bar(np.arange(N[i]), self.L[i].cumhisto/np.sum(self.L[i].cumhisto), width=1, align='edge', ec="k")
             ax.set_xticks(())
             if i>0:
                 ax.set_yticks(())

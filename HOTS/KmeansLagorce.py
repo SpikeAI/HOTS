@@ -2,8 +2,10 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 
 import time
 import numpy as np
-from HOTS.Tools import EuclidianNorm, prediction
-from HOTS.KmeansCluster import Cluster
+from Tools import EuclidianNorm, prediction
+from KmeansCluster import Cluster
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 class KmeansLagorce(Cluster):
     '''
@@ -19,7 +21,7 @@ class KmeansLagorce(Cluster):
         self.homeo = homeo
         self.hompower = 0
 
-    def fit(self, STS, init='rdn', NbCycle=1):
+    def fit(self, STS, init=None, NbCycle=1):
         '''
         Methods to learn prototypes fitting data
         INPUT :
@@ -31,19 +33,18 @@ class KmeansLagorce(Cluster):
                 representing the centers of clusters
         '''
         tic = time.time()
+        #valmin = 0.7
+        #valmax = 1.3
+        #N = self.nb_cluster
+        #c = (np.log(valmax)-1)/(np.log(valmax)-np.log(valmin)+N*(np.log(valmin)-1))
+        #b = c*np.log(valmin)
+        #a = np.log(valmax)*(c-1)-b
         
-        valmin = 0.7
-        valmax = 1.3
-        N = self.nb_cluster
-        c = (np.log(valmax)-1)/(np.log(valmax)-np.log(valmin)+N*(np.log(valmin)-1))
-        b = c*np.log(valmin)
-        a = np.log(valmax)*(c-1)-b
-        
-        b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
-        d = -b/np.log(valmin)
-        a = -b*N
-
+        #b = np.log(valmax)*np.log(valmin)/((1-N)*np.log(valmin)-np.log(valmax))
+        #d = -b/np.log(valmin)
+        #a = -b*N
         surface = STS.Surface.copy()
+        pbar = tqdm(total=surface.shape[0])
         if self.to_record == True:
             self.record_each = surface.shape[0]//1000
         if init is None:
@@ -52,6 +53,8 @@ class KmeansLagorce(Cluster):
             idx = np.random.permutation(np.arange(surface.shape[0]))[
                 :self.nb_cluster]
             self.prototype = surface[idx, :]
+        elif init == 'realrand':
+            self.prototype = np.random.rand(self.nb_cluster,surface.shape[1])
         else:
             raise NameError('argument '+str(init) +
                             ' is not valid. Only None or rdn are valid')
@@ -61,6 +64,7 @@ class KmeansLagorce(Cluster):
         for each_cycle in range(NbCycle):
             for idx, Si in enumerate(surface):
                 # find the closest prototype
+                pbar.update(1)
                 Distance_to_proto = np.linalg.norm(Si - self.prototype, ord=2, axis=1)
                 #Adding homeostasis rule
                 if self.homeo==True:
@@ -93,7 +97,7 @@ class KmeansLagorce(Cluster):
                 self.idx_global += 1
 
         tac = time.time()
-
+        pbar.close()
         self.nb_proto = nb_proto
         if self.verbose > 0:
             print(

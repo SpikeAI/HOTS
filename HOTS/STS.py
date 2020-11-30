@@ -56,7 +56,7 @@ class STS(object):
         self.height = event.ImageSize[1] + 2*self.R
         self.ListOfTimeMatrix = np.zeros((self.nb_polarities, self.width, self.height))-self.initial_time
         self.BinaryMask = np.zeros((self.nb_polarities, self.width, self.height))
-
+        
         if stop is not None:
             self.Surface = np.zeros((stop+1, self.nb_polarities * self.area))
         else:
@@ -73,7 +73,7 @@ class STS(object):
             x, y = addr + self.R
             self.ListOfTimeMatrix[pol, x, y] = t
             self.LocalTimeDiff = t - self.ListOfTimeMatrix[:, (x-self.R):(x+self.R+1), (y-self.R):(y+self.R+1)]
-
+            
             if kernel == 'exponential':
                 SI = np.exp(-(self.LocalTimeDiff)/self.tau)*self.mask_circular
             elif kernel == 'linear':
