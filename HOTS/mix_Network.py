@@ -4,7 +4,8 @@ from mix_TimeSurface import *
 from mix_Stats import *
 from Event import Event
 from Tools import LoadObject
-from tqdm import tqdm
+from tqdm import tqdm as tqdm
+import tonic
 #from threading import Thread, Rlock
 
 #loco = Rlock()
@@ -18,7 +19,7 @@ class network(object):
                         K_clust = 2, # nbclust(L+1) = K_clust*nbclust(L)
                         nblay = 3,
                         # parameters of time-surfaces and datasets
-                        tau = 10, #timestamp en microsec/
+                        tau = 10, #timestamp en millisec/
                         K_tau = 10,
                         decay = 'exponential', # among ['exponential', 'linear']
                         nbpolcam = 2,
@@ -52,19 +53,97 @@ class network(object):
                 if to_record == True:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
         self.L[lay].out = 1
-
         
-    # faire un merge de run et train?
-    def run(self, x, y, t, p, to_record=False):
+##____________________________________________________________________________________
+
+    def learning1by1(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
+
+        if dataset == 'nmnist':
+            learningset = tonic.datasets.NMNIST(save_to='../Data/',
+                                train=False,
+                                transform=None)
+            loader = tonic.datasets.DataLoader(learningset, shuffle=True)
+            
+        eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+        for n in range(len(self.L)):
+            pbar = tqdm(total=nb_digit)
+            for idig in range(nb_digit):
+                pbar.update(1)
+                events = eventslist[idig]
+                if diginit==True:
+                    for l in range(n+1):
+                        self.TS[l].spatpmat[:] = 0
+                        self.TS[l].iev = 0
+                for iev in range(events.shape[1]):
+                    x,y,t,p = events[0][iev][0],events[0][iev][1],events[0][iev][2],events[0][iev][3]
+                    lay=0
+                    while lay < n+1:
+                        if lay==n:
+                            learn=True
+                        else:
+                            learn=False
+                        timesurf, activ = self.TS[lay].addevent(x, y, t, p)
+                        if activ==True:
+                            p, dist = self.L[lay].run(timesurf, learn)
+                            if learn==True:
+                                self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
+                            lay += 1
+                        else:
+                            lay = n+1 
+            pbar.close()
+        for l in range(len(self.L)):
+            self.stats[l].histo = self.L[l].cumhisto.copy()
+        return loader
+ 
+    def training(self, loader, nb_digit=40, to_record=True):
+        pbar = tqdm(total=nb_digit)
+        labelmap = []
+        for idig in range(nb_digit):
+            for i in range(len(self.L)):
+                self.TS[i].spatpmat[:] = 0
+                self.TS[i].iev = 0
+                self.L[i].cumhisto[:] = 0
+            pbar.update(1)
+            events, target = next(iter(loader))
+            for iev in range(events.shape[1]):
+                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2], events[0][iev][3], to_record)
+            data = (target,self.L[-1].cumhisto.copy())
+            labelmap.append(data)
+        pbar.close()
+        return labelmap, loader
+    
+    def testing(self, loader, trainmap, nb_digit=40, to_record=True):
+        pbar = tqdm(total=nb_digit)
+        labelmap = []
+        for idig in range(nb_digit):
+            for i in range(len(self.L)):
+                self.TS[i].spatpmat[:] = 0
+                self.TS[i].iev = 0
+                self.L[i].cumhisto[:] = 0
+            pbar.update(1)
+            events, target = next(iter(loader))
+            for iev in range(events.shape[1]):
+                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2], events[0][iev][3], to_record)
+            data = (target,self.L[-1].cumhisto.copy())
+            labelmap.append(data)
+        pbar.close()
+        
+        score1=accuracy(trainmap,labelmap,'bhatta')
+        score2=accuracy(trainmap,labelmap,'eucli')
+        score3=accuracy(trainmap,labelmap,'norm')
+        print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
+        
+        return labelmap, loader
+
+    def run(self, x, y, t, p, learn=False, to_record=False):
         lay = 0
-        learn = False
         while lay<len(self.TS):
             timesurf, activ = self.TS[lay].addevent(x, y, t, p)
             if activ==True:
-                p, dicprev = self.L[lay].run(timesurf, learn)
+                p, dist = self.L[lay].run(timesurf, learn)
                 if to_record==True:
-                    self.stats[lay].update(p, self.L[lay].kernel, dicprev, timesurf)
-                    self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
+                    self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
+                    #self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
                 lay+=1
             else:
                 lay = len(self.TS)
@@ -72,20 +151,7 @@ class network(object):
         return out, activ
 
 
-    def train(self, x, y, t, p):
-        lay = 0
-        learn = True
-        while lay<len(self.TS):
-            timesurf, activ = self.TS[lay].addevent(x, y, t, p)
-            if activ==True:
-                p, dicprev = self.L[lay].run(timesurf, learn)
-                if hasattr(self, 'stats'):
-                    self.stats[lay].update(p, self.L[lay].kernel, dicprev, timesurf)
-                    #self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
-                lay+=1
-            else:
-                lay = len(self.TS)
-
+##___________REPRODUCING RESULTS FROM LAGORCE 2017________________________________________
 
     def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
 
@@ -98,22 +164,23 @@ class network(object):
                 diglist+=digit_numbers
             event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=diglist)
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
-        else:
-            event = []
-
+        elif dataset == 'nmnist':
+            learningset = tonic.datasets.NMNIST(save_to='../Data/',
+                                train=True,
+                                transform=None)
+            loader = tonic.datasets.DataLoader(learningset, shuffle=True)
         nbevent = int(event.time.shape[0])
+        
         for n in range(len(self.L)):
             count = 0
             pbar = tqdm(total=nbevent)
             while count<nbevent:
                 pbar.update(1)
-                x, y, t, p = event.address[count,0],event.address[count,1],event.time[count],event.polarity[count]
+                x,y,t,p = event.address[count,0],event.address[count,1], event.time[count]*10**6,event.polarity[count]
                 if diginit==True and event.time[count]<event.time[count-1]:
-                    i = 0
-                    while i<n+1:
+                    for i in range(n+1):
                         self.TS[i].spatpmat[:] = 0
                         self.TS[i].iev = 0
-                        i+=1
                 lay=0
                 while lay < n+1:
                     if lay==n:
@@ -124,12 +191,15 @@ class network(object):
                     if lay==0 or filtering=='all':
                         activ2=activ
                     if activ2==True and np.sum(timesurf)>0:
-                        p, dicprev = self.L[lay].run(timesurf, learn)
+                        p, dist = self.L[lay].run(timesurf, learn)
+                        if learn==True:
+                            self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
                         lay += 1
                     else:
                         lay = n+1
-                #self.train(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count])
                 count += 1
+            for l in range(len(self.L)):
+                self.stats[l].histo = self.L[l].cumhisto.copy()
             pbar.close()
 
 
@@ -142,6 +212,7 @@ class network(object):
             label_list = LoadObject('../Data/alphabet_label.pkl')
             label = label_list[:36]
         else:
+            print('not ready yet')
             event = []
 
         output = []
@@ -150,36 +221,61 @@ class network(object):
         nbevent = int(event.time.shape[0])
         pbar = tqdm(total=nbevent)
         idx = 0
-        digit = label[idx][0]
         labelmap = []
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
             self.L[i].cumhisto[:] = 0
+            
         while count<nbevent:
             pbar.update(1)
-
-            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record)
+            self.run(event.address[count,0],event.address[count,1],event.time[count]*10**6, event.polarity[count], to_record)
             if count2==label[idx][1]:
-                data = (digit,self.L[-1].cumhisto.copy())
+                data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
                     self.L[i].cumhisto[:] = 0
-
                 idx += 1
-                if idx<len(label):
-                    digit = label[idx][0]
                 count2=-1
-
             count += 1
             count2 += 1
 
         pbar.close()
         return labelmap
 
-    def testinglagorce(self, nb_digit=None, dataset='simple', to_record=True):
+    def testinglagorce(self, trainmap, nb_digit=None, dataset='simple', to_record=True):
+        
+        def EuclidianNorm(hist1,hist2):
+            return np.linalg.norm(hist1-hist2)
+
+        def NormalizedNorm(hist1,hist2):
+            hist1/=np.sum(hist1)
+            hist2/=np.sum(hist2)
+            return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
+
+        def BattachaNorm(hist1, hist2):
+            hist1/=np.sum(hist1)
+            hist2/=np.sum(hist2)
+            return -np.log(np.sum(np.sqrt(hist1*hist2)))
+
+        def accuracy(trainmap,testmap,measure):
+            accuracy=0
+            total = 0
+            for i in range(len(testmap)):
+                dist = np.zeros([len(trainmap)])
+                for k in range(len(trainmap)):
+                    if measure=='bhatta':
+                        dist[k] = BattachaNorm(testmap[i][1],trainmap[k][1])
+                    elif measure=='eucli':
+                        dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
+                    elif measure=='norm':
+                        dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
+                if testmap[i][0]==trainmap[np.argmin(dist)][0]:
+                    accuracy+=1
+                total+=1
+            return accuracy/total
 
         if dataset == 'simple':
             event = Event(ImageSize=(32, 32))
@@ -188,6 +284,7 @@ class network(object):
             label_list = LoadObject('../Data/alphabet_label.pkl')
             label = label_list[36:76]
         else:
+            print('not ready yet')
             event = []
 
         output = []
@@ -196,7 +293,6 @@ class network(object):
         nbevent = int(event.time.shape[0])
         pbar = tqdm(total=nbevent)
         idx = 0
-        digit = label[idx][0]
         labelmap = []
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
@@ -204,26 +300,29 @@ class network(object):
             self.L[i].cumhisto[:] = 0
         while count<nbevent:
             pbar.update(1)
-
-            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record)
-
+            self.run(event.address[count,0],event.address[count,1],event.time[count]*10**6,event.polarity[count], to_record)
             if count2==label[idx][1]:
-                data = (digit,self.L[-1].cumhisto.copy())
+                data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
                     self.L[i].cumhisto[:] = 0
                 idx += 1
-                if idx<len(label):
-                    digit = label[idx][0]
                 count2=-1
-
             count += 1
             count2 += 1
 
         pbar.close()
-        return labelmap
+        
+        score1=accuracy(trainmap,labelmap,'bhatta')
+        score2=accuracy(trainmap,labelmap,'eucli')
+        score3=accuracy(trainmap,labelmap,'norm')
+        print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
+        
+        return labelmap, [score1,score2,score3]
+
+##___________________PLOTTING_________________________________________________________
 
     def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
         '''
@@ -248,7 +347,7 @@ class network(object):
 
         for i in range(len(self.L)):
             ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
-            plt.bar(np.arange(N[i]), self.L[i].cumhisto/np.sum(self.L[i].cumhisto), width=1, align='edge', ec="k")
+            plt.bar(np.arange(N[i]), self.stats[i].histo/np.sum(self.stats[i].histo), width=1, align='edge', ec="k")
             ax.set_xticks(())
             if i>0:
                 ax.set_yticks(())
@@ -268,7 +367,6 @@ class network(object):
                         axi.set_xticks(())
                         axi.set_yticks(())
 
-
     def plotconv(self):
         fig = plt.figure(figsize=(15,5))
         for i in range(len(self.L)):
@@ -278,7 +376,6 @@ class network(object):
             ax1.set(ylabel='error', xlabel='events (x'+str(self.stats[i].nbqt)+')', title='Mean error (eucl. dist) on '+str(self.stats[i].nbqt)+' events - Layer '+str(i+1))
         #ax1.title.set_color('w')
             ax1.tick_params(axis='both')
-
 
     def plotactiv(self, maxpol=None):
         N = []
@@ -295,3 +392,36 @@ class network(object):
                     axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
                     axi.set_xticks(())
                     axi.set_yticks(())
+
+                    
+##__________________TOOLS_____________________________________________________________________
+    
+def EuclidianNorm(hist1,hist2):
+    return np.linalg.norm(hist1-hist2)
+
+def NormalizedNorm(hist1,hist2):
+    hist1/=np.sum(hist1)
+    hist2/=np.sum(hist2)
+    return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
+
+def BattachaNorm(hist1, hist2):
+    hist1/=np.sum(hist1)
+    hist2/=np.sum(hist2)
+    return -np.log(np.sum(np.sqrt(hist1*hist2)))
+
+def accuracy(trainmap,testmap,measure):
+    accuracy=0
+    total = 0
+    for i in range(len(testmap)):
+        dist = np.zeros([len(trainmap)])
+        for k in range(len(trainmap)):
+            if measure=='bhatta':
+                dist[k] = BattachaNorm(testmap[i][1],trainmap[k][1])
+            elif measure=='eucli':
+                dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
+            elif measure=='norm':
+                dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
+        if testmap[i][0]==trainmap[np.argmin(dist)][0]:
+            accuracy+=1
+        total+=1
+    return accuracy/total
