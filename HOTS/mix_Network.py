@@ -34,9 +34,9 @@ class network(object):
                         homeo = False,
                         pola = True,
                         to_record = True,
-                        filt = 5
+                        filt = 2
                 ):
-        tau *= 1000 # to enter tau in ms
+        tau *= 1e-3 # to enter tau in ms
         if to_record == True:
             self.stats = [[]]*nblay
         self.TS = [[]]*nblay
@@ -75,7 +75,7 @@ class network(object):
                         self.TS[l].spatpmat[:] = 0
                         self.TS[l].iev = 0
                 for iev in range(events.shape[1]):
-                    x,y,t,p = events[0][iev][0],events[0][iev][1],events[0][iev][2],events[0][iev][3]
+                    x,y,t,p = events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6,events[0][iev][3]
                     lay=0
                     while lay < n+1:
                         if lay==n:
@@ -83,20 +83,46 @@ class network(object):
                         else:
                             learn=False
                         timesurf, activ = self.TS[lay].addevent(x, y, t, p)
-                        if activ==True:
+                        if lay==0 or filtering=='all':
+                            activ2=activ
+                        if activ2==True and np.sum(timesurf)>0:
+                        #if activ==True:
                             p, dist = self.L[lay].run(timesurf, learn)
                             if learn==True:
                                 self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
                             lay += 1
                         else:
-                            lay = n+1 
-                            
+                            lay = n+1           
             pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
         return loader
- 
-    def training(self, loader, nb_digit=40, to_record=True):
+    
+    
+    def learningall(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
+
+        if dataset == 'nmnist':
+            learningset = tonic.datasets.NMNIST(save_to='../Data/',
+                                train=False,
+                                transform=None)
+            loader = tonic.datasets.DataLoader(learningset, shuffle=True)
+            
+        pbar = tqdm(total=nb_digit)
+        for idig in range(nb_digit):
+            if diginit==True:
+                for i in range(len(self.L)):
+                    self.TS[i].spatpmat[:] = 0
+                    self.TS[i].iev = 0
+            pbar.update(1)
+            events, target = next(iter(loader))
+            for iev in range(events.shape[1]):
+                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6, events[0][iev][3], leanr=True, to_record=True)
+        pbar.close()
+        for l in range(len(self.L)):
+            self.stats[l].histo = self.L[l].cumhisto.copy()
+        return loader
+    
+    def training(self, loader, nb_digit=40):
         pbar = tqdm(total=nb_digit)
         labelmap = []
         for idig in range(nb_digit):
@@ -107,34 +133,21 @@ class network(object):
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2], events[0][iev][3], to_record)
+                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6, events[0][iev][3], to_record=True)
             data = (target,self.L[-1].cumhisto.copy())
             labelmap.append(data)
         pbar.close()
         return labelmap, loader
     
-    def testing(self, loader, trainmap, nb_digit=40, to_record=True):
-        pbar = tqdm(total=nb_digit)
-        labelmap = []
-        for idig in range(nb_digit):
-            for i in range(len(self.L)):
-                self.TS[i].spatpmat[:] = 0
-                self.TS[i].iev = 0
-                self.L[i].cumhisto[:] = 0
-            pbar.update(1)
-            events, target = next(iter(loader))
-            for iev in range(events.shape[1]):
-                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2], events[0][iev][3], to_record)
-            data = (target,self.L[-1].cumhisto.copy())
-            labelmap.append(data)
-        pbar.close()
+ 
+    def testing(self, loader, trainmap, nb_digit=40):
         
-        score1=accuracy(trainmap,labelmap,'bhatta')
-        score2=accuracy(trainmap,labelmap,'eucli')
-        score3=accuracy(trainmap,labelmap,'norm')
+        testmap, loader = self.training(loader)
+        score1=accuracy(trainmap,testmap,'bhatta')
+        score2=accuracy(trainmap,testmap,'eucli')
+        score3=accuracy(trainmap,testmap,'norm')
         print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
-        
-        return labelmap, loader
+        return testmap, loader
 
     def run(self, x, y, t, p, learn=False, to_record=False):
         lay = 0
@@ -165,19 +178,14 @@ class network(object):
                 diglist+=digit_numbers
             event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=diglist)
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
-        elif dataset == 'nmnist':
-            learningset = tonic.datasets.NMNIST(save_to='../Data/',
-                                train=True,
-                                transform=None)
-            loader = tonic.datasets.DataLoader(learningset, shuffle=True)
-        nbevent = int(event.time.shape[0])
         
+        nbevent = int(event.time.shape[0])    
         for n in range(len(self.L)):
             count = 0
             pbar = tqdm(total=nbevent)
             while count<nbevent:
                 pbar.update(1)
-                x,y,t,p = event.address[count,0],event.address[count,1], event.time[count]*10**6,event.polarity[count]
+                x,y,t,p = event.address[count,0],event.address[count,1], event.time[count],event.polarity[count]
                 if diginit==True and event.time[count]<event.time[count-1]:
                     for i in range(n+1):
                         self.TS[i].spatpmat[:] = 0
@@ -230,7 +238,7 @@ class network(object):
             
         while count<nbevent:
             pbar.update(1)
-            self.run(event.address[count,0],event.address[count,1],event.time[count]*10**6, event.polarity[count], to_record)
+            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record)
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
@@ -242,41 +250,10 @@ class network(object):
                 count2=-1
             count += 1
             count2 += 1
-
         pbar.close()
         return labelmap
 
     def testinglagorce(self, trainmap, nb_digit=None, dataset='simple', to_record=True):
-        
-        def EuclidianNorm(hist1,hist2):
-            return np.linalg.norm(hist1-hist2)
-
-        def NormalizedNorm(hist1,hist2):
-            hist1/=np.sum(hist1)
-            hist2/=np.sum(hist2)
-            return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
-
-        def BattachaNorm(hist1, hist2):
-            hist1/=np.sum(hist1)
-            hist2/=np.sum(hist2)
-            return -np.log(np.sum(np.sqrt(hist1*hist2)))
-
-        def accuracy(trainmap,testmap,measure):
-            accuracy=0
-            total = 0
-            for i in range(len(testmap)):
-                dist = np.zeros([len(trainmap)])
-                for k in range(len(trainmap)):
-                    if measure=='bhatta':
-                        dist[k] = BattachaNorm(testmap[i][1],trainmap[k][1])
-                    elif measure=='eucli':
-                        dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
-                    elif measure=='norm':
-                        dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
-                if testmap[i][0]==trainmap[np.argmin(dist)][0]:
-                    accuracy+=1
-                total+=1
-            return accuracy/total
 
         if dataset == 'simple':
             event = Event(ImageSize=(32, 32))
@@ -301,7 +278,7 @@ class network(object):
             self.L[i].cumhisto[:] = 0
         while count<nbevent:
             pbar.update(1)
-            self.run(event.address[count,0],event.address[count,1],event.time[count]*10**6,event.polarity[count], to_record)
+            self.run(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count], to_record)
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
