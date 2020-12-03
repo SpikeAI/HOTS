@@ -11,12 +11,12 @@ class layer(object):
     """
     
     def __init__(self, R, N_clust, pola, nbpola, camsize, homeo, algo, hout, krnlinit, to_record):
-        self.out = False          # binary number to indicate if this layer is the last one of the network
+        self.out = False          # boolean to indicate if this layer is the last one of the network
         self.hout = hout
         self.to_record = to_record
         self.R = R
         self.algo = algo
-        self.homeo = homeo        # binary number indicating if homeostasis is used or not
+        self.homeo = homeo        # boolean indicating if homeostasis is used or not
         self.nbtrain = 0          # number of TS sent in the layer
         self.krnlinit = krnlinit
         
@@ -27,8 +27,7 @@ class layer(object):
         some = np.sqrt(np.sum(self.kernel**2, axis=0))
         self.kernel = self.kernel/some[None,:]
             
-        if self.to_record==True or self.homeo==True:
-            self.cumhisto = np.zeros([N_clust])
+        self.cumhisto = np.zeros([N_clust])
         if algo == 'maro':
             self.last_time_activated = np.zeros(N_clust).astype(int)
         
@@ -36,16 +35,44 @@ class layer(object):
         '''
         '''
         #______USED IN MP WITH COSINE SIMILARITY:
+        histo = self.cumhisto.copy()+np.ones([len(self.cumhisto)])
+        histo/=np.sum(histo)
         if self.algo=='mpursuit':
             mu = 1 
-            histo = self.cumhisto.copy()+np.ones([len(self.cumhisto)])
-            histo/=np.sum(histo)
             gain = np.log(histo)/np.log(mu/self.kernel.shape[1])
-        #______
+        #__________________________________________
         else:
-            gain = np.exp(self.kernel.shape[1]/4*(self.cumhisto/np.sum(self.cumhisto)-1/self.kernel.shape[1]))
+            gain = np.exp(self.kernel.shape[1]/4*(histo-1/self.kernel.shape[1]))
         
         return gain
+    
+    def run(self, TS, learn):
+        plotdic = False
+        if self.algo=='lagorce':
+            h, temphisto, dist = self.lagorce(TS, learn)
+        elif self.algo=='mpursuit':
+            h, temphisto, dist = self.mpursuit(TS, learn)
+        elif self.algo=='maro':
+            h, temphisto, dist = self.maro(TS, learn)         
+        self.cumhisto += temphisto
+            
+        if learn == True:
+            self.nbtrain += 1
+        if self.hout == 1:
+            p = np.ceil(h)
+        elif self.hout == 2:
+            p = h
+        else:
+            p = np.zeros([len(h),1])
+            p[np.argmax(h)] = 1
+            
+        if plotdic==True:
+            if self.nbtrain % 10000==0:
+                self.plotdicpola(self,len(h),self.R)
+        return p, dist
+    
+    
+##____________DIFFERENT METHODS________________________________________________________
     
     def lagorce(self, TS, learn):
         
@@ -55,10 +82,8 @@ class layer(object):
                 h = np.zeros([self.kernel.shape[1]])
                 h[self.nbtrain] = 1
                 temphisto = h.copy()
-                return h, temphisto
-        #if len(TS)>50 and len(TS)<350:
-            #plt.imshow(np.reshape(TS, [9,36]))
-            #plt.show()
+                return h, temphisto, 0
+
         Distance_to_proto = np.linalg.norm(TS - self.kernel, ord=2, axis=0)
         if self.homeo==1:
             gain = self.homeorule()
@@ -77,7 +102,7 @@ class layer(object):
         h[closest_proto_idx] = 1
         temphisto = h.copy()
         
-        return h, temphisto
+        return h, temphisto, Distance_to_proto[closest_proto_idx]
     
     def maro(self, TS, learn):
 
@@ -112,7 +137,7 @@ class layer(object):
         h[closest_proto_idx] = 1
         temphisto = h.copy()
         
-        return h, temphisto
+        return h, temphisto, Distance_to_proto[closest_proto_idx]
     
     def mpursuit(self, TS, learn):
         alpha = 1
@@ -135,33 +160,8 @@ class layer(object):
                 self.kernel[:,ind] = self.kernel[:,ind]/np.sqrt(np.sum(self.kernel[:,ind]**2))
             temphisto[ind] += 1
         return h, temphisto
-
-    def run(self, TS, learn): # performs Matching Pursuit on the input time-surface. For different parameters it can learn dictionary, use homeostasis 
-        plotdic = False
-        dicprev = self.kernel.copy()
-
-        if self.algo=='lagorce':
-            h, temphisto = self.lagorce(TS, learn)
-        elif self.algo=='mpursuit':
-            h, temphisto = self.mpursuit(TS, learn)
-        elif self.algo=='maro':
-            h, temphisto = self.maro(TS, learn) 
-            
-        if learn == True:
-            self.nbtrain += 1
-        if self.to_record==True or self.homeo==True:
-            self.cumhisto += temphisto 
-        if self.hout == 1:
-            p = np.ceil(h)
-        elif self.hout == 2:
-            p = h
-        else:
-            p = np.zeros([len(h),1])
-            p[np.argmax(h)] = 1
-        if plotdic==True:
-            if self.nbtrain % 10000==0:
-                self.plotdicpola(self,len(h),self.R)
-        return p, dicprev
+    
+##____________PLOTTING_________________________________________________________________________
     
     def plotdicpola(lay, pola, R):
         fig = plt.figure(figsize=(15,5))

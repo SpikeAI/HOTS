@@ -90,6 +90,7 @@ class network(object):
                             lay += 1
                         else:
                             lay = n+1 
+                            
             pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
