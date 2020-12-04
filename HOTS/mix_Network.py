@@ -5,6 +5,7 @@ from mix_Stats import *
 from Event import Event
 from Tools import LoadObject
 from tqdm import tqdm as tqdm
+from sklearn.neighbors import KNeighborsClassifier
 import tonic
 #from threading import Thread, Rlock
 
@@ -116,7 +117,7 @@ class network(object):
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6, events[0][iev][3], leanr=True, to_record=True)
+                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6, events[0][iev][3], learn=True, to_record=True)
         pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
@@ -224,6 +225,7 @@ class network(object):
             print('not ready yet')
             event = []
 
+        learn=False
         output = []
         count = 0
         count2 = 0
@@ -238,7 +240,7 @@ class network(object):
             
         while count<nbevent:
             pbar.update(1)
-            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], to_record)
+            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], learn, to_record)
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
@@ -265,6 +267,7 @@ class network(object):
             print('not ready yet')
             event = []
 
+        learn = False
         output = []
         count = 0
         count2 = 0
@@ -278,7 +281,7 @@ class network(object):
             self.L[i].cumhisto[:] = 0
         while count<nbevent:
             pbar.update(1)
-            self.run(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count], to_record)
+            self.run(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count], learn, to_record)
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
@@ -403,3 +406,13 @@ def accuracy(trainmap,testmap,measure):
             accuracy+=1
         total+=1
     return accuracy/total
+
+def knn(trainmap,testmap,k=6):
+    X_train = np.array([trainmap[i][1] for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
+    accuracy = 0
+    for i in range(len(testmap)):
+        if knn.predict([testmap[i][1]]).item()==testmap[i][0].item():
+            accuracy += 1
+    print(accuracy/len(testmap)) 
