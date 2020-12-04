@@ -10,7 +10,7 @@ class layer(object):
     """layer aims at learning an online sparse dictionary to describe an input stimulus (here a time-surface). Given the input size (square 2R+1 matrix) it will create a (2R+1)^2 by N dictionary matrix: self.dic . compute h (output), which is the sparse map: the coefficients by which one multiply the dictionary (basis) to get the reconstructed signal.
     """
     
-    def __init__(self, R, N_clust, pola, nbpola, camsize, homeo, algo, hout, krnlinit, to_record):
+    def __init__(self, R, N_clust, pola, nbpola, homeo, algo, hout, krnlinit, to_record):
         self.out = False          # boolean to indicate if this layer is the last one of the network
         self.hout = hout
         self.to_record = to_record
@@ -43,7 +43,6 @@ class layer(object):
         #__________________________________________
         else:
             gain = np.exp(self.kernel.shape[1]/4*(histo-1/self.kernel.shape[1]))
-        
         return gain
     
     def run(self, TS, learn):

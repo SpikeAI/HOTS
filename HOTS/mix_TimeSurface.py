@@ -46,9 +46,10 @@ class TimeSurface(object):
 
     def addevent(self, xev, yev, tev, pev):
         timesurf = np.zeros((self.spatpmat.shape[0],2*self.R+1,2*self.R+1))
-        if not pev.shape:
+        xev, yev = int(xev), int(yev)
+        if isinstance(pev, (int, float)):
             p = np.zeros((self.spatpmat.shape[0]))
-            p[pev]=1
+            p[int(pev)]=1
             pev = p.copy()
         if self.iev==0:
             self.iev += 1

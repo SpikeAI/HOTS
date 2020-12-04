@@ -26,7 +26,7 @@ class network(object):
                         nbpolcam = 2,
                         R = 2,
                         K_R = 2,
-                        camsize = [34, 34],
+                        camsize = (34, 34),
                         begin = 0, #first event indice taken into account
                         # functional parameters of the network
                         algo = 'lagorce', # among ['lagorce', 'maro', 'mpursuit']
@@ -45,12 +45,12 @@ class network(object):
         for lay in range(nblay):
             if lay == 0:
                 self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt)
-                self.L[lay] = layer(R, nbclust, pola, nbpolcam, camsize, homeo, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, algo, hout, krnlinit, to_record)
                 if to_record == True:
                     self.stats[lay] = stats(nbclust, camsize)
             else:
                 self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt)
-                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), camsize, homeo, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, algo, hout, krnlinit, to_record)
                 if to_record == True:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
         self.L[lay].out = 1
@@ -63,7 +63,28 @@ class network(object):
             learningset = tonic.datasets.NMNIST(save_to='../Data/',
                                 train=False,
                                 transform=None)
-            loader = tonic.datasets.DataLoader(learningset, shuffle=True)
+        elif dataset == 'poker':
+            learningset = tonic.datasets.POKERDVS(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        elif dataset == 'gesture':
+            learningset = tonic.datasets.DVSGesture(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        elif dataset == 'cars':
+            learningset = tonic.datasets.NCARS(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        loader = tonic.datasets.DataLoader(learningset, shuffle=True)
+            
+        if learningset.sensor_size!=self.TS[0].camsize:
+            print('sensor formatting...')
+            for i in range(1,len(self.TS)):
+                self.TS[i].camsize = learningset.sensor_size
+                self.TS[i-1].spatpmat = np.zeros((self.L[i].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
+                self.stats[i].actmap = np.zeros((self.L[i].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
+            self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
+            self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
             
         eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
         for n in range(len(self.L)):
@@ -76,7 +97,7 @@ class network(object):
                         self.TS[l].spatpmat[:] = 0
                         self.TS[l].iev = 0
                 for iev in range(events.shape[1]):
-                    x,y,t,p = events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6,events[0][iev][3]
+                    x,y,t,p = events[0,iev,0].item(),events[0,iev,1].item(),events[0,iev,2].item()*1e-6,events[0,iev,3].item()
                     lay=0
                     while lay < n+1:
                         if lay==n:
