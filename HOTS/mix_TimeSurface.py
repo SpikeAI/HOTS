@@ -51,6 +51,10 @@ class TimeSurface(object):
             p = np.zeros((self.spatpmat.shape[0]))
             p[int(pev)]=1
             pev = p.copy()
+        elif pev.size<2:
+            p = np.zeros((self.spatpmat.shape[0]))
+            p[int(pev)]=1
+            pev = p.copy()
         if self.iev==0:
             self.iev += 1
             self.t = tev

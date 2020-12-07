@@ -1,14 +1,20 @@
+yarn.lock
+node_modules/
 HOTS.egg-info
+*.pdf
+*.png
+*.zip
 .DS_Store
 .ipynb_checkpoints
 __pycache__
 **/__pycache__
 HOTS/__pycache__
 Records
-data/testsetnmnist.p
+Data/
 vecthistLR.pkl
 vectorzLR.pkl
 notebooks/NEW_HOTS_05_LR_draft-Copy1.ipynb
+paper/
 paper/Grimaldi_etal2020Cosyne-abstract.aux
 paper/Grimaldi_etal2020Cosyne-abstract.bbl
 paper/Grimaldi_etal2020Cosyne-abstract.bcf
@@ -36,5 +42,3 @@ paper/Grimaldi_etal2020Cosyne-abstract-mentoring-blx.bib
 paper/Grimaldi_etal2020Cosyne-abstract-mentoring.bbl
 paper/Grimaldi_etal2020Cosyne-abstract-mentoring.blg
 notebooks/*.swp
-notebooks/NEW_HOTS_DRAFT.ipynb
-notebooks/2020-11-06_NEW_HOTS_05_LogisticRegression-A.ipynb.orig

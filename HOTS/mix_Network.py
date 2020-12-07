@@ -138,15 +138,18 @@ class network(object):
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6, events[0][iev][3], learn=True, to_record=True)
+                self.run(events[0][iev][0].item(),events[0][iev][1].item(),events[0][iev][2].item()*1e-6, events[0][iev][3].item(), learn=True, to_record=True)
         pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
         return loader
     
-    def training(self, loader, nb_digit=40):
+    def training(self, loader, LR=False, tau_cla=150, nb_digit=40):
         pbar = tqdm(total=nb_digit)
         labelmap = []
+        TSout = TimeSurface(R=0, tau=tau_cla, camsize=self.TS[0].camsize, nbpol=self.L[-1].kernel.shape[1], pola=True, filt=0)
+        eventsout = np.zeros([1,self.TS[-1].camsize[0]*self.TS[-1].camsize[1]*self.L[-1].kernel.shape[1]])
+        evtshape = eventsout.shape
         for idig in range(nb_digit):
             for i in range(len(self.L)):
                 self.TS[i].spatpmat[:] = 0
@@ -155,11 +158,16 @@ class network(object):
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                self.run(events[0][iev][0],events[0][iev][1],events[0][iev][2]*1e-6, events[0][iev][3], to_record=True)
-            data = (target,self.L[-1].cumhisto.copy())
-            labelmap.append(data)
+                out, activout = self.run(events[0][iev][0].item(),events[0][iev][1].item(),events[0][iev][2].item()*1e-6, events[0][iev][3].item(), to_record=True)
+                if LR == True and activout==True:
+                    TSout.addevent(out[0],out[1],out[2],out[3])
+                    event = np.reshape(TSout.spatpmat, evtshape)
+                    eventsout = np.concatenate((eventsout,event))
+            if LR == False:        
+                data = (target,self.L[-1].cumhisto.copy())
+                labelmap.append(data)
         pbar.close()
-        return labelmap, loader
+        return eventsout, labelmap, loader
     
  
     def testing(self, loader, trainmap, nb_digit=40):
@@ -173,6 +181,7 @@ class network(object):
 
     def run(self, x, y, t, p, learn=False, to_record=False):
         lay = 0
+        activout=False
         while lay<len(self.TS):
             timesurf, activ = self.TS[lay].addevent(x, y, t, p)
             if activ==True:
@@ -181,10 +190,12 @@ class network(object):
                     self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
                     #self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
                 lay+=1
+                if lay==len(self.TS):
+                    activout=True
             else:
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
-        return out, activ
+        return out, activout
 
 
 ##___________REPRODUCING RESULTS FROM LAGORCE 2017________________________________________
