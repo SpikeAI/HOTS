@@ -75,6 +75,7 @@ class network(object):
             learningset = tonic.datasets.NCARS(save_to='../Data/',
                                 train=False,
                                 transform=None)
+        else: print('select correct dataset')
         loader = tonic.datasets.DataLoader(learningset, shuffle=True)
             
         if learningset.sensor_size!=self.TS[0].camsize:
@@ -122,7 +123,6 @@ class network(object):
     
     
     def learningall(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
-
         if dataset == 'nmnist':
             learningset = tonic.datasets.NMNIST(save_to='../Data/',
                                 train=False,
@@ -145,11 +145,14 @@ class network(object):
         return loader
     
     def training(self, loader, LR=False, tau_cla=150, nb_digit=40):
+        
         pbar = tqdm(total=nb_digit)
+        timeOut = []
+        addXOut = []
+        addYOut = []
+        polaOut = []
+        labelout = []
         labelmap = []
-        TSout = TimeSurface(R=0, tau=tau_cla, camsize=self.TS[0].camsize, nbpol=self.L[-1].kernel.shape[1], pola=True, filt=0)
-        eventsout = np.zeros([1,self.TS[-1].camsize[0]*self.TS[-1].camsize[1]*self.L[-1].kernel.shape[1]])
-        evtshape = eventsout.shape
         for idig in range(nb_digit):
             for i in range(len(self.L)):
                 self.TS[i].spatpmat[:] = 0
@@ -159,25 +162,33 @@ class network(object):
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
                 out, activout = self.run(events[0][iev][0].item(),events[0][iev][1].item(),events[0][iev][2].item()*1e-6, events[0][iev][3].item(), to_record=True)
-                if LR == True and activout==True:
-                    TSout.addevent(out[0],out[1],out[2],out[3])
-                    event = np.reshape(TSout.spatpmat, evtshape)
-                    eventsout = np.concatenate((eventsout,event))
+                if LR == True and activout == True:
+                    addXOut.append(out[0])
+                    addYOut.append(out[1])
+                    timeOut.append(out[2])
+                    polaOut.append(out[3])
+                    labelout.append(target[0])
             if LR == False:        
                 data = (target,self.L[-1].cumhisto.copy())
                 labelmap.append(data)
+                eventsout = []
+            else:
+                eventsout = eventV(timeOut, addXOut, addYOut, polaOut, len(timeOut))
+                eventsout.ImageSize = self.TS[0].camsize
         pbar.close()
-        return eventsout, labelmap, loader
+        return labelmap, loader, [eventsout, labelout]
     
  
-    def testing(self, loader, trainmap, nb_digit=40):
+    def testing(self, loader, trainmap, LR=False, tau_cla=150, nb_digit=40):
         
-        testmap, loader = self.training(loader)
-        score1=accuracy(trainmap,testmap,'bhatta')
-        score2=accuracy(trainmap,testmap,'eucli')
-        score3=accuracy(trainmap,testmap,'norm')
-        print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
-        return testmap, loader
+        testmap, loader, eventsout = self.training(loader, LR)
+        if LR == False:
+            score1=accuracy(trainmap,testmap,'bhatta')
+            score2=accuracy(trainmap,testmap,'eucli')
+            score3=accuracy(trainmap,testmap,'norm')
+            print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
+        return testmap, loader, eventsout
+    
 
     def run(self, x, y, t, p, learn=False, to_record=False):
         lay = 0
@@ -448,3 +459,18 @@ def knn(trainmap,testmap,k=6):
         if knn.predict([testmap[i][1]]).item()==testmap[i][0].item():
             accuracy += 1
     print(accuracy/len(testmap)) 
+    
+    
+class eventV(object):
+    def __init__(self, t, x, y, p, nbevt):
+        self.time = np.zeros((nbevt))
+        self.address = np.zeros((nbevt, 2))
+        self.polarity = np.zeros((nbevt))
+        self.ListPolarities = None
+        self.ImageSize = np.zeros((1,2))
+        for i in range(nbevt):
+            self.time[i]=t[i]
+            self.address[i,0]=x[i]
+            self.address[i,1]=y[i]
+            self.polarity[i]=p[i]
+        self.ListPolarities = np.unique(self.polarity)
