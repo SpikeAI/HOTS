@@ -17,4 +17,6 @@ dependencies:
    - nbconvert
    - jupyter_contrib_nbextensions
    - ipykernel
+   - ipywidgets
    - matplotlib
+   - tonic
