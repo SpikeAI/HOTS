@@ -195,7 +195,7 @@ class network(object):
                                         events[0][iev][ordering.find("y")].item(), \
                                         events[0][iev][ordering.find("t")].item()*1e-6, \
                                         events[0][iev][ordering.find("p")].item(), \
-                                        to_record=True)
+                                        to_record=False)
                 if LR == True and activout == True:
                     addXOut.append(out[0])
                     addYOut.append(out[1])
