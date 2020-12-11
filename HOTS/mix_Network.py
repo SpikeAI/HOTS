@@ -75,15 +75,20 @@ class network(object):
             learningset = tonic.datasets.NCARS(save_to='../Data/',
                                 train=False,
                                 transform=None)
-        else: print('select correct dataset')
+        elif dataset == 'ncaltech':
+            learningset = tonic.datasets.NCALTECH101(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        else: print('incorrect dataset') 
+            
         loader = tonic.datasets.DataLoader(learningset, shuffle=True)
             
         if learningset.sensor_size!=self.TS[0].camsize:
             print('sensor formatting...')
             for i in range(1,len(self.TS)):
                 self.TS[i].camsize = learningset.sensor_size
-                self.TS[i-1].spatpmat = np.zeros((self.L[i].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
-                self.stats[i].actmap = np.zeros((self.L[i].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
+                self.TS[i].spatpmat = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
+                self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
             self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
             self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
             
@@ -98,7 +103,10 @@ class network(object):
                         self.TS[l].spatpmat[:] = 0
                         self.TS[l].iev = 0
                 for iev in range(events.shape[1]):
-                    x,y,t,p = events[0,iev,0].item(),events[0,iev,1].item(),events[0,iev,2].item()*1e-6,events[0,iev,3].item()
+                    x,y,t,p =   events[0,iev,learningset.ordering.find("x")].item(), \
+                                events[0,iev,learningset.ordering.find("y")].item(), \
+                                events[0,iev,learningset.ordering.find("t")].item()*1e-6, \
+                                events[0,iev,learningset.ordering.find("p")].item() 
                     lay=0
                     while lay < n+1:
                         if lay==n:
@@ -119,7 +127,7 @@ class network(object):
             pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
-        return loader
+        return loader, learningset.ordering
     
     
     def learningall(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
@@ -127,7 +135,25 @@ class network(object):
             learningset = tonic.datasets.NMNIST(save_to='../Data/',
                                 train=False,
                                 transform=None)
-            loader = tonic.datasets.DataLoader(learningset, shuffle=True)
+        elif dataset == 'poker':
+            learningset = tonic.datasets.POKERDVS(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        elif dataset == 'gesture':
+            learningset = tonic.datasets.DVSGesture(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        elif dataset == 'cars':
+            learningset = tonic.datasets.NCARS(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        elif dataset == 'ncaltech':
+            learningset = tonic.datasets.NCALTECH101(save_to='../Data/',
+                                train=False,
+                                transform=None)
+        else: print('incorrect dataset') 
+            
+        loader = tonic.datasets.DataLoader(learningset, shuffle=True)
             
         pbar = tqdm(total=nb_digit)
         for idig in range(nb_digit):
@@ -138,13 +164,17 @@ class network(object):
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                self.run(events[0][iev][0].item(),events[0][iev][1].item(),events[0][iev][2].item()*1e-6, events[0][iev][3].item(), learn=True, to_record=True)
+                self.run(events[0][iev][learningset.ordering.find("x")].item(), \
+                         events[0][iev][learningset.ordering.find("y")].item(), \
+                         events[0][iev][learningset.ordering.find("t")].item()*1e-6, \
+                         events[0][iev][learningset.ordering.find("p")].item(), \
+                         learn=True, to_record=True)
         pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
-        return loader
+        return loader, learningset.ordering
     
-    def training(self, loader, LR=False, tau_cla=150, nb_digit=40):
+    def training(self, loader, ordering, LR=False, tau_cla=150, nb_digit=40):
         
         pbar = tqdm(total=nb_digit)
         timeOut = []
@@ -161,7 +191,11 @@ class network(object):
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                out, activout = self.run(events[0][iev][0].item(),events[0][iev][1].item(),events[0][iev][2].item()*1e-6, events[0][iev][3].item(), to_record=True)
+                out, activout =self.run(events[0][iev][ordering.find("x")].item(), \
+                                        events[0][iev][ordering.find("y")].item(), \
+                                        events[0][iev][ordering.find("t")].item()*1e-6, \
+                                        events[0][iev][ordering.find("p")].item(), \
+                                        to_record=False)
                 if LR == True and activout == True:
                     addXOut.append(out[0])
                     addYOut.append(out[1])
@@ -179,9 +213,9 @@ class network(object):
         return labelmap, loader, [eventsout, labelout]
     
  
-    def testing(self, loader, trainmap, LR=False, tau_cla=150, nb_digit=40):
+    def testing(self, loader, ordering, trainmap, LR=False, tau_cla=150, nb_digit=40):
         
-        testmap, loader, eventsout = self.training(loader, LR)
+        testmap, loader, eventsout = self.training(loader, ordering, LR)
         if LR == False:
             score1=accuracy(trainmap,testmap,'bhatta')
             score2=accuracy(trainmap,testmap,'eucli')
