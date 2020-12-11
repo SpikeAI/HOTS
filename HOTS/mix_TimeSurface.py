@@ -27,7 +27,7 @@ class TimeSurface(object):
                 parameters: timesurf, gamma to display events (2.2 default)
 """
 
-    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=2):
+    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=2, sigma=None):
         # PARAMETERS OF THE TIME SURFACES
         self.R = R
         self.tau = tau # in ms
@@ -37,6 +37,7 @@ class TimeSurface(object):
         self.beta = 1
         self.pola = pola
         self.filt = filt
+        self.sigma = sigma
         # VARIABLES OF THE TIME SURFACE
         self.x = 0
         self.y = 0
@@ -98,6 +99,14 @@ class TimeSurface(object):
             elif self.camsize[1]-(self.y+1)<self.R:
                 temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
             timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+            
+            if self.sigma is not None:
+                X_p, Y_p = np.meshgrid(np.arange(-self.R, self.R+1),
+                                         np.arange(-self.R, self.R+1))
+                radius = np.sqrt(X_p**2 + Y_p**2)
+                mask_circular = np.exp(- .5 * radius**2 / self.R ** 2 / self.sigma**2)
+                timesurf *= 10*mask_circular 
+
             #if self.camsize[1]-(self.y+1)<self.R or self.camsize[0]-(self.x+1)<self.R:
                 #self.plote()
             # reshaping timesurf as a 1D vector
@@ -135,6 +144,13 @@ class TimeSurface(object):
         elif self.camsize[1]-(self.y+1)<self.R:
             temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
         timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+        
+        
+        X_p, Y_p = np.meshgrid(np.arange(-self.R, self.R+1),
+                                         np.arange(-self.R, self.R+1))
+        radius = np.sqrt(X_p**2 + Y_p**2)
+        mask_circular = np.exp(- .5 * radius**2 / self.R ** 2 / self.sigma**2)
+        timesurf *= mask_circular 
 
         fig = plt.figure(figsize=(10,5))
         sub1 = fig.add_subplot(1,3,1)

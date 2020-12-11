@@ -37,8 +37,10 @@ class layer(object):
         #______USED IN MP WITH COSINE SIMILARITY:
         histo = self.cumhisto.copy()+np.ones([len(self.cumhisto)])
         histo/=np.sum(histo)
+        # faire une moyenne flottante sur un certain nombre d'events (ou avec le temps) 
+        # faire deux règles lente -> homeo ou rapide pour le codage
         if self.algo=='mpursuit':
-            mu = 1 
+            mu = 1
             gain = np.log(histo)/np.log(mu/self.kernel.shape[1])
         #__________________________________________
         else:

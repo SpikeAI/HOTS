@@ -35,54 +35,54 @@ class network(object):
                         homeo = False,
                         pola = True,
                         to_record = True,
-                        filt = 2
+                        filt = 2,
+                        sigma = None
                 ):
         tau *= 1e-3 # to enter tau in ms
-        if to_record == True:
+        if to_record:
             self.stats = [[]]*nblay
         self.TS = [[]]*nblay
         self.L = [[]]*nblay
         for lay in range(nblay):
             if lay == 0:
-                self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt)
+                self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt, sigma)
                 self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, algo, hout, krnlinit, to_record)
-                if to_record == True:
+                if to_record:
                     self.stats[lay] = stats(nbclust, camsize)
             else:
-                self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt)
+                self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
                 self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, algo, hout, krnlinit, to_record)
-                if to_record == True:
+                if to_record:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
         self.L[lay].out = 1
         
 ##____________________________________________________________________________________
 
-    def learning1by1(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
-
+    def load(self, dataset, trainset=False):
         if dataset == 'nmnist':
             learningset = tonic.datasets.NMNIST(save_to='../Data/',
-                                train=False,
+                                train=trainset,
                                 transform=None)
         elif dataset == 'poker':
             learningset = tonic.datasets.POKERDVS(save_to='../Data/',
-                                train=False,
+                                train=trainset,
                                 transform=None)
         elif dataset == 'gesture':
             learningset = tonic.datasets.DVSGesture(save_to='../Data/',
-                                train=False,
+                                train=trainset,
                                 transform=None)
         elif dataset == 'cars':
             learningset = tonic.datasets.NCARS(save_to='../Data/',
-                                train=False,
+                                train=trainset,
                                 transform=None)
         elif dataset == 'ncaltech':
             learningset = tonic.datasets.NCALTECH101(save_to='../Data/',
-                                train=False,
+                                train=trainset,
                                 transform=None)
         else: print('incorrect dataset') 
             
         loader = tonic.datasets.DataLoader(learningset, shuffle=True)
-            
+        
         if learningset.sensor_size!=self.TS[0].camsize:
             print('sensor formatting...')
             for i in range(1,len(self.TS)):
@@ -91,6 +91,12 @@ class network(object):
                 self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
             self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
             self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
+        return loader, learningset.ordering
+
+
+    def learning1by1(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
+        
+        loader, ordering = self.load(dataset)
             
         eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
         for n in range(len(self.L)):
@@ -98,15 +104,15 @@ class network(object):
             for idig in range(nb_digit):
                 pbar.update(1)
                 events = eventslist[idig]
-                if diginit==True:
+                if diginit:
                     for l in range(n+1):
                         self.TS[l].spatpmat[:] = 0
                         self.TS[l].iev = 0
                 for iev in range(events.shape[1]):
-                    x,y,t,p =   events[0,iev,learningset.ordering.find("x")].item(), \
-                                events[0,iev,learningset.ordering.find("y")].item(), \
-                                events[0,iev,learningset.ordering.find("t")].item()*1e-6, \
-                                events[0,iev,learningset.ordering.find("p")].item() 
+                    x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
+                                events[0,iev,ordering.find("y")].item(), \
+                                events[0,iev,ordering.find("t")].item()*1e-6, \
+                                events[0,iev,ordering.find("p")].item() 
                     lay=0
                     while lay < n+1:
                         if lay==n:
@@ -116,10 +122,10 @@ class network(object):
                         timesurf, activ = self.TS[lay].addevent(x, y, t, p)
                         if lay==0 or filtering=='all':
                             activ2=activ
-                        if activ2==True and np.sum(timesurf)>0:
+                        if activ2 and np.sum(timesurf)>0:
                         #if activ==True:
                             p, dist = self.L[lay].run(timesurf, learn)
-                            if learn==True:
+                            if learn:
                                 self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
                             lay += 1
                         else:
@@ -127,54 +133,34 @@ class network(object):
             pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
-        return loader, learningset.ordering
+        return loader, ordering
     
     
     def learningall(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
-        if dataset == 'nmnist':
-            learningset = tonic.datasets.NMNIST(save_to='../Data/',
-                                train=False,
-                                transform=None)
-        elif dataset == 'poker':
-            learningset = tonic.datasets.POKERDVS(save_to='../Data/',
-                                train=False,
-                                transform=None)
-        elif dataset == 'gesture':
-            learningset = tonic.datasets.DVSGesture(save_to='../Data/',
-                                train=False,
-                                transform=None)
-        elif dataset == 'cars':
-            learningset = tonic.datasets.NCARS(save_to='../Data/',
-                                train=False,
-                                transform=None)
-        elif dataset == 'ncaltech':
-            learningset = tonic.datasets.NCALTECH101(save_to='../Data/',
-                                train=False,
-                                transform=None)
-        else: print('incorrect dataset') 
-            
-        loader = tonic.datasets.DataLoader(learningset, shuffle=True)
+        
+        loader, ordering = self.load(dataset)
             
         pbar = tqdm(total=nb_digit)
         for idig in range(nb_digit):
-            if diginit==True:
+            if diginit:
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                self.run(events[0][iev][learningset.ordering.find("x")].item(), \
-                         events[0][iev][learningset.ordering.find("y")].item(), \
-                         events[0][iev][learningset.ordering.find("t")].item()*1e-6, \
-                         events[0][iev][learningset.ordering.find("p")].item(), \
+                self.run(events[0][iev][ordering.find("x")].item(), \
+                         events[0][iev][ordering.find("y")].item(), \
+                         events[0][iev][ordering.find("t")].item()*1e-6, \
+                         events[0][iev][ordering.find("p")].item(), \
                          learn=True, to_record=True)
         pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
-        return loader, learningset.ordering
+        return loader, ordering
     
-    def training(self, loader, ordering, LR=False, tau_cla=150, nb_digit=40):
+    
+    def training(self, loader, ordering, LR=False, tau_cla=150, nb_digit=40, to_record=False):
         
         pbar = tqdm(total=nb_digit)
         timeOut = []
@@ -188,6 +174,7 @@ class network(object):
                 self.TS[i].spatpmat[:] = 0
                 self.TS[i].iev = 0
                 self.L[i].cumhisto[:] = 0
+                self.stats[i].actmap[:] = 0
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
@@ -195,14 +182,14 @@ class network(object):
                                         events[0][iev][ordering.find("y")].item(), \
                                         events[0][iev][ordering.find("t")].item()*1e-6, \
                                         events[0][iev][ordering.find("p")].item(), \
-                                        to_record=False)
-                if LR == True and activout == True:
+                                        to_record=to_record)
+                if LR and activout:
                     addXOut.append(out[0])
                     addYOut.append(out[1])
                     timeOut.append(out[2])
                     polaOut.append(out[3])
                     labelout.append(target[0])
-            if LR == False:        
+            if not LR:        
                 data = (target,self.L[-1].cumhisto.copy())
                 labelmap.append(data)
                 eventsout = []
@@ -213,10 +200,10 @@ class network(object):
         return labelmap, loader, [eventsout, labelout]
     
  
-    def testing(self, loader, ordering, trainmap, LR=False, tau_cla=150, nb_digit=40):
+    def testing(self, loader, ordering, trainmap, LR=False, tau_cla=150, nb_digit=40, to_record=False):
         
-        testmap, loader, eventsout = self.training(loader, ordering, LR)
-        if LR == False:
+        testmap, loader, eventsout = self.training(loader, ordering, LR=LR, tau_cla=tau_cla, nb_digit=nb_digit, to_record=to_record)
+        if not LR:
             score1=accuracy(trainmap,testmap,'bhatta')
             score2=accuracy(trainmap,testmap,'eucli')
             score3=accuracy(trainmap,testmap,'norm')
@@ -229,11 +216,11 @@ class network(object):
         activout=False
         while lay<len(self.TS):
             timesurf, activ = self.TS[lay].addevent(x, y, t, p)
-            if activ==True:
+            if activ:
                 p, dist = self.L[lay].run(timesurf, learn)
-                if to_record==True:
+                if to_record:
                     self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                    #self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
+                    self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
                 lay+=1
                 if lay==len(self.TS):
                     activout=True
@@ -255,6 +242,7 @@ class network(object):
             for nbd in range(nb_cycle):
                 diglist+=digit_numbers
             event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=diglist)
+        else: print('only one dataset compatible with this method')
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
         
         nbevent = int(event.time.shape[0])    
@@ -264,7 +252,7 @@ class network(object):
             while count<nbevent:
                 pbar.update(1)
                 x,y,t,p = event.address[count,0],event.address[count,1], event.time[count],event.polarity[count]
-                if diginit==True and event.time[count]<event.time[count-1]:
+                if diginit and event.time[count]<event.time[count-1]:
                     for i in range(n+1):
                         self.TS[i].spatpmat[:] = 0
                         self.TS[i].iev = 0
@@ -277,9 +265,9 @@ class network(object):
                     timesurf, activ = self.TS[lay].addevent(x, y, t, p)
                     if lay==0 or filtering=='all':
                         activ2=activ
-                    if activ2==True and np.sum(timesurf)>0:
+                    if activ2 and np.sum(timesurf)>0:
                         p, dist = self.L[lay].run(timesurf, learn)
-                        if learn==True:
+                        if learn:
                             self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
                         lay += 1
                     else:
@@ -398,7 +386,7 @@ class network(object):
 
         fig = plt.figure(figsize=(16,9))
         gs = fig.add_gridspec(np.sum(P)+hisiz, np.sum(N)+len(self.L)-1, wspace=0.05, hspace=0.05)
-        if self.L[-1].homeo==True:
+        if self.L[-1].homeo:
             fig.suptitle('Activation histograms and associated features with homeostasis', size=20, y=0.95)
         else:
             fig.suptitle('Activation histograms and associated features without homeostasis', size=20, y=0.95)
@@ -424,6 +412,7 @@ class network(object):
                         axi.imshow(krnl, cmap=plt.cm.plasma, interpolation='nearest')
                         axi.set_xticks(())
                         axi.set_yticks(())
+        plt.show()
 
     def plotconv(self):
         fig = plt.figure(figsize=(15,5))
