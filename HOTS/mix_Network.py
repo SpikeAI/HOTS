@@ -36,8 +36,10 @@ class network(object):
                         pola = True,
                         to_record = True,
                         filt = 2,
-                        sigma = None
+                        sigma = None,
+                        pooling = False
                 ):
+        self.pooling = pooling
         tau *= 1e-3 # to enter tau in ms
         if to_record:
             self.stats = [[]]*nblay
@@ -127,6 +129,8 @@ class network(object):
                             p, dist = self.L[lay].run(timesurf, learn)
                             if learn:
                                 self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
+                            if self.pooling:
+                                x,y = spatial_jitter(x,y,self.TS[0].camsize)
                             lay += 1
                         else:
                             lay = n+1           
@@ -221,6 +225,8 @@ class network(object):
                 if to_record:
                     self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
                     self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
+                if self.pooling:
+                    x,y = spatial_jitter(x,y,self.TS[0].camsize)
                 lay+=1
                 if lay==len(self.TS):
                     activout=True
@@ -497,3 +503,47 @@ class eventV(object):
             self.address[i,1]=y[i]
             self.polarity[i]=p[i]
         self.ListPolarities = np.unique(self.polarity)
+
+        
+def spatial_jitter(
+    x_index, y_index,
+    sensor_size,
+    variance_x=1,
+    variance_y=1,
+    sigma_x_y=0,
+    ):
+    """Changes position for each pixel by drawing samples from a multivariate
+    Gaussian distribution with the following properties:
+        mean = [x,y]
+        covariance matrix = [[variance_x, sigma_x_y],[sigma_x_y, variance_y]]
+    Jittered events that lie outside the focal plane will be dropped if clip_outliers is True.
+    Args:
+        events: ndarray of shape [num_events, num_event_channels]
+        ordering: ordering of the event tuple inside of events, if None
+                  the system will take a guess through
+                  guess_event_ordering_numpy. This function requires 'x'
+                  and 'y' to be in the ordering
+        variance_x: squared sigma value for the distribution in the x direction
+        variance_y: squared sigma value for the distribution in the y direction
+        sigma_x_y: changes skewness of distribution, only change if you want shifts along diagonal axis.
+        integer_coordinates: when True, shifted x and y values will be integer coordinates
+        clip_outliers: when True, events that have been jittered outside the focal plane will be dropped.
+    Returns:
+        spatially jittered set of events.
+    """
+
+    shifts = np.random.multivariate_normal(
+        [0, 0], [[variance_x, sigma_x_y], [sigma_x_y, variance_y]]
+    )
+
+    shifts = shifts.round()
+
+    xs = (x_index + shifts[0])
+    ys = (y_index + shifts[1])
+    
+    if xs<0: xs=0
+    elif xs>sensor_size[0]-1: xs = sensor_size[0]-1
+    if ys<0: ys=0
+    elif ys>sensor_size[1]-1: ys = sensor_size[1]-1
+
+    return xs, ys
