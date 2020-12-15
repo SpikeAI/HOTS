@@ -65,7 +65,8 @@ class layer(object):
         elif self.algo=='maro':
             h, temphisto, dist = self.maro(TS, learn)         
         self.cumhisto += temphisto
-        self.tphisto = 0.5*self.tphisto+0.5*temphisto
+        if self.homeinv:
+            self.tphisto = 0.5*self.tphisto+0.5*temphisto
             
         if learn:
             self.nbtrain += 1

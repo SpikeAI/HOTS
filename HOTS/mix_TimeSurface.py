@@ -144,13 +144,6 @@ class TimeSurface(object):
         elif self.camsize[1]-(self.y+1)<self.R:
             temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
         timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
-        
-        
-        X_p, Y_p = np.meshgrid(np.arange(-self.R, self.R+1),
-                                         np.arange(-self.R, self.R+1))
-        radius = np.sqrt(X_p**2 + Y_p**2)
-        mask_circular = np.exp(- .5 * radius**2 / self.R ** 2 / self.sigma**2)
-        timesurf *= mask_circular 
 
         fig = plt.figure(figsize=(10,5))
         sub1 = fig.add_subplot(1,3,1)
