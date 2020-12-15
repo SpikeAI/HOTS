@@ -37,7 +37,8 @@ class network(object):
                         to_record = True,
                         filt = 2,
                         sigma = None,
-                        pooling = False
+                        pooling = False,
+                        homeinv = False
                 ):
         self.pooling = pooling
         tau *= 1e-3 # to enter tau in ms
@@ -48,12 +49,12 @@ class network(object):
         for lay in range(nblay):
             if lay == 0:
                 self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt, sigma)
-                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
                     self.stats[lay] = stats(nbclust, camsize)
             else:
                 self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
-                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
         self.L[lay].out = 1

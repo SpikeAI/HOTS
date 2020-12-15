@@ -10,17 +10,19 @@ class layer(object):
     """layer aims at learning an online sparse dictionary to describe an input stimulus (here a time-surface). Given the input size (square 2R+1 matrix) it will create a (2R+1)^2 by N dictionary matrix: self.dic . compute h (output), which is the sparse map: the coefficients by which one multiply the dictionary (basis) to get the reconstructed signal.
     """
     
-    def __init__(self, R, N_clust, pola, nbpola, homeo, algo, hout, krnlinit, to_record):
+    def __init__(self, R, N_clust, pola, nbpola, homeo, homeinv, algo, hout, krnlinit, to_record):
         self.out = False          # boolean to indicate if this layer is the last one of the network
         self.hout = hout
         self.to_record = to_record
         self.R = R
         self.algo = algo
         self.homeo = homeo        # boolean indicating if homeostasis is used or not
+        self.homeinv = homeinv
         self.nbtrain = 0          # number of TS sent in the layer
+        self.ratihom = 0.01/(self.nbtrain+1)
         self.krnlinit = krnlinit
         
-        if pola==False:
+        if not pola:
             self.kernel = np.random.rand((2*R+1)**2, N_clust)
         else:
             self.kernel = np.random.rand(nbpola*(2*R+1)**2, N_clust)
@@ -28,10 +30,13 @@ class layer(object):
         self.kernel = self.kernel/some[None,:]
             
         self.cumhisto = np.zeros([N_clust])
+        if self.homeinv:
+            self.tphisto = np.ones([N_clust])/N_clust
+            
         if algo == 'maro':
             self.last_time_activated = np.zeros(N_clust).astype(int)
         
-    def homeorule(self): # careful with the method you choose for example: gain(mpursuit) = 1/gain(lagorce) 
+    def homeorule(self): # careful with the method you choose for example: gain(mpursuit) != gain(lagorce) 
         '''
         '''
         #______USED IN MP WITH COSINE SIMILARITY:
@@ -47,6 +52,10 @@ class layer(object):
             gain = np.exp(self.kernel.shape[1]/4*(histo-1/self.kernel.shape[1]))
         return gain
     
+    def inversehomeo(self): # rule for translation invariance of the features
+        gainv = np.exp(self.kernel.shape[1]/400*(1/self.kernel.shape[1]-self.tphisto))
+        return gainv
+    
     def run(self, TS, learn):
         plotdic = False
         if self.algo=='lagorce':
@@ -56,8 +65,9 @@ class layer(object):
         elif self.algo=='maro':
             h, temphisto, dist = self.maro(TS, learn)         
         self.cumhisto += temphisto
+        self.tphisto = 0.5*self.tphisto+0.5*temphisto
             
-        if learn == True:
+        if learn:
             self.nbtrain += 1
         if self.hout == 1:
             p = np.ceil(h)
@@ -86,12 +96,15 @@ class layer(object):
                 return h, temphisto, 0
 
         Distance_to_proto = np.linalg.norm(TS - self.kernel, ord=2, axis=0)
-        if self.homeo==1:
-            gain = self.homeorule()
-            closest_proto_idx = np.argmin(Distance_to_proto*gain.T)
-        else:
-            closest_proto_idx = np.argmin(Distance_to_proto)
-        if learn==True:
+        
+        gain = np.ones([len(self.cumhisto)])
+        if self.homeo:
+            gain *= self.homeorule()
+        if self.homeinv:
+            gain *= self.inversehomeo()
+        closest_proto_idx = np.argmin(Distance_to_proto*gain.T)
+
+        if learn:
             pk = self.cumhisto[closest_proto_idx]
             Ck = self.kernel[:,closest_proto_idx]
             alpha = 0.01/(1+pk/20000)
@@ -109,13 +122,13 @@ class layer(object):
 
         Distance_to_proto = np.linalg.norm(TS - self.kernel, ord=2, axis=0)
         
-        if self.homeo==1:
+        if self.homeo:
             gain = self.homeorule()
             closest_proto_idx = np.argmin(Distance_to_proto*gain.T)
         else:
             closest_proto_idx = np.argmin(Distance_to_proto)
             
-        if learn==True:
+        if learn:
             pk = self.cumhisto[closest_proto_idx]
             Ck = self.kernel[:,closest_proto_idx]
             self.last_time_activated[closest_proto_idx] = self.nbtrain
@@ -147,16 +160,16 @@ class layer(object):
         temphisto = np.zeros([len(h)])
         corr = np.dot(self.kernel.T,TS).T[0]
         Xcorr = np.dot(self.kernel.T, self.kernel)
-        if self.homeo==1:
+        if self.homeo:
             gain = self.homeorule()
         while np.max(corr)>0: # here, Xcorr has relatively high values, meaning clusters are correlated. With the update rule of the MP, coefficients of corr can get negative after few iterations. This criterion is used to stop the loop
-            if self.homeo==1:
+            if self.homeo:
                 ind = np.argmax(corr*gain)
             else:
                 ind = np.argmax(corr)
             h[ind] = corr[ind].copy()/Xcorr[ind,ind]
             corr -= alpha*h[ind]*Xcorr[:,ind]
-            if learn == True:
+            if learn:
                 self.kernel[:,ind] = self.kernel[:,ind] + eta*h[ind]*(TS.T-self.kernel[:,ind])
                 self.kernel[:,ind] = self.kernel[:,ind]/np.sqrt(np.sum(self.kernel[:,ind]**2))
             temphisto[ind] += 1
