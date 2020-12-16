@@ -3,7 +3,6 @@ channels:
     - anaconda
     - conda-forge
 dependencies:
-   - pip
    - tqdm # TODO
    - numpy
    - cython
@@ -19,4 +18,9 @@ dependencies:
    - ipykernel
    - ipywidgets
    - matplotlib
-   - tonic
+   - rust
+   - pip
+   - pip:
+     - aedat
+     - loris
+     - tonic
