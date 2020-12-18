@@ -80,7 +80,6 @@ class network(object):
                                 transform=None)
         elif dataset == 'ncaltech':
             learningset = tonic.datasets.NCALTECH101(save_to='../Data/',
-                                train=trainset,
                                 transform=None)
         else: print('incorrect dataset') 
             
