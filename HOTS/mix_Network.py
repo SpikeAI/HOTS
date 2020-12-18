@@ -4,7 +4,7 @@ from mix_TimeSurface import *
 from mix_Stats import *
 from Event import Event
 from Tools import LoadObject
-from tqdm import tqdm as tqdm
+from tqdm import tqdm_notebook as tqdm
 from sklearn.neighbors import KNeighborsClassifier
 import tonic
 #from threading import Thread, Rlock
@@ -410,13 +410,15 @@ class network(object):
 
         #f3_ax1.set_title('gs[0, :]')
             for k in range(N[i]):
+                vmaxi = max(self.L[i].kernel[:,k])
                 for j in range(P[i]):
                     if j>maxpol-1:
                         pass
                     else:
                         axi = fig.add_subplot(gs[j+hisiz,k+1*i+int(np.sum(N[:i]))])
                         krnl = self.L[i].kernel[j*R2[i]:(j+1)*R2[i],k].reshape((int(np.sqrt(R2[i])), int(np.sqrt(R2[i]))))
-                        axi.imshow(krnl, cmap=plt.cm.plasma, interpolation='nearest')
+                        
+                        axi.imshow(krnl, vmin=0, vmax=vmaxi, cmap=plt.cm.plasma, interpolation='nearest')
                         axi.set_xticks(())
                         axi.set_yticks(())
         plt.show()

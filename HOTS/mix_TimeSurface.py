@@ -105,7 +105,7 @@ class TimeSurface(object):
                                          np.arange(-self.R, self.R+1))
                 radius = np.sqrt(X_p**2 + Y_p**2)
                 mask_circular = np.exp(- .5 * radius**2 / self.R ** 2 / self.sigma**2)
-                timesurf *= 10*mask_circular 
+                timesurf *= mask_circular 
 
             #if self.camsize[1]-(self.y+1)<self.R or self.camsize[0]-(self.x+1)<self.R:
                 #self.plote()
