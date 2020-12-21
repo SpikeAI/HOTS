@@ -37,10 +37,10 @@ class network(object):
                         to_record = True,
                         filt = 2,
                         sigma = None,
-                        pooling = False,
+                        jitter = False,
                         homeinv = False
                 ):
-        self.pooling = pooling
+        self.jitter = jitter
         tau *= 1e3 # to enter tau in ms
         if to_record:
             self.stats = [[]]*nblay
@@ -137,7 +137,7 @@ class network(object):
                             p, dist = self.L[lay].run(timesurf, learn)
                             if learn:
                                 self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                            if self.pooling:
+                            if self.jitter:
                                 x,y = spatial_jitter(x,y,self.TS[0].camsize)
                             lay += 1
                         else:
@@ -238,7 +238,7 @@ class network(object):
                 if to_record:
                     self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
                     self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
-                if self.pooling:
+                if self.jitter:
                     x,y = spatial_jitter(x,y,self.TS[0].camsize)
                 lay+=1
                 if lay==len(self.TS):
