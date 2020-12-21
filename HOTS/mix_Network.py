@@ -93,25 +93,24 @@ class network(object):
                 self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
             self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
             self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
-        return loader, learningset.ordering
+        return loader, learningset.ordering, len(learningset.classes)
 
 
-    def learning1by1(self, nb_digit=20, dataset='nmnist', diginit=True, filtering=None):
+    def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
         
-        loader, ordering = self.load(dataset)
-            
+        loader, ordering, nbclass = self.load(dataset)
         #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
         eventslist = []
-        nbloadz = np.zeros([10])
-        while np.sum(nbloadz)<nb_digit:
+        nbloadz = np.zeros([nbclass])
+        while np.sum(nbloadz)<nb_digit*nbclass:
             loadev, loadtar = next(iter(loader))
-            if nbloadz[loadtar]<nb_digit/10:
+            if nbloadz[loadtar]<nb_digit:
                 eventslist.append(loadev)
                 nbloadz[loadtar]+=1
         
         for n in range(len(self.L)):
-            pbar = tqdm(total=nb_digit)
-            for idig in range(nb_digit):
+            pbar = tqdm(total=nb_digit*nbclass)
+            for idig in range(nb_digit*nbclass):
                 pbar.update(1)
                 events = eventslist[idig]
                 if diginit:
@@ -148,21 +147,21 @@ class network(object):
         return loader, ordering
     
     
-    def learningall(self, nb_digit=20, dataset='nmnist', diginit=True, filtering=None):
+    def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
         
-        loader, ordering = self.load(dataset)
+        loader, ordering, nbclass = self.load(dataset)
             
-        pbar = tqdm(total=nb_digit)
+        pbar = tqdm(total=nb_digit*nbclass)
         
-        nbloadz = np.zeros([10])
-        while np.sum(nbloadz)<nb_digit:
+        nbloadz = np.zeros([nbclass])
+        while np.sum(nbloadz)<nb_digit*nbclass:
         #for idig in range(nb_digit):
             if diginit:
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
             events, target = next(iter(loader))
-            if nbloadz[target]<nb_digit/10:
+            if nbloadz[target]<nb_digit:
                 nbloadz[target]+=1
                 pbar.update(1)
                 for iev in range(events.shape[1]):
