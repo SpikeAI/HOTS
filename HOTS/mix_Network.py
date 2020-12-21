@@ -41,7 +41,7 @@ class network(object):
                         homeinv = False
                 ):
         self.pooling = pooling
-        tau *= 1e-3 # to enter tau in ms
+        tau *= 1e3 # to enter tau in ms
         if to_record:
             self.stats = [[]]*nblay
         self.TS = [[]]*nblay
@@ -96,11 +96,19 @@ class network(object):
         return loader, learningset.ordering
 
 
-    def learning1by1(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
+    def learning1by1(self, nb_digit=20, dataset='nmnist', diginit=True, filtering=None):
         
         loader, ordering = self.load(dataset)
             
-        eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+        #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+        eventslist = []
+        nbloadz = np.zeros([10])
+        while np.sum(nbloadz)<nb_digit:
+            loadev, loadtar = next(iter(loader))
+            if nbloadz[loadtar]<nb_digit/10:
+                eventslist.append(loadev)
+                nbloadz[loadtar]+=1
+        
         for n in range(len(self.L)):
             pbar = tqdm(total=nb_digit)
             for idig in range(nb_digit):
@@ -113,7 +121,7 @@ class network(object):
                 for iev in range(events.shape[1]):
                     x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
                                 events[0,iev,ordering.find("y")].item(), \
-                                events[0,iev,ordering.find("t")].item()*1e-6, \
+                                events[0,iev,ordering.find("t")].item(), \
                                 events[0,iev,ordering.find("p")].item() 
                     lay=0
                     while lay < n+1:
@@ -140,31 +148,36 @@ class network(object):
         return loader, ordering
     
     
-    def learningall(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
+    def learningall(self, nb_digit=20, dataset='nmnist', diginit=True, filtering=None):
         
         loader, ordering = self.load(dataset)
             
         pbar = tqdm(total=nb_digit)
-        for idig in range(nb_digit):
+        
+        nbloadz = np.zeros([10])
+        while np.sum(nbloadz)<nb_digit:
+        #for idig in range(nb_digit):
             if diginit:
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-            pbar.update(1)
             events, target = next(iter(loader))
-            for iev in range(events.shape[1]):
-                self.run(events[0][iev][ordering.find("x")].item(), \
-                         events[0][iev][ordering.find("y")].item(), \
-                         events[0][iev][ordering.find("t")].item()*1e-6, \
-                         events[0][iev][ordering.find("p")].item(), \
-                         learn=True, to_record=True)
+            if nbloadz[target]<nb_digit/10:
+                nbloadz[target]+=1
+                pbar.update(1)
+                for iev in range(events.shape[1]):
+                    self.run(events[0][iev][ordering.find("x")].item(), \
+                             events[0][iev][ordering.find("y")].item(), \
+                             events[0][iev][ordering.find("t")].item(), \
+                             events[0][iev][ordering.find("p")].item(), \
+                             learn=True, to_record=True)
         pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
         return loader, ordering
     
     
-    def training(self, loader, ordering, LR=False, tau_cla=150, nb_digit=40, to_record=False):
+    def training(self, loader, ordering, LR=False, tau_cla=150, nb_digit=500, to_record=False):
         
         pbar = tqdm(total=nb_digit)
         timeOut = []
@@ -184,7 +197,7 @@ class network(object):
             for iev in range(events.shape[1]):
                 out, activout =self.run(events[0][iev][ordering.find("x")].item(), \
                                         events[0][iev][ordering.find("y")].item(), \
-                                        events[0][iev][ordering.find("t")].item()*1e-6, \
+                                        events[0][iev][ordering.find("t")].item(), \
                                         events[0][iev][ordering.find("p")].item(), \
                                         to_record=to_record)
                 if LR and activout:
@@ -204,7 +217,7 @@ class network(object):
         return labelmap, loader, [eventsout, labelout]
     
  
-    def testing(self, loader, ordering, trainmap, LR=False, tau_cla=150, nb_digit=40, to_record=False):
+    def testing(self, loader, ordering, trainmap, LR=False, tau_cla=150, nb_digit=100, to_record=False):
         
         testmap, loader, eventsout = self.training(loader, ordering, LR=LR, tau_cla=tau_cla, nb_digit=nb_digit, to_record=to_record)
         if not LR:
