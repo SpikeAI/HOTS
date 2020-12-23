@@ -33,12 +33,13 @@ class network(object):
                         krnlinit = 'rdn',
                         hout = False, #works only with mpursuit
                         homeo = False,
+                        homparam = [.25, 1],
                         pola = True,
                         to_record = True,
                         filt = 2,
                         sigma = None,
                         jitter = False,
-                        homeinv = False
+                        homeinv = False, 
                 ):
         self.jitter = jitter
         tau *= 1e3 # to enter tau in ms
@@ -49,16 +50,16 @@ class network(object):
         for lay in range(nblay):
             if lay == 0:
                 self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt, sigma)
-                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, homeinv, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
                     self.stats[lay] = stats(nbclust, camsize)
             else:
                 self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
-                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homeinv, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
         
-##____________________________________________________________________________________
+##___________________________________________________________________________________________
 
     def load(self, dataset, trainset=False):
         if dataset == 'nmnist':
@@ -187,7 +188,7 @@ class network(object):
             for i in range(len(self.L)):
                 self.TS[i].spatpmat[:] = 0
                 self.TS[i].iev = 0
-                self.L[i].cumhisto[:] = 0
+                self.L[i].cumhisto[:] = 1
                 #self.stats[i].actmap[:] = 0
             pbar.update(1)
             events, target = next(iter(loader))
@@ -236,7 +237,7 @@ class network(object):
         return out, activout
 
 
-##___________REPRODUCING RESULTS FROM LAGORCE 2017________________________________________
+##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
 
     def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
 
@@ -307,7 +308,7 @@ class network(object):
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
-            self.L[i].cumhisto[:] = 0
+            self.L[i].cumhisto[:] = 1
             
         while count<nbevent:
             pbar.update(1)
@@ -318,7 +319,7 @@ class network(object):
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-                    self.L[i].cumhisto[:] = 0
+                    self.L[i].cumhisto[:] = 1
                 idx += 1
                 count2=-1
             count += 1
@@ -349,7 +350,7 @@ class network(object):
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
-            self.L[i].cumhisto[:] = 0
+            self.L[i].cumhisto[:] = 1
         while count<nbevent:
             pbar.update(1)
             self.run(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count], learn, to_record)
@@ -359,7 +360,7 @@ class network(object):
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-                    self.L[i].cumhisto[:] = 0
+                    self.L[i].cumhisto[:] = 1
                 idx += 1
                 count2=-1
             count += 1
@@ -373,8 +374,8 @@ class network(object):
         print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
         
         return labelmap, [score1,score2,score3]
-
-##___________________PLOTTING_________________________________________________________
+    
+##___________________PLOTTING________________________________________________________________
 
     def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
         '''
@@ -447,103 +448,10 @@ class network(object):
                     axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
                     axi.set_xticks(())
                     axi.set_yticks(())
-
                     
-##__________________TOOLS_____________________________________________________________________
-    
-def EuclidianNorm(hist1,hist2):
-    return np.linalg.norm(hist1-hist2)
-
-def NormalizedNorm(hist1,hist2):
-    hist1/=np.sum(hist1)
-    hist2/=np.sum(hist2)
-    return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
-
-def BattachaNorm(hist1, hist2):
-    hist1/=np.sum(hist1)
-    hist2/=np.sum(hist2)
-    return -np.log(np.sum(np.sqrt(hist1*hist2)))
-
-def accuracy(trainmap,testmap,measure):
-    accuracy=0
-    total = 0
-    for i in range(len(testmap)):
-        dist = np.zeros([len(trainmap)])
-        for k in range(len(trainmap)):
-            if measure=='bhatta':
-                dist[k] = BattachaNorm(testmap[i][1],trainmap[k][1])
-            elif measure=='eucli':
-                dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
-            elif measure=='norm':
-                dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
-        if testmap[i][0]==trainmap[np.argmin(dist)][0]:
-            accuracy+=1
-        total+=1
-    return accuracy/total
-
-def knn(trainmap,testmap,k):
-    X_train = np.array([trainmap[i][1] for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
-    knn = KNeighborsClassifier(n_neighbors=k)
-    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
-    accuracy = 0
-    for i in range(len(testmap)):
-        if knn.predict([testmap[i][1]]).item()==testmap[i][0].item():
-            accuracy += 1
-    #print(accuracy/len(testmap)) 
-    return accuracy/len(testmap)
-
-def histoscore(trainmap,testmap,k=6):
-    bhat_score = accuracy(trainmap, testmap, 'bhatta')
-    norm_score = accuracy(trainmap, testmap, 'norm')
-    eucl_score = accuracy(trainmap, testmap, 'eucli')
-    knn_score = knn(trainmap,testmap,k)
-    k2 = k//2
-    k2nn_score = knn(trainmap,testmap,k2)
-    print(f'Classification scores: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}% - {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
-        
-def spatial_jitter(
-    x_index, y_index,
-    sensor_size,
-    variance_x=1,
-    variance_y=1,
-    sigma_x_y=0,
-    ):
-    """Changes position for each pixel by drawing samples from a multivariate
-    Gaussian distribution with the following properties:
-        mean = [x,y]
-        covariance matrix = [[variance_x, sigma_x_y],[sigma_x_y, variance_y]]
-    Jittered events that lie outside the focal plane will be dropped if clip_outliers is True.
-    Args:
-        events: ndarray of shape [num_events, num_event_channels]
-        ordering: ordering of the event tuple inside of events, if None
-                  the system will take a guess through
-                  guess_event_ordering_numpy. This function requires 'x'
-                  and 'y' to be in the ordering
-        variance_x: squared sigma value for the distribution in the x direction
-        variance_y: squared sigma value for the distribution in the y direction
-        sigma_x_y: changes skewness of distribution, only change if you want shifts along diagonal axis.
-        integer_coordinates: when True, shifted x and y values will be integer coordinates
-        clip_outliers: when True, events that have been jittered outside the focal plane will be dropped.
-    Returns:
-        spatially jittered set of events.
-    """
-
-    shifts = np.random.multivariate_normal(
-        [0, 0], [[variance_x, sigma_x_y], [sigma_x_y, variance_y]]
-    )
-
-    shifts = shifts.round()
-
-    xs = (x_index + shifts[0])
-    ys = (y_index + shifts[1])
-    
-    if xs<0: xs=0
-    elif xs>sensor_size[0]-1: xs = sensor_size[0]-1
-    if ys<0: ys=0
-    elif ys>sensor_size[1]-1: ys = sensor_size[1]-1
-
-    return xs, ys
-
+                    
+##________________POOLING NETWORK____________________________________________________________
+##___________________________________________________________________________________________
 
 
 class poolingnetwork(network):
@@ -567,6 +475,7 @@ class poolingnetwork(network):
                         krnlinit = 'rdn',
                         hout = False, #works only with mpursuit
                         homeo = False,
+                        homparam = [.25, 1],
                         pola = True,
                         to_record = True,
                         filt = 2,
@@ -593,6 +502,7 @@ class poolingnetwork(network):
                         krnlinit = krnlinit,
                         hout = hout, 
                         homeo = homeo,
+                        homparam = homparam,
                         pola = pola,
                         to_record = to_record,
                         filt = filt,
@@ -606,7 +516,7 @@ class poolingnetwork(network):
         for lay in range(1,nblay):
             camsize = np.array(camsize)//Kstride
             self.TS[lay] = TimeSurface(R, tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
-            self.L[lay] = layer(R, 16, pola, nbclust*(K_clust**(lay-1)), homeo, homeinv, algo, hout, krnlinit, to_record)
+            self.L[lay] = layer(R, 16, pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
             self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
  
  ##____________________________________________________________________________________
@@ -689,3 +599,100 @@ class poolingnetwork(network):
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
         return loader, ordering
+
+                    
+##__________________TOOLS____________________________________________________________________
+##___________________________________________________________________________________________
+    
+def EuclidianNorm(hist1,hist2):
+    return np.linalg.norm(hist1-hist2)
+
+def NormalizedNorm(hist1,hist2):
+    hist1/=np.sum(hist1)
+    hist2/=np.sum(hist2)
+    return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
+
+def BattachaNorm(hist1, hist2):
+    hist1/=np.sum(hist1)
+    hist2/=np.sum(hist2)
+    return -np.log(np.sum(np.sqrt(hist1*hist2)))
+
+def accuracy(trainmap,testmap,measure):
+    accuracy=0
+    total = 0
+    for i in range(len(testmap)):
+        dist = np.zeros([len(trainmap)])
+        for k in range(len(trainmap)):
+            if measure=='bhatta':
+                dist[k] = BattachaNorm(testmap[i][1],trainmap[k][1])
+            elif measure=='eucli':
+                dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
+            elif measure=='norm':
+                dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
+        if testmap[i][0]==trainmap[np.argmin(dist)][0]:
+            accuracy+=1
+        total+=1
+    return accuracy/total
+
+def knn(trainmap,testmap,k):
+    X_train = np.array([trainmap[i][1] for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
+    accuracy = 0
+    for i in range(len(testmap)):
+        if knn.predict([testmap[i][1]])==testmap[i][0]:
+            accuracy += 1
+    #print(accuracy/len(testmap)) 
+    return accuracy/len(testmap)
+
+def histoscore(trainmap,testmap,k=6):
+    bhat_score = accuracy(trainmap, testmap, 'bhatta')
+    norm_score = accuracy(trainmap, testmap, 'norm')
+    eucl_score = accuracy(trainmap, testmap, 'eucli')
+    knn_score = knn(trainmap,testmap,k)
+    k2 = k//2
+    k2nn_score = knn(trainmap,testmap,k2)
+    print(f'Classification scores: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}% - {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
+        
+def spatial_jitter(
+    x_index, y_index,
+    sensor_size,
+    variance_x=1,
+    variance_y=1,
+    sigma_x_y=0,
+    ):
+    """Changes position for each pixel by drawing samples from a multivariate
+    Gaussian distribution with the following properties:
+        mean = [x,y]
+        covariance matrix = [[variance_x, sigma_x_y],[sigma_x_y, variance_y]]
+    Jittered events that lie outside the focal plane will be dropped if clip_outliers is True.
+    Args:
+        events: ndarray of shape [num_events, num_event_channels]
+        ordering: ordering of the event tuple inside of events, if None
+                  the system will take a guess through
+                  guess_event_ordering_numpy. This function requires 'x'
+                  and 'y' to be in the ordering
+        variance_x: squared sigma value for the distribution in the x direction
+        variance_y: squared sigma value for the distribution in the y direction
+        sigma_x_y: changes skewness of distribution, only change if you want shifts along diagonal axis.
+        integer_coordinates: when True, shifted x and y values will be integer coordinates
+        clip_outliers: when True, events that have been jittered outside the focal plane will be dropped.
+    Returns:
+        spatially jittered set of events.
+    """
+
+    shifts = np.random.multivariate_normal(
+        [0, 0], [[variance_x, sigma_x_y], [sigma_x_y, variance_y]]
+    )
+
+    shifts = shifts.round()
+
+    xs = (x_index + shifts[0])
+    ys = (y_index + shifts[1])
+    
+    if xs<0: xs=0
+    elif xs>sensor_size[0]-1: xs = sensor_size[0]-1
+    if ys<0: ys=0
+    elif ys>sensor_size[1]-1: ys = sensor_size[1]-1
+
+    return xs, ys

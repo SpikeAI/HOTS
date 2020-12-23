@@ -10,12 +10,13 @@ class layer(object):
     """layer aims at learning an online sparse dictionary to describe an input stimulus (here a time-surface). Given the input size (square 2R+1 matrix) it will create a (2R+1)^2 by N dictionary matrix: self.dic . compute h (output), which is the sparse map: the coefficients by which one multiply the dictionary (basis) to get the reconstructed signal.
     """
     
-    def __init__(self, R, N_clust, pola, nbpola, homeo, homeinv, algo, hout, krnlinit, to_record):
+    def __init__(self, R, N_clust, pola, nbpola, homeo, homparam, homeinv, algo, hout, krnlinit, to_record):
         self.hout = hout
         self.to_record = to_record
         self.R = R
         self.algo = algo
         self.homeo = homeo        # boolean indicating if homeostasis is used or not
+        self.homparam = homparam
         self.homeinv = homeinv
         self.nbtrain = 0          # number of TS sent in the layer
         self.ratihom = 0.01/(self.nbtrain+1)
@@ -28,27 +29,25 @@ class layer(object):
         some = np.sqrt(np.sum(self.kernel**2, axis=0))
         self.kernel = self.kernel/some[None,:]
             
-        self.cumhisto = np.zeros([N_clust])
+        self.cumhisto = np.ones([N_clust])
         if self.homeinv:
             self.tphisto = np.ones([N_clust])/N_clust
             
         if algo == 'maro':
             self.last_time_activated = np.zeros(N_clust).astype(int)
         
-    def homeorule(self): # careful with the method you choose for example: gain(mpursuit) != gain(lagorce) 
+    def homeorule(self):
         '''
         '''
-        #______USED IN MP WITH COSINE SIMILARITY:
-        histo = self.cumhisto.copy()+np.ones([len(self.cumhisto)])
+        histo = self.cumhisto.copy()
         histo/=np.sum(histo)
-        # faire une moyenne flottante sur un certain nombre d'events (ou avec le temps) 
-        # faire deux règles lente -> homeo ou rapide pour le codage
+
         if self.algo=='mpursuit':
             mu = 1
             gain = np.log(histo)/np.log(mu/self.kernel.shape[1])
         #__________________________________________
         else:
-            gain = np.exp(self.kernel.shape[1]/4*(histo-1/self.kernel.shape[1]))
+            gain = np.exp(self.homparam[0]*(self.kernel.shape[1]**self.homparam[1])*(histo-1/self.kernel.shape[1]))
         return gain
     
     def inversehomeo(self): # rule for translation invariance of the features
