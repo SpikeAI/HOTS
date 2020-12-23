@@ -11,7 +11,6 @@ class layer(object):
     """
     
     def __init__(self, R, N_clust, pola, nbpola, homeo, homeinv, algo, hout, krnlinit, to_record):
-        self.out = False          # boolean to indicate if this layer is the last one of the network
         self.hout = hout
         self.to_record = to_record
         self.R = R
