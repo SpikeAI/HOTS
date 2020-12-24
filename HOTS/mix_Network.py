@@ -608,23 +608,15 @@ def EuclidianNorm(hist1,hist2):
     return np.linalg.norm(hist1-hist2)
 
 def NormalizedNorm(hist1,hist2):
-    hist1/=np.sum(hist1)
-    hist2/=np.sum(hist2)
     return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
 
 def BattachaNorm(hist1, hist2):
-    hist1/=np.sum(hist1)
-    hist2/=np.sum(hist2)
     return -np.log(np.sum(np.sqrt(hist1*hist2)))
 
 def KullbackLeibler(hist_test, hist_train):
-    hist_train/=np.sum(hist_train)
-    hist_test/=np.sum(hist_test)
     return np.sum(hist_test*np.log(hist_test/hist_train))
 
 def JensenShannon(hist1, hist2):
-    hist1/=np.sum(hist1)
-    hist2/=np.sum(hist2)
     hist3 = (hist1+hist2)*0.5
     return (KullbackLeibler(hist1,hist3)+KullbackLeibler(hist2,hist3))*0.5
 
@@ -634,30 +626,31 @@ def accuracy(trainmap,testmap,measure):
     for i in range(len(testmap)):
         dist = np.zeros([len(trainmap)])
         for k in range(len(trainmap)):
+            histest = testmap[i][1]/np.sum(testmap[i][1])
+            histrain = trainmap[k][1]/np.sum(trainmap[k][1])
             if measure=='bhatta':
-                dist[k] = BattachaNorm(testmap[i][1],trainmap[k][1])
+                dist[k] = BattachaNorm(histest,histrain)
             elif measure=='eucli':
-                dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
+                dist[k] = EuclidianNorm(histest,histrain)
             elif measure=='norm':
-                dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
+                dist[k] = NormalizedNorm(histest,histrain)
             elif measure == 'KL':
-                dist[k] = KullbackLeibler(testmap[i][1],trainmap[k][1])
+                dist[k] = KullbackLeibler(histest,histrain)
             elif measure == 'JS':
-                dist[k] = JensenShannon(testmap[i][1],trainmap[k][1])
+                dist[k] = JensenShannon(histest,histrain)
         if testmap[i][0]==trainmap[np.argmin(dist)][0]:
             accuracy+=1
         total+=1
     return accuracy/total
 
 def knn(trainmap,testmap,k):
-    X_train = np.array([trainmap[i][1] for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
+    X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
     accuracy = 0
     for i in range(len(testmap)):
-        if knn.predict([testmap[i][1]])==testmap[i][0]:
+        if knn.predict([testmap[i][1]/np.sum(testmap[i][1])])==testmap[i][0]:
             accuracy += 1
-    #print(accuracy/len(testmap)) 
     return accuracy/len(testmap)
 
 def histoscore(trainmap,testmap,k=6):
@@ -669,9 +662,11 @@ def histoscore(trainmap,testmap,k=6):
     knn_score = knn(trainmap,testmap,k)
     k2 = k//2
     k2nn_score = knn(trainmap,testmap,k2)
+    print(47*'-'+'SCORES'+47*'-')
     print(f'Classification scores with HOTS measures: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}%')
     print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
     print(f'Classification scores with entropy: Kullback-Leibler = {KL_score*100}% - Jensen-Shannon = {JS_score*100}%')
+    print(100*'-')
         
 def spatial_jitter(
     x_index, y_index,
