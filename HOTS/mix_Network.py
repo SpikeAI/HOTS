@@ -617,6 +617,17 @@ def BattachaNorm(hist1, hist2):
     hist2/=np.sum(hist2)
     return -np.log(np.sum(np.sqrt(hist1*hist2)))
 
+def KullbackLeibler(hist_test, hist_train):
+    hist_train/=np.sum(hist_train)
+    hist_test/=np.sum(hist_test)
+    return np.sum(hist_test*np.log(hist_test/hist_train))
+
+def JensenShannon(hist1, hist2):
+    hist1/=np.sum(hist1)
+    hist2/=np.sum(hist2)
+    hist3 = (hist1+hist2)*0.5
+    return (KullbackLeibler(hist1,hist3)+KullbackLeibler(hist2,hist3))*0.5
+
 def accuracy(trainmap,testmap,measure):
     accuracy=0
     total = 0
@@ -629,6 +640,10 @@ def accuracy(trainmap,testmap,measure):
                 dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
             elif measure=='norm':
                 dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
+            elif measure == 'KL':
+                dist[k] = KullbackLeibler(testmap[i][1],trainmap[k][1])
+            elif measure == 'JS':
+                dist[k] = JensenShannon(testmap[i][1],trainmap[k][1])
         if testmap[i][0]==trainmap[np.argmin(dist)][0]:
             accuracy+=1
         total+=1
@@ -649,10 +664,14 @@ def histoscore(trainmap,testmap,k=6):
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
     norm_score = accuracy(trainmap, testmap, 'norm')
     eucl_score = accuracy(trainmap, testmap, 'eucli')
+    KL_score = accuracy(trainmap,testmap,'KL')
+    JS_score = accuracy(trainmap,testmap,'JS')
     knn_score = knn(trainmap,testmap,k)
     k2 = k//2
     k2nn_score = knn(trainmap,testmap,k2)
-    print(f'Classification scores: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}% - {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
+    print(f'Classification scores with HOTS measures: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}%')
+    print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
+    print(f'Classification scores with entropy: Kullback-Leibler = {KL_score*100}% - Jensen-Shannon = {JS_score*100}%')
         
 def spatial_jitter(
     x_index, y_index,
