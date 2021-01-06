@@ -147,7 +147,7 @@ class network(object):
         return loader, ordering
     
     
-    def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
+    def learningall(self, nb_digit=2, dataset='nmnist', diginit=True):
         
         loader, ordering, nbclass = self.load(dataset)
             
