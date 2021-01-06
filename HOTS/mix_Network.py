@@ -225,7 +225,7 @@ class network(object):
                 p, dist = self.L[lay].run(timesurf, learn)
                 if to_record:
                     self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                    self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
+                    #self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
                 if self.jitter:
                     x,y = spatial_jitter(x,y,self.TS[0].camsize)
                 lay+=1
