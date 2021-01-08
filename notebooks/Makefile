@@ -23,3 +23,10 @@ E:
 	$(JN) 2020-11-19_NEW_HOTS_05_LogisticRegression-E.ipynb
 	git commit -m' LR results : E ' 2020-11-19_NEW_HOTS_05_LogisticRegression-E.ipynb
 	git push
+
+
+F:
+	$(JN) HOTS_EXP_04_LR-large.ipynb
+	git commit -m' LR results : HOTS_EXP_04_LR-large ' HOTS_EXP_04_LR-large.ipynb
+	git push
+
