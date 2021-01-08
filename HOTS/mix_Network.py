@@ -33,15 +33,16 @@ class network(object):
                         krnlinit = 'rdn',
                         hout = False, #works only with mpursuit
                         homeo = False,
+                        homparam = [.25, 1],
                         pola = True,
                         to_record = True,
                         filt = 2,
                         sigma = None,
-                        pooling = False,
-                        homeinv = False
+                        jitter = False,
+                        homeinv = False, 
                 ):
-        self.pooling = pooling
-        tau *= 1e-3 # to enter tau in ms
+        self.jitter = jitter
+        tau *= 1e3 # to enter tau in ms
         if to_record:
             self.stats = [[]]*nblay
         self.TS = [[]]*nblay
@@ -49,17 +50,16 @@ class network(object):
         for lay in range(nblay):
             if lay == 0:
                 self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt, sigma)
-                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, homeinv, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
                     self.stats[lay] = stats(nbclust, camsize)
             else:
                 self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
-                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homeinv, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
-        self.L[lay].out = 1
         
-##____________________________________________________________________________________
+##___________________________________________________________________________________________
 
     def load(self, dataset, trainset=False):
         if dataset == 'nmnist':
@@ -93,17 +93,24 @@ class network(object):
                 self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
             self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
             self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
-        return loader, learningset.ordering
+        return loader, learningset.ordering, len(learningset.classes)
 
 
-    def learning1by1(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
+    def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
         
-        loader, ordering = self.load(dataset)
-            
-        eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+        loader, ordering, nbclass = self.load(dataset)
+        #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+        eventslist = []
+        nbloadz = np.zeros([nbclass])
+        while np.sum(nbloadz)<nb_digit*nbclass:
+            loadev, loadtar = next(iter(loader))
+            if nbloadz[loadtar]<nb_digit:
+                eventslist.append(loadev)
+                nbloadz[loadtar]+=1
+        
         for n in range(len(self.L)):
-            pbar = tqdm(total=nb_digit)
-            for idig in range(nb_digit):
+            pbar = tqdm(total=nb_digit*nbclass)
+            for idig in range(nb_digit*nbclass):
                 pbar.update(1)
                 events = eventslist[idig]
                 if diginit:
@@ -113,7 +120,7 @@ class network(object):
                 for iev in range(events.shape[1]):
                     x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
                                 events[0,iev,ordering.find("y")].item(), \
-                                events[0,iev,ordering.find("t")].item()*1e-6, \
+                                events[0,iev,ordering.find("t")].item(), \
                                 events[0,iev,ordering.find("p")].item() 
                     lay=0
                     while lay < n+1:
@@ -129,7 +136,7 @@ class network(object):
                             p, dist = self.L[lay].run(timesurf, learn)
                             if learn:
                                 self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                            if self.pooling:
+                            if self.jitter:
                                 x,y = spatial_jitter(x,y,self.TS[0].camsize)
                             lay += 1
                         else:
@@ -140,79 +147,73 @@ class network(object):
         return loader, ordering
     
     
-    def learningall(self, nb_digit=15, dataset='nmnist', diginit=True, filtering=None):
+    def learningall(self, nb_digit=2, dataset='nmnist', diginit=True):
         
-        loader, ordering = self.load(dataset)
+        loader, ordering, nbclass = self.load(dataset)
             
-        pbar = tqdm(total=nb_digit)
-        for idig in range(nb_digit):
+        pbar = tqdm(total=nb_digit*nbclass)
+        
+        nbloadz = np.zeros([nbclass])
+        while np.sum(nbloadz)<nb_digit*nbclass:
+        #for idig in range(nb_digit):
             if diginit:
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-            pbar.update(1)
             events, target = next(iter(loader))
-            for iev in range(events.shape[1]):
-                self.run(events[0][iev][ordering.find("x")].item(), \
-                         events[0][iev][ordering.find("y")].item(), \
-                         events[0][iev][ordering.find("t")].item()*1e-6, \
-                         events[0][iev][ordering.find("p")].item(), \
-                         learn=True, to_record=True)
+            if nbloadz[target]<nb_digit:
+                nbloadz[target]+=1
+                pbar.update(1)
+                for iev in range(events.shape[1]):
+                    self.run(events[0][iev][ordering.find("x")].item(), \
+                             events[0][iev][ordering.find("y")].item(), \
+                             events[0][iev][ordering.find("t")].item(), \
+                             events[0][iev][ordering.find("p")].item(), \
+                             learn=True, to_record=True)
         pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
         return loader, ordering
     
     
-    def training(self, loader, ordering, LR=False, tau_cla=150, nb_digit=40, to_record=False):
-        
+    def running(self, loader, ordering, LR=False, tau_cla=150, nb_digit=500, to_record=False):
         pbar = tqdm(total=nb_digit)
-        timeOut = []
-        addXOut = []
-        addYOut = []
-        polaOut = []
-        labelout = []
+        timout = []
+        xout = []
+        yout = []
+        polout = []
+        labout = []
         labelmap = []
         for idig in range(nb_digit):
             for i in range(len(self.L)):
                 self.TS[i].spatpmat[:] = 0
                 self.TS[i].iev = 0
-                self.L[i].cumhisto[:] = 0
-                self.stats[i].actmap[:] = 0
+                self.L[i].cumhisto[:] = 1
+                #self.stats[i].actmap[:] = 0
             pbar.update(1)
             events, target = next(iter(loader))
             for iev in range(events.shape[1]):
-                out, activout =self.run(events[0][iev][ordering.find("x")].item(), \
+                out, activout = self.run(events[0][iev][ordering.find("x")].item(), \
                                         events[0][iev][ordering.find("y")].item(), \
-                                        events[0][iev][ordering.find("t")].item()*1e-6, \
+                                        events[0][iev][ordering.find("t")].item(), \
                                         events[0][iev][ordering.find("p")].item(), \
                                         to_record=to_record)
                 if LR and activout:
-                    addXOut.append(out[0])
-                    addYOut.append(out[1])
-                    timeOut.append(out[2])
-                    polaOut.append(out[3])
-                    labelout.append(target[0])
+                    xout.append(out[0])
+                    yout.append(out[1])
+                    timout.append(out[2])
+                    polout.append(out[3])
+                    labout.append(target.item())
             if not LR:        
-                data = (target,self.L[-1].cumhisto.copy())
+                data = (target.item(),self.L[-1].cumhisto.copy())
                 labelmap.append(data)
                 eventsout = []
-            else:
-                eventsout = eventV(timeOut, addXOut, addYOut, polaOut, len(timeOut))
-                eventsout.ImageSize = self.TS[0].camsize
+        if LR:
+            camsize = self.TS[-1].camsize
+            nbpola = self.L[-1].kernel.shape[1]
+            eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
         pbar.close()
-        return labelmap, loader, [eventsout, labelout]
-    
- 
-    def testing(self, loader, ordering, trainmap, LR=False, tau_cla=150, nb_digit=40, to_record=False):
-        
-        testmap, loader, eventsout = self.training(loader, ordering, LR=LR, tau_cla=tau_cla, nb_digit=nb_digit, to_record=to_record)
-        if not LR:
-            score1=accuracy(trainmap,testmap,'bhatta')
-            score2=accuracy(trainmap,testmap,'eucli')
-            score3=accuracy(trainmap,testmap,'norm')
-            print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
-        return testmap, loader, eventsout
+        return labelmap, loader, eventsout
     
 
     def run(self, x, y, t, p, learn=False, to_record=False):
@@ -224,8 +225,8 @@ class network(object):
                 p, dist = self.L[lay].run(timesurf, learn)
                 if to_record:
                     self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                    self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
-                if self.pooling:
+                    #self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
+                if self.jitter:
                     x,y = spatial_jitter(x,y,self.TS[0].camsize)
                 lay+=1
                 if lay==len(self.TS):
@@ -236,7 +237,7 @@ class network(object):
         return out, activout
 
 
-##___________REPRODUCING RESULTS FROM LAGORCE 2017________________________________________
+##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
 
     def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
 
@@ -307,7 +308,7 @@ class network(object):
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
-            self.L[i].cumhisto[:] = 0
+            self.L[i].cumhisto[:] = 1
             
         while count<nbevent:
             pbar.update(1)
@@ -318,7 +319,7 @@ class network(object):
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-                    self.L[i].cumhisto[:] = 0
+                    self.L[i].cumhisto[:] = 1
                 idx += 1
                 count2=-1
             count += 1
@@ -349,7 +350,7 @@ class network(object):
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
-            self.L[i].cumhisto[:] = 0
+            self.L[i].cumhisto[:] = 1
         while count<nbevent:
             pbar.update(1)
             self.run(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count], learn, to_record)
@@ -359,7 +360,7 @@ class network(object):
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-                    self.L[i].cumhisto[:] = 0
+                    self.L[i].cumhisto[:] = 1
                 idx += 1
                 count2=-1
             count += 1
@@ -373,8 +374,8 @@ class network(object):
         print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
         
         return labelmap, [score1,score2,score3]
-
-##___________________PLOTTING_________________________________________________________
+    
+##___________________PLOTTING________________________________________________________________
 
     def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
         '''
@@ -447,22 +448,177 @@ class network(object):
                     axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
                     axi.set_xticks(())
                     axi.set_yticks(())
+                    
+                    
+##________________POOLING NETWORK____________________________________________________________
+##___________________________________________________________________________________________
+
+
+class poolingnetwork(network):
+    
+    def __init__(self,
+                        # architecture of the network (default=Lagorce2017)
+                        nbclust = 4,
+                        K_clust = 2, # nbclust(L+1) = K_clust*nbclust(L)
+                        nblay = 3,
+                        # parameters of time-surfaces and datasets
+                        tau = 10, #timestamp en millisec/
+                        K_tau = 10,
+                        decay = 'exponential', # among ['exponential', 'linear']
+                        nbpolcam = 2,
+                        R = 2,
+                        K_R = 2,
+                        camsize = (34, 34),
+                        begin = 0, #first event indice taken into account
+                        # functional parameters of the network
+                        algo = 'lagorce', # among ['lagorce', 'maro', 'mpursuit']
+                        krnlinit = 'rdn',
+                        hout = False, #works only with mpursuit
+                        homeo = False,
+                        homparam = [.25, 1],
+                        pola = True,
+                        to_record = True,
+                        filt = 2,
+                        sigma = None,
+                        jitter = False,
+                        homeinv = False,
+                 
+                        Kstride = 2,
+                        Kevtstr = False,
+                ):
+        super().__init__(
+                        nbclust = nbclust,
+                        K_clust = K_clust,
+                        nblay = nblay,
+                        tau = tau, 
+                        K_tau = K_tau,
+                        decay = decay, 
+                        nbpolcam = nbpolcam,
+                        R = R,
+                        K_R = K_R,
+                        camsize = camsize,
+                        begin = begin,
+                        algo = algo, 
+                        krnlinit = krnlinit,
+                        hout = hout, 
+                        homeo = homeo,
+                        homparam = homparam,
+                        pola = pola,
+                        to_record = to_record,
+                        filt = filt,
+                        sigma = sigma,
+                        jitter = jitter,
+                        homeinv = homeinv
+                )
+        
+        self.Kstride = Kstride
+        self.Kevtstr = Kevtstr
+        for lay in range(1,nblay):
+            camsize = np.array(camsize)//Kstride
+            self.TS[lay] = TimeSurface(R, tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
+            self.L[lay] = layer(R, 16, pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
+            self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
+ 
+ ##____________________________________________________________________________________
+        
+    def run(self, x, y, t, p, learn=False, to_record=False):
+        lay = 0
+        activout=False
+        while lay<len(self.TS):
+            timesurf, activ = self.TS[lay].addevent(x, y, t, p)
+            if activ:
+                p, dist = self.L[lay].run(timesurf, learn)
+                if to_record:
+                    self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
+                    self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
+                if self.jitter:
+                    x,y = spatial_jitter(x,y,self.TS[0].camsize)
+                # pooling
+                if lay<len(self.TS)-1:
+                    x = min(x//self.Kstride,self.TS[lay+1].camsize[0]-1)
+                    y = min(y//self.Kstride,self.TS[lay+1].camsize[1]-1)
+                lay+=1
+                if lay==len(self.TS):
+                    activout=True
+            else:
+                lay = len(self.TS)
+        out = [x,y,t,np.argmax(p)]
+        return out, activout
+    
+    
+    def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
+        
+        loader, ordering, nbclass = self.load(dataset)
+        #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+        eventslist = []
+        nbloadz = np.zeros([nbclass])
+        while np.sum(nbloadz)<nb_digit*nbclass:
+            loadev, loadtar = next(iter(loader))
+            if nbloadz[loadtar]<nb_digit:
+                eventslist.append(loadev)
+                nbloadz[loadtar]+=1
+        
+        for n in range(len(self.L)):
+            pbar = tqdm(total=nb_digit*nbclass)
+            for idig in range(nb_digit*nbclass):
+                pbar.update(1)
+                events = eventslist[idig]
+                if diginit:
+                    for l in range(n+1):
+                        self.TS[l].spatpmat[:] = 0
+                        self.TS[l].iev = 0
+                for iev in range(events.shape[1]):
+                    x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
+                                events[0,iev,ordering.find("y")].item(), \
+                                events[0,iev,ordering.find("t")].item(), \
+                                events[0,iev,ordering.find("p")].item() 
+                    lay=0
+                    while lay < n+1:
+                        if lay==n:
+                            learn=True
+                        else:
+                            learn=False
+                        timesurf, activ = self.TS[lay].addevent(x, y, t, p)
+                        if lay==0 or filtering=='all':
+                            activ2=activ
+                        if activ2 and np.sum(timesurf)>0:
+                        #if activ==True:
+                            p, dist = self.L[lay].run(timesurf, learn)
+                            if learn:
+                                self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
+                            if self.jitter:
+                                x,y = spatial_jitter(x,y,self.TS[0].camsize)
+                            # no stride for the last layer
+                            if lay<len(self.TS)-1:
+                                x = min(x//self.Kstride,self.TS[lay+1].camsize[0]-1)
+                                y = min(y//self.Kstride,self.TS[lay+1].camsize[1]-1)
+                            lay += 1
+                        else:
+                            lay = n+1           
+            pbar.close()
+        for l in range(len(self.L)):
+            self.stats[l].histo = self.L[l].cumhisto.copy()
+        return loader, ordering
 
                     
-##__________________TOOLS_____________________________________________________________________
+##__________________TOOLS____________________________________________________________________
+##___________________________________________________________________________________________
     
 def EuclidianNorm(hist1,hist2):
     return np.linalg.norm(hist1-hist2)
 
 def NormalizedNorm(hist1,hist2):
-    hist1/=np.sum(hist1)
-    hist2/=np.sum(hist2)
     return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
 
 def BattachaNorm(hist1, hist2):
-    hist1/=np.sum(hist1)
-    hist2/=np.sum(hist2)
     return -np.log(np.sum(np.sqrt(hist1*hist2)))
+
+def KullbackLeibler(hist_test, hist_train):
+    return np.sum(hist_test*np.log(hist_test/hist_train))
+
+def JensenShannon(hist1, hist2):
+    hist3 = (hist1+hist2)*0.5
+    return (KullbackLeibler(hist1,hist3)+KullbackLeibler(hist2,hist3))*0.5
 
 def accuracy(trainmap,testmap,measure):
     accuracy=0
@@ -470,42 +626,47 @@ def accuracy(trainmap,testmap,measure):
     for i in range(len(testmap)):
         dist = np.zeros([len(trainmap)])
         for k in range(len(trainmap)):
+            histest = testmap[i][1]/np.sum(testmap[i][1])
+            histrain = trainmap[k][1]/np.sum(trainmap[k][1])
             if measure=='bhatta':
-                dist[k] = BattachaNorm(testmap[i][1],trainmap[k][1])
+                dist[k] = BattachaNorm(histest,histrain)
             elif measure=='eucli':
-                dist[k] = EuclidianNorm(testmap[i][1],trainmap[k][1])
+                dist[k] = EuclidianNorm(histest,histrain)
             elif measure=='norm':
-                dist[k] = NormalizedNorm(testmap[i][1],trainmap[k][1])
+                dist[k] = NormalizedNorm(histest,histrain)
+            elif measure == 'KL':
+                dist[k] = KullbackLeibler(histest,histrain)
+            elif measure == 'JS':
+                dist[k] = JensenShannon(histest,histrain)
         if testmap[i][0]==trainmap[np.argmin(dist)][0]:
             accuracy+=1
         total+=1
     return accuracy/total
 
-def knn(trainmap,testmap,k=6):
-    X_train = np.array([trainmap[i][1] for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
+def knn(trainmap,testmap,k):
+    X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
     accuracy = 0
     for i in range(len(testmap)):
-        if knn.predict([testmap[i][1]]).item()==testmap[i][0].item():
+        if knn.predict([testmap[i][1]/np.sum(testmap[i][1])])==testmap[i][0]:
             accuracy += 1
-    print(accuracy/len(testmap)) 
-    
-    
-class eventV(object):
-    def __init__(self, t, x, y, p, nbevt):
-        self.time = np.zeros((nbevt))
-        self.address = np.zeros((nbevt, 2))
-        self.polarity = np.zeros((nbevt))
-        self.ListPolarities = None
-        self.ImageSize = np.zeros((1,2))
-        for i in range(nbevt):
-            self.time[i]=t[i]
-            self.address[i,0]=x[i]
-            self.address[i,1]=y[i]
-            self.polarity[i]=p[i]
-        self.ListPolarities = np.unique(self.polarity)
+    return accuracy/len(testmap)
 
+def histoscore(trainmap,testmap,k=6):
+    bhat_score = accuracy(trainmap, testmap, 'bhatta')
+    norm_score = accuracy(trainmap, testmap, 'norm')
+    eucl_score = accuracy(trainmap, testmap, 'eucli')
+    KL_score = accuracy(trainmap,testmap,'KL')
+    JS_score = accuracy(trainmap,testmap,'JS')
+    knn_score = knn(trainmap,testmap,k)
+    k2 = k//2
+    k2nn_score = knn(trainmap,testmap,k2)
+    print(47*'-'+'SCORES'+47*'-')
+    print(f'Classification scores with HOTS measures: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}%')
+    print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
+    print(f'Classification scores with entropy: Kullback-Leibler = {KL_score*100}% - Jensen-Shannon = {JS_score*100}%')
+    print(100*'-')
         
 def spatial_jitter(
     x_index, y_index,
