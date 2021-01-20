@@ -23,10 +23,7 @@ E:
 	$(JN) HOTS_EXP_04_XXL-8clust.ipynb
 	git commit -m' EXP XXL 8 clusters results ' HOTS_EXP_04_XXL-8clust.ipynb
 	git push
-
-
 F:
 	$(JN) HOTS_EXP_04_LR-large.ipynb
 	git commit -m' LR results : HOTS_EXP_04_LR-large ' HOTS_EXP_04_LR-large.ipynb
 	git push
-
