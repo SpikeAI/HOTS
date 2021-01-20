@@ -1,10 +1,12 @@
-default: update
+default: notebooks
 
 PYTHON=ipython --gui=qt
 PYTHON=ipython
 
 # RUNNING
-
+notebooks:
+	cd notebooks; make
+	
 %.ipynb:
 	$(JN) $@
 
@@ -26,16 +28,6 @@ pep8:
 	autopep8 *.py -r -i --max-line-length 120 --ignore E402
 
 ## INSTALL
-activate:
-	conda activate hots
-
-install:
-	conda env create -f environment.yml
-	#python3 -m pip install -r requirements.txt
-	python -m ipykernel install --user --name=hots
-
-update:
-	conda env update -f environment.yml
 
 clean:
 	rm -fr /tmp/tensor*
