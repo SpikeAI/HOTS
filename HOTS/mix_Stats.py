@@ -8,7 +8,7 @@ class stats(object):
         self.count = 0
         self.dist_cum = 0
         self.dist = []
-        self.actmap = np.zeros([N,camsize[0],camsize[1]])
+        self.actmap = np.zeros([N,camsize[0]+1,camsize[1]+1])
         self.histo = []
         #self.Ddic = []
         #self.spar = []

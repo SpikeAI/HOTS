@@ -43,12 +43,14 @@ class TimeSurface(object):
         self.x = 0
         self.y = 0
         self.t = 0
+        self.p = 0
         self.iev = 0
-        self.spatpmat = np.zeros((nbpol,camsize[0],camsize[1]))
+        self.spatpmat = np.zeros((nbpol,camsize[0]+1,camsize[1]+1))
 
     def addevent(self, xev, yev, tev, pev):
         timesurf = np.zeros((self.spatpmat.shape[0],2*self.R+1,2*self.R+1))
-        xev, yev = int(xev), int(yev)
+        xev, yev = int(min(xev,self.camsize[0])), int(min(yev,self.camsize[1]))
+        xev, yev = int(max(xev,0)), int(max(yev,0))
         if isinstance(pev, (int, float)):
             p = np.zeros((self.spatpmat.shape[0]))
             p[int(pev)]=1
@@ -60,6 +62,7 @@ class TimeSurface(object):
         if self.iev==0:
             self.iev += 1
             self.t = tev
+            self.p = np.argmax(pev)
             polz = np.nonzero(pev)[0]
             #to change if pev has multiple polarities
             self.spatpmat[np.argmax(pev), xev, yev] = 1
@@ -82,27 +85,21 @@ class TimeSurface(object):
             elif self.decay == 'linear':
                 self.spatpmat = max(self.spatpmat-(tev-self.t)/self.tau,0)
             self.t = tev
+            self.p = np.argmax(pev)
             polz = np.nonzero(pev)[0]
             #to change if pev has multiple polarities
             self.spatpmat[np.argmax(pev), xev, yev] = 1
             #for i in range(len(polz)):
                 #self.spatpmat[polz[i], xev, yev] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
             # making time surface
-            xshift = copy.copy(self.x)
-            yshift = copy.copy(self.y)
-            # padding for events near the edges of the pixel grid
-            temp_spatpmat = copy.copy(self.spatpmat)
-            if self.x<self.R:
-                temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(self.R+1,0),(0,0)),'symmetric')
-                xshift += self.R+1
-            elif self.camsize[0]-(self.x+1)<self.R:
-                temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,self.R+1),(0,0)),'symmetric')
-            if self.y<self.R:
-                temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(self.R+1,0)),'symmetric')
-                yshift += self.R+1
-            elif self.camsize[1]-(self.y+1)<self.R:
-                temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
-            timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+            
+            #print(timesurf.shape, xev, yev)
+            timesurf = self.getts()
+            #if xev<self.R or xev+self.R>self.camsize[0]:
+            #self.plote()
+            #print(timesurf.shape)
+            if np.sum(timesurf[:,self.R,self.R])==0:
+                print('TS pas centrée', xev, yev)
             
             if self.sigma is not None:
                 X_p, Y_p = np.meshgrid(np.arange(-self.R, self.R+1),
@@ -129,29 +126,32 @@ class TimeSurface(object):
         if len(card[0])>minact:
             activ = True
         return TS, activ
-
-    def plote(self, gamma=2.2):
-
-        # making time surface
+    
+    def getts(self):
         xshift = copy.copy(self.x)
         yshift = copy.copy(self.y)
-            # padding for events near the edges of the pixel grid
+        # padding for events near the edges of the pixel grid
         temp_spatpmat = copy.copy(self.spatpmat)
-        if self.x<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(self.R+1,0),(0,0)),'symmetric')
-            xshift += self.R+1
-        elif self.camsize[0]-(self.x+1)<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,self.R+1),(0,0)),'symmetric')
-        if self.y<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(self.R+1,0)),'symmetric')
-            yshift += self.R+1
-        elif self.camsize[1]-(self.y+1)<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
+        if self.x-self.R<0:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(self.R,0),(0,0)),'symmetric')
+            xshift += self.R
+        elif self.camsize[0]<self.x+self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,self.R),(0,0)),'symmetric')
+        if self.y-self.R<0:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(self.R,0)),'symmetric')
+            yshift += self.R
+        elif self.camsize[1]<self.y+self.R:
+            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R)),'symmetric')
         timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+        return timesurf
+        
+    def plote(self, gamma=2.2):
+
+        timesurf = self.getts()
 
         fig = plt.figure(figsize=(10,5))
         sub1 = fig.add_subplot(1,3,1)
-        mapa = sub1.imshow((self.spatpmat[0].T)**gamma, cmap=plt.cm.plasma)
+        mapa = sub1.imshow((self.spatpmat[self.p].T)**gamma, cmap=plt.cm.plasma)
         sub1.plot(self.x,self.y,'r*')
         sub1.plot([self.x-self.R, self.x-self.R], [self.y-self.R, self.y+self.R], color='red')
         sub1.plot([self.x-self.R, self.x+self.R], [self.y-self.R, self.y-self.R], color='red')
@@ -173,22 +173,7 @@ class TimeSurface(object):
 
     def plot3D(self, gamma=2.2):
 
-        # making time surface
-        xshift = copy.copy(self.x)
-        yshift = copy.copy(self.y)
-            # padding for events near the edges of the pixel grid
-        temp_spatpmat = copy.copy(self.spatpmat)
-        if self.x<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(self.R+1,0),(0,0)),'symmetric')
-            xshift += self.R+1
-        elif self.camsize[0]-(self.x+1)<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,self.R+1),(0,0)),'symmetric')
-        if self.y<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(self.R+1,0)),'symmetric')
-            yshift += self.R+1
-        elif self.camsize[1]-(self.y+1)<self.R:
-            temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R+1)),'symmetric')
-        timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
+        timesurf = self.getts()
 
         fig = plt.figure(figsize=(10,5))
         sub1 = fig.add_subplot(1,2,1, projection="3d")

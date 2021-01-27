@@ -101,10 +101,10 @@ class network(object):
             print('sensor formatting...')
             for i in range(1,len(self.TS)):
                 self.TS[i].camsize = learningset.sensor_size
-                self.TS[i].spatpmat = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
-                self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0],learningset.sensor_size[1]))
-            self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
-            self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0],learningset.sensor_size[1]))
+                self.TS[i].spatpmat = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
+                self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
+            self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
+            self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
         return loader, learningset.ordering, len(learningset.classes)
 
 
