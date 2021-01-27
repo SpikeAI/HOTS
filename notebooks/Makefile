@@ -1,4 +1,4 @@
-default: C D E
+default: G
 
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
@@ -26,4 +26,8 @@ E:
 F:
 	$(JN) HOTS_EXP_04_LR-large.ipynb
 	git commit -m' LR results : HOTS_EXP_04_LR-large ' HOTS_EXP_04_LR-large.ipynb
+	git push
+G:    
+	$(JN) HOTS_EXP_08_jitter.ipynb
+	git commit -m'results : HOTS_EXP_08_jitter ' HOTS_EXP_08_jitter.ipynb
 	git push

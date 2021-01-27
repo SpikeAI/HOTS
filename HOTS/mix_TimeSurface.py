@@ -27,7 +27,7 @@ class TimeSurface(object):
                 parameters: timesurf, gamma to display events (2.2 default)
 """
 
-    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=2, sigma=None):
+    def __init__(self, R, tau, camsize, nbpol=2, pola=True, filt=2, sigma=None, decay='exponential'):
         # PARAMETERS OF THE TIME SURFACES
         self.R = R
         self.tau = tau # in ms
@@ -38,6 +38,7 @@ class TimeSurface(object):
         self.pola = pola
         self.filt = filt
         self.sigma = sigma
+        self.decay = decay
         # VARIABLES OF THE TIME SURFACE
         self.x = 0
         self.y = 0
@@ -74,9 +75,12 @@ class TimeSurface(object):
             self.x = xev
             self.y = yev
             # updating the spatiotemporal surface
-            self.spatpmat = self.spatpmat*np.exp(-(float(tev-self.t))/self.tau)
-            # making threshold for small elements
-            self.spatpmat[self.spatpmat<np.exp(-float(self.kthrs))]=0
+            if self.decay == 'exponential':
+                self.spatpmat = self.spatpmat*np.exp(-(float(tev-self.t))/self.tau)
+                # making threshold for small elements
+                self.spatpmat[self.spatpmat<np.exp(-float(self.kthrs))]=0
+            elif self.decay == 'linear':
+                self.spatpmat = max(self.spatpmat-(tev-self.t)/self.tau,0)
             self.t = tev
             polz = np.nonzero(pev)[0]
             #to change if pev has multiple polarities

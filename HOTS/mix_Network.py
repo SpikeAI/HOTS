@@ -61,26 +61,38 @@ class network(object):
         
 ##___________________________________________________________________________________________
 
-    def load(self, dataset, trainset=False):
+    def load(self, dataset, trainset=False, jitonic=[None,None]):
+        if jitonic[1] is not None:
+            print(f'spatial jitter -> var = {jitonic[1]}')
+            transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True)])
+            
+        if jitonic[0] is not None:
+            print(f'spatial jitter -> var = {jitonic[0]}')
+            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(variance=jitonic[0], integer_timestamps=False, clip_negative=True)])
+            
+        if jitonic == [None,None]:
+            print('none')
+            transform = None
+            
         if dataset == 'nmnist':
             learningset = tonic.datasets.NMNIST(save_to='../Data/',
                                 train=trainset,
-                                transform=None)
+                                transform=transform)
         elif dataset == 'poker':
             learningset = tonic.datasets.POKERDVS(save_to='../Data/',
                                 train=trainset,
-                                transform=None)
+                                transform=transform)
         elif dataset == 'gesture':
             learningset = tonic.datasets.DVSGesture(save_to='../Data/',
                                 train=trainset,
-                                transform=None)
+                                transform=transform)
         elif dataset == 'cars':
             learningset = tonic.datasets.NCARS(save_to='../Data/',
                                 train=trainset,
-                                transform=None)
+                                transform=transform)
         elif dataset == 'ncaltech':
             learningset = tonic.datasets.NCALTECH101(save_to='../Data/',
-                                transform=None)
+                                transform=transform)
         else: print('incorrect dataset') 
             
         loader = tonic.datasets.DataLoader(learningset, shuffle=True)
@@ -96,9 +108,9 @@ class network(object):
         return loader, learningset.ordering, len(learningset.classes)
 
 
-    def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
+    def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
         
-        loader, ordering, nbclass = self.load(dataset)
+        loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
         #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
         eventslist = []
         nbloadz = np.zeros([nbclass])
@@ -147,9 +159,9 @@ class network(object):
         return loader, ordering
     
     
-    def learningall(self, nb_digit=2, dataset='nmnist', diginit=True):
+    def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
         
-        loader, ordering, nbclass = self.load(dataset)
+        loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
             
         pbar = tqdm(total=nb_digit*nbclass)
         
@@ -173,10 +185,15 @@ class network(object):
         pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
+        
         return loader, ordering
     
     
-    def running(self, loader, ordering, LR=False, tau_cla=150, nb_digit=500, to_record=False):
+    def running(self, loader, ordering, LR=False, tau_cla=150, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+        
+        if jitonic[0] is not None or jitonic[1] is not None:
+            loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
+            
         pbar = tqdm(total=nb_digit)
         timout = []
         xout = []
@@ -402,10 +419,11 @@ class network(object):
             ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
             plt.bar(np.arange(N[i]), self.stats[i].histo/np.sum(self.stats[i].histo), width=1, align='edge', ec="k")
             ax.set_xticks(())
-            if i>0:
-                ax.set_yticks(())
+            #if i>0:
+                #ax.set_yticks(())
             ax.set_title('Layer '+str(i+1), fontsize=16)
             plt.xlim([0,N[i]])
+            yhis = 1.1*max(self.stats[i].histo/np.sum(self.stats[i].histo))
             plt.ylim([0,yhis])
 
         #f3_ax1.set_title('gs[0, :]')
@@ -422,6 +440,7 @@ class network(object):
                         axi.set_xticks(())
                         axi.set_yticks(())
         plt.show()
+        return fig
 
     def plotconv(self):
         fig = plt.figure(figsize=(15,5))
