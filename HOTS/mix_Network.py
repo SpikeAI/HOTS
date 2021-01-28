@@ -67,7 +67,7 @@ class network(object):
             transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True)])
             
         if jitonic[0] is not None:
-            print(f'spatial jitter -> var = {jitonic[0]}')
+            print(f'time jitter -> var = {jitonic[0]}')
             transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(variance=jitonic[0], integer_timestamps=False, clip_negative=True)])
             
         if jitonic == [None,None]:
