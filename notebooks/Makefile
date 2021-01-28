@@ -30,4 +30,8 @@ F:
 G:    
 	$(JN) HOTS_EXP_08_jitter.ipynb
 	git commit -m'results : HOTS_EXP_08_jitter ' HOTS_EXP_08_jitter.ipynb
+	git push 
+H:    
+	$(JN) HOTS_EXP_02_NMNIST.ipynb
+	git commit -m'results : HOTS_EXP_02 ' HOTS_EXP_02_NMNIST.ipynb
 	git push
