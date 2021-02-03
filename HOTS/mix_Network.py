@@ -251,6 +251,8 @@ class network(object):
             else:
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
+        #if self.TS[0].iev//500==0:
+            #self.TS[0].plote()
         return out, activout
 
 
