@@ -62,6 +62,7 @@ class network(object):
 ##___________________________________________________________________________________________
 
     def load(self, dataset, trainset=False, jitonic=[None,None]):
+        self.jitonic = jitonic
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
             transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True)])
@@ -674,7 +675,7 @@ def knn(trainmap,testmap,k):
             accuracy += 1
     return accuracy/len(testmap)
 
-def histoscore(trainmap,testmap,k=6):
+def histoscore(trainmap,testmap,k=6, verbose = True):
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
     norm_score = accuracy(trainmap, testmap, 'norm')
     eucl_score = accuracy(trainmap, testmap, 'eucli')
@@ -683,11 +684,13 @@ def histoscore(trainmap,testmap,k=6):
     knn_score = knn(trainmap,testmap,k)
     k2 = k//2
     k2nn_score = knn(trainmap,testmap,k2)
-    print(47*'-'+'SCORES'+47*'-')
-    print(f'Classification scores with HOTS measures: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}%')
-    print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
-    print(f'Classification scores with entropy: Kullback-Leibler = {KL_score*100}% - Jensen-Shannon = {JS_score*100}%')
-    print(100*'-')
+    if verbose:
+        print(47*'-'+'SCORES'+47*'-')
+        print(f'Classification scores with HOTS measures: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}%')
+        print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
+        print(f'Classification scores with entropy: Kullback-Leibler = {KL_score*100}% - Jensen-Shannon = {JS_score*100}%')
+        print(100*'-')
+    return JS_score
         
 def spatial_jitter(
     x_index, y_index,
