@@ -3,8 +3,8 @@ __author__ = "(c) Victor Boutin & Laurent Perrinet INT - CNRS (2017-) Antoine Gr
 import scipy.io
 import numpy as np
 from os import listdir
-from Tools import LoadObject
-import Tool_libUnpackAtis as ua
+from vic_Tools import LoadObject
+import vic_Tool_libUnpackAtis as ua
 import pickle
 
 #from HOTS.conv2eve import conv2eve

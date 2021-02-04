@@ -2,8 +2,8 @@ import numpy as np
 from mix_Layer import *
 from mix_TimeSurface import *
 from mix_Stats import *
-from Event import Event
-from Tools import LoadObject
+from vic_Event import Event
+from vic_Tools import LoadObject
 from tqdm import tqdm_notebook as tqdm
 from sklearn.neighbors import KNeighborsClassifier
 import tonic
