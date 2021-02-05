@@ -3,6 +3,9 @@ default: G
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
 
+laurent:
+    $(JN) HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
+
 A:
 	$(JN) HOTS_EXP_05_NCARS.ipynb
 	git commit -m 'EXP 05 results' HOTS_EXP_05_NCARS.ipynb
