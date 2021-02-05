@@ -1,4 +1,4 @@
-default: G
+default: I J
 
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
@@ -37,4 +37,12 @@ G:
 H:    
 	$(JN) HOTS_EXP_02_NMNIST.ipynb
 	git commit -m'results : HOTS_EXP_02 ' HOTS_EXP_02_NMNIST.ipynb
+	git push
+I:    
+	$(JN) HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
+	git commit -m'results : HOTS_EXP_09 ' HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
+	git push
+J:    
+	$(JN) HOTS_EXP_09_LR_PyTorch-Laurent-max.ipynb
+	git commit -m'results : HOTS_EXP_09 ' HOTS_EXP_09_LR_PyTorch-Laurent-max.ipynb
 	git push
