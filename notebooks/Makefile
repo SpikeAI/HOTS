@@ -4,7 +4,7 @@ J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreproce
 JN=$(J) --to notebook --inplace
 
 laurent:
-    $(JN) HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
+	$(JN) HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
 
 A:
 	$(JN) HOTS_EXP_05_NCARS.ipynb
