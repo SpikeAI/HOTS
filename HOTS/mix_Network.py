@@ -649,6 +649,7 @@ def accuracy(trainmap,testmap,measure):
         dist = np.zeros([len(trainmap)])
         for k in range(len(trainmap)):
             histest = testmap[i][1]/np.sum(testmap[i][1])
+            #print(testmap[i][1])
             histrain = trainmap[k][1]/np.sum(trainmap[k][1])
             if measure=='bhatta':
                 dist[k] = BattachaNorm(histest,histrain)
