@@ -1,4 +1,4 @@
-default: I J
+default: G
 
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
