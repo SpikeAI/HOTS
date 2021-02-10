@@ -168,7 +168,6 @@ class network(object):
         
         model = self.load_model(dataset)
         if model.L[0].nbtrain!=0:
-            print(model.L[0].nbtrain)
             return model
         else:
         
