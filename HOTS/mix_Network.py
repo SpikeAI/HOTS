@@ -167,7 +167,7 @@ class network(object):
     def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
         
         model = self.load_model(dataset)
-        if model.L[0].nbtrain!=0:
+        if model:
             return model
         else:
         
@@ -201,13 +201,18 @@ class network(object):
             return self
         
     
-    def running(self, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+    def running(self, homeotest = True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
         
-        output = self.load_output(dataset, nb_digit, train, jitonic, LR)
-        if len(output)>0:
+        output = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
+        if output:
             return output
         else:
             loader, ordering, nbclass = self.load(dataset, trainset=train, jitonic=jitonic)
+            
+            homeomod = self.L[0].homeo
+            
+            for i in range(len(self.L)):
+                self.L[i].homeo=homeotest
 
             pbar = tqdm(total=nb_digit)
             timout = []
@@ -246,11 +251,15 @@ class network(object):
                 nbpola = self.L[-1].kernel.shape[1]
                 eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
             pbar.close()
+            
+            for i in range(len(self.L)):
+                self.L[i].homeo=homeomod
+
             if LR:
-                self.save_output(evoutsout, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
+                self.save_output(evoutsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
                 output = eventsout
             else:
-                self.save_output(labelmap, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
+                self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
                 output = labelmap
             return output
 
@@ -309,7 +318,7 @@ class network(object):
                 model = pickle.load(file)
         return model
     
-    def save_output(self, evout, dataset, nb, train, jitonic, LR):
+    def save_output(self, evout, homeo, dataset, nb, train, jitonic, LR):
         if train: 
             path = f'../Records/{dataset}/train'
         else: 
@@ -317,7 +326,7 @@ class network(object):
         if not os.path.exists(path):
             os.makedirs(path)
         path = self.get_fname(path)+f'_{nb}_{jitonic}'
-        if self.L[0].homeo:
+        if homeo:
             path = path+'_homeo'
         if not LR:
             path = path+'_histo'
@@ -325,14 +334,14 @@ class network(object):
         with open(path, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
             
-    def load_output(self, dataset, nb, train, jitonic, LR):
+    def load_output(self, dataset, homeo, nb, train, jitonic, LR):
         output = []
         if train: 
             path = f'../Records/{dataset}/train'
         else: 
             path = f'../Records/{dataset}/test'
         path = self.get_fname(path)+f'_{nb}_{jitonic}'
-        if self.L[0].homeo:
+        if homeo:
             path = path+'_homeo'
         if not LR:
             path = path+'_histo'
