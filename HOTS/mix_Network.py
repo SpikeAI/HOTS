@@ -7,6 +7,9 @@ from vic_Tools import LoadObject
 from tqdm import tqdm_notebook as tqdm
 from sklearn.neighbors import KNeighborsClassifier
 import tonic
+import os
+import pickle
+import datetime
 #from threading import Thread, Rlock
 
 #loco = Rlock()
@@ -41,7 +44,7 @@ class network(object):
                         jitter = False,
                         homeinv = False, 
                 ):
-        self.jitter = jitter
+        self.jitter = jitter # != from jitonic, this jitter is added at the layer output, creating an average pooling
         tau *= 1e3 # to enter tau in ms
         if to_record:
             self.stats = [[]]*nblay
@@ -61,7 +64,7 @@ class network(object):
         
 ##___________________________________________________________________________________________
 
-    def load(self, dataset, trainset=False, jitonic=[None,None]):
+    def load(self, dataset, trainset=True, jitonic=[None,None]):
         self.jitonic = jitonic
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
@@ -72,41 +75,41 @@ class network(object):
             transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(variance=jitonic[0], integer_timestamps=False, clip_negative=True)])
             
         if jitonic == [None,None]:
-            print('none')
+            print('no jitter')
             transform = None
             
         if dataset == 'nmnist':
-            learningset = tonic.datasets.NMNIST(save_to='../Data/',
+            eventset = tonic.datasets.NMNIST(save_to='../Data/',
                                 train=trainset,
                                 transform=transform)
         elif dataset == 'poker':
-            learningset = tonic.datasets.POKERDVS(save_to='../Data/',
+            eventset = tonic.datasets.POKERDVS(save_to='../Data/',
                                 train=trainset,
                                 transform=transform)
         elif dataset == 'gesture':
-            learningset = tonic.datasets.DVSGesture(save_to='../Data/',
+            eventset = tonic.datasets.DVSGesture(save_to='../Data/',
                                 train=trainset,
                                 transform=transform)
         elif dataset == 'cars':
-            learningset = tonic.datasets.NCARS(save_to='../Data/',
+            eventset = tonic.datasets.NCARS(save_to='../Data/',
                                 train=trainset,
                                 transform=transform)
         elif dataset == 'ncaltech':
-            learningset = tonic.datasets.NCALTECH101(save_to='../Data/',
+            eventset = tonic.datasets.NCALTECH101(save_to='../Data/',
                                 transform=transform)
-        else: print('incorrect dataset') 
-            
-        loader = tonic.datasets.DataLoader(learningset, shuffle=True)
-        
-        if learningset.sensor_size!=self.TS[0].camsize:
+        else: print('incorrect dataset')
+
+        loader = tonic.datasets.DataLoader(eventset, shuffle=True)
+
+        if eventset.sensor_size!=self.TS[0].camsize:
             print('sensor formatting...')
             for i in range(1,len(self.TS)):
-                self.TS[i].camsize = learningset.sensor_size
-                self.TS[i].spatpmat = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
-                self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
-            self.TS[0].spatpmat = np.zeros((2,learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
-            self.stats[0].actmap = np.zeros((2,learningset.sensor_size[0]+1,learningset.sensor_size[1]+1))
-        return loader, learningset.ordering, len(learningset.classes)
+                self.TS[i].camsize = eventset.sensor_size
+                self.TS[i].spatpmat = np.zeros((self.L[i-1].kernel.shape[1],eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
+                self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
+            self.TS[0].spatpmat = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
+            self.stats[0].actmap = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
+        return loader, eventset.ordering, len(eventset.classes)
 
 
     def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
@@ -157,82 +160,108 @@ class network(object):
             pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
-        return loader, ordering
+            
+        #self.save_model(dataset)
     
     
     def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
         
-        loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
-            
-        pbar = tqdm(total=nb_digit*nbclass)
+        model = self.load_model(dataset)
+        if model:
+            return model
+        else:
         
-        nbloadz = np.zeros([nbclass])
-        while np.sum(nbloadz)<nb_digit*nbclass:
-        #for idig in range(nb_digit):
-            if diginit:
+            loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
+
+            pbar = tqdm(total=nb_digit*nbclass)
+
+            nbloadz = np.zeros([nbclass])
+            while np.sum(nbloadz)<nb_digit*nbclass:
+            #for idig in range(nb_digit):
+                if diginit:
+                    for i in range(len(self.L)):
+                        self.TS[i].spatpmat[:] = 0
+                        self.TS[i].iev = 0
+                events, target = next(iter(loader))
+                if nbloadz[target]<nb_digit:
+                    nbloadz[target]+=1
+                    pbar.update(1)
+                    for iev in range(events.shape[1]):
+                        self.run(events[0][iev][ordering.find("x")].item(), \
+                                 events[0][iev][ordering.find("y")].item(), \
+                                 events[0][iev][ordering.find("t")].item(), \
+                                 events[0][iev][ordering.find("p")].item(), \
+                                 learn=True, to_record=True)
+            pbar.close()
+            for l in range(len(self.L)):
+                self.stats[l].histo = self.L[l].cumhisto.copy()
+
+            self.save_model(dataset)
+            
+            return self
+        
+    
+    def running(self, homeotest = True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+        
+        output = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
+        if output:
+            return output
+        else:
+            loader, ordering, nbclass = self.load(dataset, trainset=train, jitonic=jitonic)
+            
+            homeomod = self.L[0].homeo
+            
+            for i in range(len(self.L)):
+                self.L[i].homeo=homeotest
+
+            pbar = tqdm(total=nb_digit)
+            timout = []
+            xout = []
+            yout = []
+            polout = []
+            labout = []
+            labelmap = []
+            for idig in range(nb_digit):
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
-            events, target = next(iter(loader))
-            if nbloadz[target]<nb_digit:
-                nbloadz[target]+=1
+                    self.L[i].cumhisto[:] = 1
+                    #self.stats[i].actmap[:] = 0
                 pbar.update(1)
+                events, target = next(iter(loader))
                 for iev in range(events.shape[1]):
-                    self.run(events[0][iev][ordering.find("x")].item(), \
-                             events[0][iev][ordering.find("y")].item(), \
-                             events[0][iev][ordering.find("t")].item(), \
-                             events[0][iev][ordering.find("p")].item(), \
-                             learn=True, to_record=True)
-        pbar.close()
-        for l in range(len(self.L)):
-            self.stats[l].histo = self.L[l].cumhisto.copy()
-        
-        return loader, ordering
-    
-    
-    def running(self, loader, ordering, LR=False, tau_cla=150, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
-        
-        if jitonic[0] is not None or jitonic[1] is not None:
-            loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
+                    out, activout = self.run(events[0][iev][ordering.find("x")].item(), \
+                                            events[0][iev][ordering.find("y")].item(), \
+                                            events[0][iev][ordering.find("t")].item(), \
+                                            events[0][iev][ordering.find("p")].item(), \
+                                            to_record=to_record)
+                    if LR and activout:
+                        xout.append(out[0])
+                        yout.append(out[1])
+                        timout.append(out[2])
+                        polout.append(out[3])
+                        labout.append(target.item())
+
+                if not LR:        
+                    data = (target.item(),self.L[-1].cumhisto.copy())
+                    labelmap.append(data)
+                    eventsout = []
+            if LR:
+                camsize = self.TS[-1].camsize
+                nbpola = self.L[-1].kernel.shape[1]
+                eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
+            pbar.close()
             
-        pbar = tqdm(total=nb_digit)
-        timout = []
-        xout = []
-        yout = []
-        polout = []
-        labout = []
-        labelmap = []
-        for idig in range(nb_digit):
             for i in range(len(self.L)):
-                self.TS[i].spatpmat[:] = 0
-                self.TS[i].iev = 0
-                self.L[i].cumhisto[:] = 1
-                #self.stats[i].actmap[:] = 0
-            pbar.update(1)
-            events, target = next(iter(loader))
-            for iev in range(events.shape[1]):
-                out, activout = self.run(events[0][iev][ordering.find("x")].item(), \
-                                        events[0][iev][ordering.find("y")].item(), \
-                                        events[0][iev][ordering.find("t")].item(), \
-                                        events[0][iev][ordering.find("p")].item(), \
-                                        to_record=to_record)
-                if LR and activout:
-                    xout.append(out[0])
-                    yout.append(out[1])
-                    timout.append(out[2])
-                    polout.append(out[3])
-                    labout.append(target.item())
-            if not LR:        
-                data = (target.item(),self.L[-1].cumhisto.copy())
-                labelmap.append(data)
-                eventsout = []
-        if LR:
-            camsize = self.TS[-1].camsize
-            nbpola = self.L[-1].kernel.shape[1]
-            eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
-        pbar.close()
-        return labelmap, loader, eventsout
-    
+                self.L[i].homeo=homeomod
+
+            if LR:
+                self.save_output(evoutsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
+                output = eventsout
+            else:
+                self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
+                output = labelmap
+            return output
 
     def run(self, x, y, t, p, learn=False, to_record=False):
         lay = 0
@@ -255,6 +284,74 @@ class network(object):
         #if self.TS[0].iev//500==0:
             #self.TS[0].plote()
         return out, activout
+    
+    def get_fname(self, path):
+        timestr = '2021-02-08'
+        algo = self.L[0].algo
+        arch = [self.L[i].kernel.shape[1] for i in range(len(self.L))]
+        R = [self.L[i].R for i in range(len(self.L))]
+        tau = [self.TS[i].tau for i in range(len(self.TS))]
+        homeo = self.L[0].homeo
+        homparam = self.L[0].homparam
+        krnlinit = self.L[0].krnlinit
+        sigma = self.TS[0].sigma
+        f_name = f'{path}/{timestr}_{algo}_{krnlinit}_{sigma}_{homeo}_{homparam}_{arch}_{tau}_{R}'
+        return f_name
+    
+    def save_model(self, dataset):
+        path = f'../Records/{dataset}/models'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        f_name = self.get_fname(path)+'.pkl'
+        with open(f_name, 'wb') as file:
+            pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
+            
+    def load_model(self, dataset):
+        model = []
+        path = f'../Records/{dataset}/models'
+        f_name = self.get_fname(path)+'.pkl'
+        print(f_name)
+        if not os.path.isfile(f_name):
+            return model
+        else:
+            with open(f_name, 'rb') as file:
+                model = pickle.load(file)
+        return model
+    
+    def save_output(self, evout, homeo, dataset, nb, train, jitonic, LR):
+        if train: 
+            path = f'../Records/{dataset}/train'
+        else: 
+            path = f'../Records/{dataset}/test'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        path = self.get_fname(path)+f'_{nb}_{jitonic}'
+        if homeo:
+            path = path+'_homeo'
+        if not LR:
+            path = path+'_histo'
+        path = path +'.pkl'
+        with open(path, 'wb') as file:
+            pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
+            
+    def load_output(self, dataset, homeo, nb, train, jitonic, LR):
+        output = []
+        if train: 
+            path = f'../Records/{dataset}/train'
+        else: 
+            path = f'../Records/{dataset}/test'
+        path = self.get_fname(path)+f'_{nb}_{jitonic}'
+        if homeo:
+            path = path+'_homeo'
+        if not LR:
+            path = path+'_histo'
+        path = path +'.pkl'
+        if not os.path.isfile(path):
+            return output
+        else:
+            with open(path, 'rb') as file:
+                output = pickle.load(file)
+        return output
 
 
 ##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
