@@ -114,59 +114,68 @@ class network(object):
 
     def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
         
-        loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
-        #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
-        eventslist = []
-        nbloadz = np.zeros([nbclass])
-        while np.sum(nbloadz)<nb_digit*nbclass:
-            loadev, loadtar = next(iter(loader))
-            if nbloadz[loadtar]<nb_digit:
-                eventslist.append(loadev)
-                nbloadz[loadtar]+=1
+        onbon = True
+        model = self.load_model(dataset,onbon)
+        if model:
+            return model
+        else:
         
-        for n in range(len(self.L)):
-            pbar = tqdm(total=nb_digit*nbclass)
-            for idig in range(nb_digit*nbclass):
-                pbar.update(1)
-                events = eventslist[idig]
-                if diginit:
-                    for l in range(n+1):
-                        self.TS[l].spatpmat[:] = 0
-                        self.TS[l].iev = 0
-                for iev in range(events.shape[1]):
-                    x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
-                                events[0,iev,ordering.find("y")].item(), \
-                                events[0,iev,ordering.find("t")].item(), \
-                                events[0,iev,ordering.find("p")].item() 
-                    lay=0
-                    while lay < n+1:
-                        if lay==n:
-                            learn=True
-                        else:
-                            learn=False
-                        timesurf, activ = self.TS[lay].addevent(x, y, t, p)
-                        if lay==0 or filtering=='all':
-                            activ2=activ
-                        if activ2 and np.sum(timesurf)>0:
-                        #if activ==True:
-                            p, dist = self.L[lay].run(timesurf, learn)
-                            if learn:
-                                self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                            if self.jitter:
-                                x,y = spatial_jitter(x,y,self.TS[0].camsize)
-                            lay += 1
-                        else:
-                            lay = n+1           
-            pbar.close()
-        for l in range(len(self.L)):
-            self.stats[l].histo = self.L[l].cumhisto.copy()
+            loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
+            #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+            eventslist = []
+            nbloadz = np.zeros([nbclass])
+            while np.sum(nbloadz)<nb_digit*nbclass:
+                loadev, loadtar = next(iter(loader))
+                if nbloadz[loadtar]<nb_digit:
+                    eventslist.append(loadev)
+                    nbloadz[loadtar]+=1
+
+            for n in range(len(self.L)):
+                pbar = tqdm(total=nb_digit*nbclass)
+                for idig in range(nb_digit*nbclass):
+                    pbar.update(1)
+                    events = eventslist[idig]
+                    if diginit:
+                        for l in range(n+1):
+                            self.TS[l].spatpmat[:] = 0
+                            self.TS[l].iev = 0
+                    for iev in range(events.shape[1]):
+                        x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
+                                    events[0,iev,ordering.find("y")].item(), \
+                                    events[0,iev,ordering.find("t")].item(), \
+                                    events[0,iev,ordering.find("p")].item() 
+                        lay=0
+                        while lay < n+1:
+                            if lay==n:
+                                learn=True
+                            else:
+                                learn=False
+                            timesurf, activ = self.TS[lay].addevent(x, y, t, p)
+                            if lay==0 or filtering=='all':
+                                activ2=activ
+                            if activ2 and np.sum(timesurf)>0:
+                            #if activ==True:
+                                p, dist = self.L[lay].run(timesurf, learn)
+                                if learn:
+                                    self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
+                                if self.jitter:
+                                    x,y = spatial_jitter(x,y,self.TS[0].camsize)
+                                lay += 1
+                            else:
+                                lay = n+1           
+                pbar.close()
+            for l in range(len(self.L)):
+                self.stats[l].histo = self.L[l].cumhisto.copy()
             
-        #self.save_model(dataset)
+            self.save_model(dataset, onbon)
+            
+            return self
     
     
     def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
         
-        model = self.load_model(dataset)
+        onbon = False
+        model = self.load_model(dataset, onbon)
         if model:
             return model
         else:
@@ -196,12 +205,12 @@ class network(object):
             for l in range(len(self.L)):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
 
-            self.save_model(dataset)
+            self.save_model(dataset, onbon)
             
             return self
         
     
-    def running(self, homeotest = True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+    def running(self, homeotest=True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
         
         output = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
         if output:
@@ -286,7 +295,7 @@ class network(object):
         return out, activout
     
     def get_fname(self, path):
-        timestr = '2021-02-08'
+        timestr = '2021-02-13'
         algo = self.L[0].algo
         arch = [self.L[i].kernel.shape[1] for i in range(len(self.L))]
         R = [self.L[i].R for i in range(len(self.L))]
@@ -298,19 +307,24 @@ class network(object):
         f_name = f'{path}/{timestr}_{algo}_{krnlinit}_{sigma}_{homeo}_{homparam}_{arch}_{tau}_{R}'
         return f_name
     
-    def save_model(self, dataset):
+    def save_model(self, dataset, onbon):
         path = f'../Records/{dataset}/models'
         if not os.path.exists(path):
             os.makedirs(path)
-        f_name = self.get_fname(path)+'.pkl'
+        if onbon:
+            f_name = self.get_fname(path)+'_1by1.pkl'
+        else:
+            f_name = self.get_fname(path)+'.pkl'
         with open(f_name, 'wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
             
-    def load_model(self, dataset):
+    def load_model(self, dataset, onbon):
         model = []
         path = f'../Records/{dataset}/models'
-        f_name = self.get_fname(path)+'.pkl'
-        print(f_name)
+        if onbon:
+            f_name = self.get_fname(path)+'_1by1.pkl'
+        else:
+            f_name = self.get_fname(path)+'.pkl'
         if not os.path.isfile(f_name):
             return model
         else:
@@ -331,6 +345,7 @@ class network(object):
         if not LR:
             path = path+'_histo'
         path = path +'.pkl'
+        print(path)
         with open(path, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
             
@@ -346,6 +361,7 @@ class network(object):
         if not LR:
             path = path+'_histo'
         path = path +'.pkl'
+        print(path)
         if not os.path.isfile(path):
             return output
         else:
