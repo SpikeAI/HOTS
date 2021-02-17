@@ -267,7 +267,7 @@ class network(object):
                 self.L[i].homeo=homeomod
 
             if LR:
-                self.save_output(evoutsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
+                self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=True)
                 output = eventsout
             else:
                 self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
@@ -363,7 +363,6 @@ class network(object):
         if not os.path.isfile(f_name):
             return output
         else:
-            print('existing output')
             with open(f_name, 'rb') as file:
                 output = pickle.load(file)
         return output
