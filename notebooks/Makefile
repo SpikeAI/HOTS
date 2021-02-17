@@ -1,4 +1,4 @@
-default: L
+default: M
 
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
@@ -53,4 +53,8 @@ K:
 L:    
 	$(JN) figures.ipynb
 	git commit -m'results : figures ' figures.ipynb
+	git push
+M:    
+	$(JN) HOTS_EXP_11_LR_sequential.ipynb
+	git commit -m'results : LR ' HOTS_EXP_11_LR_sequential.ipynb
 	git push
