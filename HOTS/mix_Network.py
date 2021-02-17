@@ -45,6 +45,8 @@ class network(object):
                         homeinv = False, 
                 ):
         self.jitter = jitter # != from jitonic, this jitter is added at the layer output, creating an average pooling
+        self.onbon = False
+        self.name = 'hots'
         tau *= 1e3 # to enter tau in ms
         if to_record:
             self.stats = [[]]*nblay
@@ -114,58 +116,67 @@ class network(object):
 
     def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
         
-        loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
-        #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
-        eventslist = []
-        nbloadz = np.zeros([nbclass])
-        while np.sum(nbloadz)<nb_digit*nbclass:
-            loadev, loadtar = next(iter(loader))
-            if nbloadz[loadtar]<nb_digit:
-                eventslist.append(loadev)
-                nbloadz[loadtar]+=1
+        self.onbon = True
+        model = self.load_model(dataset)
+        if model:
+            return model
+        else:
         
-        for n in range(len(self.L)):
-            pbar = tqdm(total=nb_digit*nbclass)
-            for idig in range(nb_digit*nbclass):
-                pbar.update(1)
-                events = eventslist[idig]
-                if diginit:
-                    for l in range(n+1):
-                        self.TS[l].spatpmat[:] = 0
-                        self.TS[l].iev = 0
-                for iev in range(events.shape[1]):
-                    x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
-                                events[0,iev,ordering.find("y")].item(), \
-                                events[0,iev,ordering.find("t")].item(), \
-                                events[0,iev,ordering.find("p")].item() 
-                    lay=0
-                    while lay < n+1:
-                        if lay==n:
-                            learn=True
-                        else:
-                            learn=False
-                        timesurf, activ = self.TS[lay].addevent(x, y, t, p)
-                        if lay==0 or filtering=='all':
-                            activ2=activ
-                        if activ2 and np.sum(timesurf)>0:
-                        #if activ==True:
-                            p, dist = self.L[lay].run(timesurf, learn)
-                            if learn:
-                                self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                            if self.jitter:
-                                x,y = spatial_jitter(x,y,self.TS[0].camsize)
-                            lay += 1
-                        else:
-                            lay = n+1           
-            pbar.close()
-        for l in range(len(self.L)):
-            self.stats[l].histo = self.L[l].cumhisto.copy()
+            loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
+            #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
+            eventslist = []
+            nbloadz = np.zeros([nbclass])
+            while np.sum(nbloadz)<nb_digit*nbclass:
+                loadev, loadtar = next(iter(loader))
+                if nbloadz[loadtar]<nb_digit:
+                    eventslist.append(loadev)
+                    nbloadz[loadtar]+=1
+
+            for n in range(len(self.L)):
+                pbar = tqdm(total=nb_digit*nbclass)
+                for idig in range(nb_digit*nbclass):
+                    pbar.update(1)
+                    events = eventslist[idig]
+                    if diginit:
+                        for l in range(n+1):
+                            self.TS[l].spatpmat[:] = 0
+                            self.TS[l].iev = 0
+                    for iev in range(events.shape[1]):
+                        x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
+                                    events[0,iev,ordering.find("y")].item(), \
+                                    events[0,iev,ordering.find("t")].item(), \
+                                    events[0,iev,ordering.find("p")].item() 
+                        lay=0
+                        while lay < n+1:
+                            if lay==n:
+                                learn=True
+                            else:
+                                learn=False
+                            timesurf, activ = self.TS[lay].addevent(x, y, t, p)
+                            if lay==0 or filtering=='all':
+                                activ2=activ
+                            if activ2 and np.sum(timesurf)>0:
+                            #if activ==True:
+                                p, dist = self.L[lay].run(timesurf, learn)
+                                if learn:
+                                    self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
+                                if self.jitter:
+                                    x,y = spatial_jitter(x,y,self.TS[0].camsize)
+                                lay += 1
+                            else:
+                                lay = n+1           
+                pbar.close()
+            for l in range(len(self.L)):
+                self.stats[l].histo = self.L[l].cumhisto.copy()
             
-        #self.save_model(dataset)
-    
+            self.save_model(dataset)
+            
+            return self
+        
     
     def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
         
+        onbon = False
         model = self.load_model(dataset)
         if model:
             return model
@@ -201,7 +212,7 @@ class network(object):
             return self
         
     
-    def running(self, homeotest = True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+    def running(self, homeotest=True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
         
         output = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
         if output:
@@ -285,8 +296,8 @@ class network(object):
             #self.TS[0].plote()
         return out, activout
     
-    def get_fname(self, path):
-        timestr = '2021-02-08'
+    def get_fname(self):
+        timestr = '2021-02-16'
         algo = self.L[0].algo
         arch = [self.L[i].kernel.shape[1] for i in range(len(self.L))]
         R = [self.L[i].R for i in range(len(self.L))]
@@ -295,22 +306,24 @@ class network(object):
         homparam = self.L[0].homparam
         krnlinit = self.L[0].krnlinit
         sigma = self.TS[0].sigma
-        f_name = f'{path}/{timestr}_{algo}_{krnlinit}_{sigma}_{homeo}_{homparam}_{arch}_{tau}_{R}'
+        onebyone = self.onbon
+        f_name = f'{timestr}_{algo}_{krnlinit}_{sigma}_{homeo}_{homparam}_{arch}_{tau}_{R}_{onebyone}'
+        self.name = f_name
+        print(self.name)
         return f_name
     
     def save_model(self, dataset):
-        path = f'../Records/{dataset}/models'
+        path = f'../Records/{dataset}/models/'
         if not os.path.exists(path):
             os.makedirs(path)
-        f_name = self.get_fname(path)+'.pkl'
+        f_name = path+self.get_fname()+'.pkl'
         with open(f_name, 'wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
             
     def load_model(self, dataset):
         model = []
-        path = f'../Records/{dataset}/models'
-        f_name = self.get_fname(path)+'.pkl'
-        print(f_name)
+        path = f'../Records/{dataset}/models/'
+        f_name = path+self.get_fname()+'.pkl'
         if not os.path.isfile(f_name):
             return model
         else:
@@ -320,36 +333,38 @@ class network(object):
     
     def save_output(self, evout, homeo, dataset, nb, train, jitonic, LR):
         if train: 
-            path = f'../Records/{dataset}/train'
+            path = f'../Records/{dataset}/train/'
         else: 
-            path = f'../Records/{dataset}/test'
+            path = f'../Records/{dataset}/test/'
         if not os.path.exists(path):
             os.makedirs(path)
-        path = self.get_fname(path)+f'_{nb}_{jitonic}'
+        f_name = path+self.name+f'_{nb}_{jitonic}'
         if homeo:
-            path = path+'_homeo'
+            f_name = f_name+'_homeo'
         if not LR:
-            path = path+'_histo'
-        path = path +'.pkl'
-        with open(path, 'wb') as file:
+            f_name = f_name+'_histo'
+        f_name = f_name +'.pkl'
+        with open(f_name, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
             
     def load_output(self, dataset, homeo, nb, train, jitonic, LR):
         output = []
         if train: 
-            path = f'../Records/{dataset}/train'
+            path = f'../Records/{dataset}/train/'
         else: 
-            path = f'../Records/{dataset}/test'
-        path = self.get_fname(path)+f'_{nb}_{jitonic}'
+            path = f'../Records/{dataset}/test/'
+        f_name = path+self.name+f'_{nb}_{jitonic}'
         if homeo:
-            path = path+'_homeo'
+            f_name = f_name+'_homeo'
         if not LR:
-            path = path+'_histo'
-        path = path +'.pkl'
-        if not os.path.isfile(path):
+            f_name = f_name+'_histo'
+        f_name = f_name +'.pkl'
+        print(f_name)
+        if not os.path.isfile(f_name):
             return output
         else:
-            with open(path, 'rb') as file:
+            print('existing output')
+            with open(f_name, 'rb') as file:
                 output = pickle.load(file)
         return output
 
