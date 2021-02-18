@@ -1,4 +1,4 @@
-default: I J
+default: M
 
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
@@ -31,18 +31,30 @@ F:
 	git commit -m' LR results : HOTS_EXP_04_LR-large ' HOTS_EXP_04_LR-large.ipynb
 	git push
 G:    
-	$(JN) HOTS_EXP_08_jitter.ipynb
-	git commit -m'results : HOTS_EXP_08_jitter ' HOTS_EXP_08_jitter.ipynb
+	$(JN) HOTS_EXP_08_temporal_jitter.ipynb
+	git commit -m'results : HOTS_EXP_08_jitter ' HOTS_EXP_08_temporal_jitter.ipynb
 	git push 
 H:    
+	$(JN) HOTS_EXP_08_spatial_jitter.ipynb
+	git commit -m'results : HOTS_EXP_08_jitter ' HOTS_EXP_08_spatial_jitter.ipynb
+	git push 
+I:    
 	$(JN) HOTS_EXP_02_NMNIST.ipynb
 	git commit -m'results : HOTS_EXP_02 ' HOTS_EXP_02_NMNIST.ipynb
 	git push
-I:    
+J:    
 	$(JN) HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
 	git commit -m'results : HOTS_EXP_09 ' HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
 	git push
-J:    
+K:    
 	$(JN) HOTS_EXP_09_LR_PyTorch-Laurent-max.ipynb
 	git commit -m'results : HOTS_EXP_09 ' HOTS_EXP_09_LR_PyTorch-Laurent-max.ipynb
+	git push
+L:    
+	$(JN) figures.ipynb
+	git commit -m'results : figures ' figures.ipynb
+	git push
+M:    
+	$(JN) HOTS_EXP_11_LR_sequential.ipynb
+	git commit -m'results : LR ' HOTS_EXP_11_LR_sequential.ipynb
 	git push
