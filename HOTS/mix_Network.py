@@ -525,9 +525,9 @@ class network(object):
         fig = plt.figure(figsize=(16,9))
         gs = fig.add_gridspec(np.sum(P)+hisiz, np.sum(N)+len(self.L)-1, wspace=0.05, hspace=0.05)
         if self.L[-1].homeo:
-            fig.suptitle('Activation histograms and associated features with homeostasis', size=20, y=0.95)
+            fig.suptitle('Activation histograms and associated time surfaces with homeostasis', size=20, y=0.95)
         else:
-            fig.suptitle('Activation histograms and associated features without homeostasis', size=20, y=0.95)
+            fig.suptitle('Activation histograms and associated time surfaces for original hots', size=20, y=0.95)
 
         for i in range(len(self.L)):
             ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
