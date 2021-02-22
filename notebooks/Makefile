@@ -4,8 +4,9 @@ J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreproce
 JN=$(J) --to notebook --inplace
 
 laurent:
-	$(JN) HOTS_EXP_09_LR_PyTorch-Laurent-full.ipynb
-
+	# $(JN) HOTS_EXP_10_Pytorch_LR_dataload.ipynb
+	$(JN) HOTS_EXP_10_Pytorch_LR_dataload-XXL.ipynb
+    
 A:
 	$(JN) HOTS_EXP_05_NCARS.ipynb
 	git commit -m 'EXP 05 results' HOTS_EXP_05_NCARS.ipynb
