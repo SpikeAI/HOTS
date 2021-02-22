@@ -2,8 +2,6 @@ import numpy as np
 from mix_Layer import *
 from mix_TimeSurface import *
 from mix_Stats import *
-from vic_Event import Event
-from vic_Tools import LoadObject
 from tqdm import tqdm_notebook as tqdm
 from sklearn.neighbors import KNeighborsClassifier
 import tonic
@@ -371,26 +369,27 @@ class network(object):
 ##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
 
     def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
-
-        #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
-        if dataset == 'simple':
-            event = Event(ImageSize=(32, 32))
-            digit_numbers = [1,32,19,22,29]
-            diglist = []
-            for nbd in range(nb_cycle):
-                diglist+=digit_numbers
-            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=diglist)
-        else: print('only one dataset compatible with this method')
+        
+        
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
         
-        nbevent = int(event.time.shape[0])    
+        path = "../Data/alphabet_ExtractedStabilized.mat"
+        
+        image_list = [1, 32, 19, 22, 29]
+        image_list += image_list
+        image_list += image_list
+        address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
+
+        #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
+        
+        nbevent = int(time.shape[0])    
         for n in range(len(self.L)):
             count = 0
             pbar = tqdm(total=nbevent)
             while count<nbevent:
                 pbar.update(1)
-                x,y,t,p = event.address[count,0],event.address[count,1], event.time[count],event.polarity[count]
-                if diginit and event.time[count]<event.time[count-1]:
+                x,y,t,p = address[count,0],address[count,1], time[count],polarity[count]
+                if diginit and time[count]<time[count-1]:
                     for i in range(n+1):
                         self.TS[i].spatpmat[:] = 0
                         self.TS[i].iev = 0
@@ -419,10 +418,11 @@ class network(object):
     def traininglagorce(self, nb_digit=None, dataset='simple', to_record=True):
 
         if dataset == 'simple':
-            event = Event(ImageSize=(32, 32))
-            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=list(
-                                                                                            np.arange(0, 36)))
-            label_list = LoadObject('../Data/alphabet_label.pkl')
+            path = "../Data/alphabet_ExtractedStabilized.mat"
+            image_list=list(np.arange(0, 36))
+            address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
+            with open('../Data/alphabet_label.pkl', 'rb') as file:
+                label_list = pickle.load(file)
             label = label_list[:36]
         else:
             print('not ready yet')
@@ -432,7 +432,7 @@ class network(object):
         output = []
         count = 0
         count2 = 0
-        nbevent = int(event.time.shape[0])
+        nbevent = int(time.shape[0])
         pbar = tqdm(total=nbevent)
         idx = 0
         labelmap = []
@@ -443,7 +443,7 @@ class network(object):
             
         while count<nbevent:
             pbar.update(1)
-            self.run(event.address[count,0],event.address[count,1],event.time[count], event.polarity[count], learn, to_record)
+            self.run(address[count,0],address[count,1],time[count],polarity[count], learn, to_record)
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
@@ -461,10 +461,11 @@ class network(object):
     def testinglagorce(self, trainmap, nb_digit=None, dataset='simple', to_record=True):
 
         if dataset == 'simple':
-            event = Event(ImageSize=(32, 32))
-            event.LoadFromMat("../Data/alphabet_ExtractedStabilized.mat", image_number=list(
-                                                                                            np.arange(36, 76)))
-            label_list = LoadObject('../Data/alphabet_label.pkl')
+            path = "../Data/alphabet_ExtractedStabilized.mat"
+            image_list=list(np.arange(36, 76))
+            address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
+            with open('../Data/alphabet_label.pkl', 'rb') as file:
+                label_list = pickle.load(file)
             label = label_list[36:76]
         else:
             print('not ready yet')
@@ -474,7 +475,7 @@ class network(object):
         output = []
         count = 0
         count2 = 0
-        nbevent = int(event.time.shape[0])
+        nbevent = int(time.shape[0])
         pbar = tqdm(total=nbevent)
         idx = 0
         labelmap = []
@@ -484,7 +485,7 @@ class network(object):
             self.L[i].cumhisto[:] = 1
         while count<nbevent:
             pbar.update(1)
-            self.run(event.address[count,0],event.address[count,1],event.time[count],event.polarity[count], learn, to_record)
+            self.run(address[count,0],address[count,1],time[count],polarity[count], learn, to_record)
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
@@ -846,3 +847,54 @@ def spatial_jitter(
     elif ys>sensor_size[1]-1: ys = sensor_size[1]-1
 
     return xs, ys
+
+
+#__________________OLD_CODE___________________________________________________________________________
+#_____________________________________________________________________________________________________
+
+def LoadFromMat(path, image_number, OutOnePolarity=False, verbose=0):
+    '''
+            Load Events from a .mat file. Only the events contained in ListPolarities are kept:
+            INPUT
+                + path : a string which is the path of the .mat file (ex : './data_cache/alphabet_ExtractedStabilized.mat')
+                + image_number : list with all the numbers of image to load
+    '''
+    import scipy
+    obj = scipy.io.loadmat(path)
+    ROI = obj['ROI'][0]
+
+    if type(image_number) is int:
+        image_number = [image_number]
+    elif type(image_number) is not list:
+        raise TypeError(
+                    'the type of argument image_number should be int or list')
+    if verbose > 0:
+        print("loading images {0}".format(image_number))
+    Total_size = 0
+    for idx, each_image in enumerate(image_number):
+        image = ROI[each_image][0, 0]
+        Total_size += image[1].shape[1]
+
+    address = np.zeros((Total_size, 2)).astype(int)
+    time = np.zeros((Total_size))
+    polarity = np.zeros((Total_size))
+    first_idx = 0
+
+    for idx, each_image in enumerate(image_number):
+        image = ROI[each_image][0, 0]
+        last_idx = first_idx + image[0].shape[1]
+        address[first_idx:last_idx, 0] = (image[1] - 1).astype(int)
+        address[first_idx:last_idx, 1] = (image[0] - 1).astype(int)
+        time[first_idx:last_idx] = (image[3] * 1e-6)
+        polarity[first_idx:last_idx] = image[2].astype(int)
+        first_idx = last_idx
+
+    polarity[polarity.T == -1] = 0
+    polarity = polarity.astype(int)
+            # Filter only the wanted polarity
+    ListPolarities = np.unique(polarity)
+    if OutOnePolarity == True:
+        polarity = np.zeros_like(polarity)
+        ListPolarities = [0]
+        
+    return address, time, polarity, ListPolarities
