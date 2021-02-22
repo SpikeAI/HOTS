@@ -11,6 +11,7 @@ A Hierarchy of event-based Time-Surfaces for Pattern Recognition
 Pattern Recognition' Xavier Lagorce, Garrick Orchard, Fransesco Gallupi, And Ryad Benosman'
 """
 
+# TODO : include new names for scripts and code
 from HOTS import STS
 from HOTS import Event
 from HOTS import ToolsMonitor
