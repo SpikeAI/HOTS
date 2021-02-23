@@ -40,7 +40,7 @@ class network(object):
                         filt = 2,
                         sigma = None,
                         jitter = False,
-                        homeinv = False, 
+                        homeinv = False,
                 ):
         self.jitter = jitter # != from jitonic, this jitter is added at the layer output, creating an average pooling
         self.onbon = False
@@ -61,7 +61,7 @@ class network(object):
                 self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
                     self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
-        
+
 ##___________________________________________________________________________________________
 
     def load(self, dataset, trainset=True, jitonic=[None,None]):
@@ -69,15 +69,15 @@ class network(object):
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
             transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True)])
-            
+
         if jitonic[0] is not None:
             print(f'time jitter -> var = {jitonic[0]}')
             transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(variance=jitonic[0], integer_timestamps=False, clip_negative=True)])
-            
+
         if jitonic == [None,None]:
             print('no jitter')
             transform = None
-            
+
         download=False
         if dataset == 'nmnist':
             path = '../Data/'
@@ -122,13 +122,13 @@ class network(object):
 
 
     def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
-        
+
         self.onbon = True
         model = self.load_model(dataset)
         if model:
             return model
         else:
-        
+
             loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
             #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
             eventslist = []
@@ -152,7 +152,7 @@ class network(object):
                         x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
                                     events[0,iev,ordering.find("y")].item(), \
                                     events[0,iev,ordering.find("t")].item(), \
-                                    events[0,iev,ordering.find("p")].item() 
+                                    events[0,iev,ordering.find("p")].item()
                         lay=0
                         while lay < n+1:
                             if lay==n:
@@ -171,24 +171,24 @@ class network(object):
                                     x,y = spatial_jitter(x,y,self.TS[0].camsize)
                                 lay += 1
                             else:
-                                lay = n+1           
+                                lay = n+1
                 pbar.close()
             for l in range(len(self.L)):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
-            
+
             self.save_model(dataset)
-            
+
             return self
-        
-    
+
+
     def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
-        
+
         onbon = False
         model = self.load_model(dataset)
         if model:
             return model
         else:
-        
+
             loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
 
             pbar = tqdm(total=nb_digit*nbclass)
@@ -215,20 +215,20 @@ class network(object):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
 
             self.save_model(dataset)
-            
+
             return self
-        
-    
+
+
     def running(self, homeotest=True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
-        
+
         output = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
         if output:
             return output
         else:
             loader, ordering, nbclass = self.load(dataset, trainset=train, jitonic=jitonic)
-            
+
             homeomod = self.L[0].homeo
-            
+
             for i in range(len(self.L)):
                 self.L[i].homeo=homeotest
 
@@ -239,6 +239,12 @@ class network(object):
             polout = []
             labout = []
             labelmap = []
+
+            x_index = ordering.find("x")
+            y_index = ordering.find("y")
+            t_index = ordering.find("t")
+            p_index = ordering.find("p")
+
             for idig in range(nb_digit):
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
@@ -248,19 +254,19 @@ class network(object):
                 pbar.update(1)
                 events, target = next(iter(loader))
                 for iev in range(events.shape[1]):
-                    out, activout = self.run(events[0][iev][ordering.find("x")].item(), \
-                                            events[0][iev][ordering.find("y")].item(), \
-                                            events[0][iev][ordering.find("t")].item(), \
-                                            events[0][iev][ordering.find("p")].item(), \
+                    out, activout = self.run(events[0][iev][x_index].item(), \
+                                            events[0][iev][y_index].item(), \
+                                            events[0][iev][t_index].item(), \
+                                            events[0][iev][p_index].item(), \
                                             to_record=to_record)
                     if LR and activout:
-                        xout.append(out[0])
-                        yout.append(out[1])
-                        timout.append(out[2])
-                        polout.append(out[3])
+                        xout.append(out[x_index])
+                        yout.append(out[y_index])
+                        timout.append(out[t_index])
+                        polout.append(out[p_index])
                         labout.append(target.item())
 
-                if not LR:        
+                if not LR:
                     data = (target.item(),self.L[-1].cumhisto.copy())
                     labelmap.append(data)
                     eventsout = []
@@ -269,7 +275,7 @@ class network(object):
                 nbpola = self.L[-1].kernel.shape[1]
                 eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
             pbar.close()
-            
+
             for i in range(len(self.L)):
                 self.L[i].homeo=homeomod
 
@@ -302,7 +308,7 @@ class network(object):
         #if self.TS[0].iev//500==0:
             #self.TS[0].plote()
         return out, activout
-    
+
     def get_fname(self):
         timestr = '2021-02-16'
         algo = self.L[0].algo
@@ -318,7 +324,7 @@ class network(object):
         self.name = f_name
         print(self.name)
         return f_name
-    
+
     def save_model(self, dataset):
         path = f'../Records/{dataset}/models/'
         if not os.path.exists(path):
@@ -326,7 +332,7 @@ class network(object):
         f_name = path+self.get_fname()+'.pkl'
         with open(f_name, 'wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
-            
+
     def load_model(self, dataset):
         model = []
         path = f'../Records/{dataset}/models/'
@@ -337,11 +343,11 @@ class network(object):
             with open(f_name, 'rb') as file:
                 model = pickle.load(file)
         return model
-    
+
     def save_output(self, evout, homeo, dataset, nb, train, jitonic, LR):
-        if train: 
+        if train:
             path = f'../Records/{dataset}/train/'
-        else: 
+        else:
             path = f'../Records/{dataset}/test/'
         if not os.path.exists(path):
             os.makedirs(path)
@@ -353,12 +359,12 @@ class network(object):
         f_name = f_name +'.pkl'
         with open(f_name, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
-            
+
     def load_output(self, dataset, homeo, nb, train, jitonic, LR):
         output = []
-        if train: 
+        if train:
             path = f'../Records/{dataset}/train/'
-        else: 
+        else:
             path = f'../Records/{dataset}/test/'
         f_name = path+self.name+f'_{nb}_{jitonic}'
         if homeo:
@@ -378,20 +384,20 @@ class network(object):
 ##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
 
     def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
-        
-        
+
+
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
-        
+
         path = "../Data/alphabet_ExtractedStabilized.mat"
-        
+
         image_list = [1, 32, 19, 22, 29]
         image_list += image_list
         image_list += image_list
         address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
 
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
-        
-        nbevent = int(time.shape[0])    
+
+        nbevent = int(time.shape[0])
         for n in range(len(self.L)):
             count = 0
             pbar = tqdm(total=nbevent)
@@ -449,7 +455,7 @@ class network(object):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
             self.L[i].cumhisto[:] = 1
-            
+
         while count<nbevent:
             pbar.update(1)
             self.run(address[count,0],address[count,1],time[count],polarity[count], learn, to_record)
@@ -508,14 +514,14 @@ class network(object):
             count2 += 1
 
         pbar.close()
-        
+
         score1=accuracy(trainmap,labelmap,'bhatta')
         score2=accuracy(trainmap,labelmap,'eucli')
         score3=accuracy(trainmap,labelmap,'norm')
         print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
-        
+
         return labelmap, [score1,score2,score3]
-    
+
 ##___________________PLOTTING________________________________________________________________
 
     def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
@@ -559,7 +565,7 @@ class network(object):
                     else:
                         axi = fig.add_subplot(gs[j+hisiz,k+1*i+int(np.sum(N[:i]))])
                         krnl = self.L[i].kernel[j*R2[i]:(j+1)*R2[i],k].reshape((int(np.sqrt(R2[i])), int(np.sqrt(R2[i]))))
-                        
+
                         axi.imshow(krnl, vmin=0, vmax=vmaxi, cmap=plt.cm.plasma, interpolation='nearest')
                         axi.set_xticks(())
                         axi.set_yticks(())
@@ -591,14 +597,14 @@ class network(object):
                     axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
                     axi.set_xticks(())
                     axi.set_yticks(())
-                    
-                    
+
+
 ##________________POOLING NETWORK____________________________________________________________
 ##___________________________________________________________________________________________
 
 
 class poolingnetwork(network):
-    
+
     def __init__(self,
                         # architecture of the network (default=Lagorce2017)
                         nbclust = 4,
@@ -625,7 +631,7 @@ class poolingnetwork(network):
                         sigma = None,
                         jitter = False,
                         homeinv = False,
-                 
+
                         Kstride = 2,
                         Kevtstr = False,
                 ):
@@ -633,17 +639,17 @@ class poolingnetwork(network):
                         nbclust = nbclust,
                         K_clust = K_clust,
                         nblay = nblay,
-                        tau = tau, 
+                        tau = tau,
                         K_tau = K_tau,
-                        decay = decay, 
+                        decay = decay,
                         nbpolcam = nbpolcam,
                         R = R,
                         K_R = K_R,
                         camsize = camsize,
                         begin = begin,
-                        algo = algo, 
+                        algo = algo,
                         krnlinit = krnlinit,
-                        hout = hout, 
+                        hout = hout,
                         homeo = homeo,
                         homparam = homparam,
                         pola = pola,
@@ -653,7 +659,7 @@ class poolingnetwork(network):
                         jitter = jitter,
                         homeinv = homeinv
                 )
-        
+
         self.Kstride = Kstride
         self.Kevtstr = Kevtstr
         for lay in range(1,nblay):
@@ -661,9 +667,9 @@ class poolingnetwork(network):
             self.TS[lay] = TimeSurface(R, tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
             self.L[lay] = layer(R, 16, pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
             self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
- 
+
  ##____________________________________________________________________________________
-        
+
     def run(self, x, y, t, p, learn=False, to_record=False):
         lay = 0
         activout=False
@@ -687,10 +693,10 @@ class poolingnetwork(network):
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
         return out, activout
-    
-    
+
+
     def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
-        
+
         loader, ordering, nbclass = self.load(dataset)
         #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
         eventslist = []
@@ -700,7 +706,7 @@ class poolingnetwork(network):
             if nbloadz[loadtar]<nb_digit:
                 eventslist.append(loadev)
                 nbloadz[loadtar]+=1
-        
+
         for n in range(len(self.L)):
             pbar = tqdm(total=nb_digit*nbclass)
             for idig in range(nb_digit*nbclass):
@@ -714,7 +720,7 @@ class poolingnetwork(network):
                     x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
                                 events[0,iev,ordering.find("y")].item(), \
                                 events[0,iev,ordering.find("t")].item(), \
-                                events[0,iev,ordering.find("p")].item() 
+                                events[0,iev,ordering.find("p")].item()
                     lay=0
                     while lay < n+1:
                         if lay==n:
@@ -737,16 +743,16 @@ class poolingnetwork(network):
                                 y = min(y//self.Kstride,self.TS[lay+1].camsize[1]-1)
                             lay += 1
                         else:
-                            lay = n+1           
+                            lay = n+1
             pbar.close()
         for l in range(len(self.L)):
             self.stats[l].histo = self.L[l].cumhisto.copy()
         return loader, ordering
 
-                    
+
 ##__________________TOOLS____________________________________________________________________
 ##___________________________________________________________________________________________
-    
+
 def EuclidianNorm(hist1,hist2):
     return np.linalg.norm(hist1-hist2)
 
@@ -813,7 +819,7 @@ def histoscore(trainmap,testmap,k=6, verbose = True):
         print(f'Classification scores with entropy: Kullback-Leibler = {KL_score*100}% - Jensen-Shannon = {JS_score*100}%')
         print(100*'-')
     return JS_score
-        
+
 def spatial_jitter(
     x_index, y_index,
     sensor_size,
@@ -849,7 +855,7 @@ def spatial_jitter(
 
     xs = (x_index + shifts[0])
     ys = (y_index + shifts[1])
-    
+
     if xs<0: xs=0
     elif xs>sensor_size[0]-1: xs = sensor_size[0]-1
     if ys<0: ys=0
@@ -905,5 +911,5 @@ def LoadFromMat(path, image_number, OutOnePolarity=False, verbose=0):
     if OutOnePolarity == True:
         polarity = np.zeros_like(polarity)
         ListPolarities = [0]
-        
+
     return address, time, polarity, ListPolarities
