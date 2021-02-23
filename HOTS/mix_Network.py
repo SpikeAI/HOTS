@@ -78,9 +78,18 @@ class network(object):
             print('no jitter')
             transform = None
             
+        download=False
         if dataset == 'nmnist':
+            path = '../Data/'
+            if trainset:
+                path+='Train/'
+            else:
+                path+='Test/'
+            if not os.path.exists(path):
+                download=True
+
             eventset = tonic.datasets.NMNIST(save_to='../Data/',
-                                train=trainset,
+                                train=trainset, download=download,
                                 transform=transform)
         elif dataset == 'poker':
             eventset = tonic.datasets.POKERDVS(save_to='../Data/',
