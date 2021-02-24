@@ -1,10 +1,8 @@
 import numpy as np
-from scipy import signal
 import copy
-from mix_TimeSurface import *
+from mix_TimeSurface import TimeSurface
 import matplotlib.pyplot as plt
 from IPython import display
-import time
 
 class layer(object):
     """layer aims at learning an online sparse dictionary to describe an input stimulus (here a time-surface). Given the input size (square 2R+1 matrix) it will create a (2R+1)^2 by N dictionary matrix: self.dic . compute h (output), which is the sparse map: the coefficients by which one multiply the dictionary (basis) to get the reconstructed signal.
