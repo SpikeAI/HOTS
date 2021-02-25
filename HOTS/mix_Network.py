@@ -1,16 +1,12 @@
 import numpy as np
-from mix_Layer import *
-from mix_TimeSurface import *
-from mix_Stats import *
-from tqdm import tqdm_notebook as tqdm
-from sklearn.neighbors import KNeighborsClassifier
+import matplotlib.pyplot as plt
+from mix_Layer import layer
+from mix_TimeSurface import TimeSurface
+from mix_Stats import stats
+from tqdm.notebook import tqdm
 import tonic
 import os
 import pickle
-import datetime
-#from threading import Thread, Rlock
-
-#loco = Rlock()
 
 class network(object):
     """network is an object composed of nblay layers (dico in Layer.py) and the same numbers of TS (TimeSurface.py) as input of the different layers. It processes the different """
@@ -219,7 +215,7 @@ class network(object):
             return self
 
 
-    def running(self, homeotest=True, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+    def running(self, homeotest=False, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
 
         output = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
         if output:
@@ -326,7 +322,9 @@ class network(object):
         return f_name
 
     def save_model(self, dataset):
-        path = f'../Records/{dataset}/models/'
+        if dataset=='nmnist':
+            path = f'../Records/EXP_03_NMNIST/models/'
+        else: print('define a path for this dataset')
         if not os.path.exists(path):
             os.makedirs(path)
         f_name = path+self.get_fname()+'.pkl'
@@ -335,7 +333,9 @@ class network(object):
 
     def load_model(self, dataset):
         model = []
-        path = f'../Records/{dataset}/models/'
+        if dataset=='nmnist':
+            path = f'../Records/EXP_03_NMNIST/models/'
+        else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
         if not os.path.isfile(f_name):
             return model
@@ -345,6 +345,9 @@ class network(object):
         return model
 
     def save_output(self, evout, homeo, dataset, nb, train, jitonic, LR):
+        if dataset=='nmnist':
+            dataset = 'EXP_03_NMNIST'
+        else: print('define a path for this dataset')
         if train:
             path = f'../Records/{dataset}/train/'
         else:
@@ -362,6 +365,9 @@ class network(object):
 
     def load_output(self, dataset, homeo, nb, train, jitonic, LR):
         output = []
+        if dataset=='nmnist':
+            dataset = 'EXP_03_NMNIST'
+        else: print('define a path for this dataset')
         if train:
             path = f'../Records/{dataset}/train/'
         else:
@@ -794,6 +800,8 @@ def accuracy(trainmap,testmap,measure):
     return accuracy/total
 
 def knn(trainmap,testmap,k):
+    from sklearn.neighbors import KNeighborsClassifier
+    
     X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
@@ -874,8 +882,8 @@ def LoadFromMat(path, image_number, OutOnePolarity=False, verbose=0):
                 + path : a string which is the path of the .mat file (ex : './data_cache/alphabet_ExtractedStabilized.mat')
                 + image_number : list with all the numbers of image to load
     '''
-    import scipy
-    obj = scipy.io.loadmat(path)
+    from scipy import io
+    obj = io.loadmat(path)
     ROI = obj['ROI'][0]
 
     if type(image_number) is int:
