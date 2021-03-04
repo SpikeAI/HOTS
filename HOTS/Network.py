@@ -341,7 +341,7 @@ class network(object):
         onebyone = self.onbon
         f_name = f'{timestr}_{algo}_{krnlinit}_{sigma}_{homeo}_{homparam}_{arch}_{tau}_{R}_{onebyone}'
         self.name = f_name
-        print(self.name)
+        #print(self.name)
         return f_name
 
     def save_model(self, dataset):

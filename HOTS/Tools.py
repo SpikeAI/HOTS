@@ -59,34 +59,43 @@ class LRtorch(torch.nn.Module):
 
 def get_loader(name, nb_digit, train, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr):
 
-    hotshom, homeotest = netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
-    stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, LR=True)
+    if name=='raw':
+        name_net = f'{timestr}_{name}'
+        download = False
+        train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
+                                  train=train, download=download,
+                                  transform=tonic.transforms.AERtoVector()
+                                 )
+        nb_pola = 2
+    else:
+        hotshom, homeotest = netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
+        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, LR=True)
 
-    # get indices for transitions from one digit to another 
-    def getdigind(stream):
-        t = np.array(stream[2])
-        newdig = [0]
-        for i in range(len(t)-1):
-            if t[i]>t[i+1]:
-                newdig.append(i+1)
-        newdig.append(i)
-        return newdig
+        # get indices for transitions from one digit to another 
+        def getdigind(stream):
+            t = np.array(stream[2])
+            newdig = [0]
+            for i in range(len(t)-1):
+                if t[i]>t[i+1]:
+                    newdig.append(i+1)
+            newdig.append(i)
+            return newdig
 
-    events_train = np.zeros([len(stream[2]), 4])
-    ordering = 'xytp'
-    for i in range(4):
-        events_train[:, i] = stream[i][:]
+        events_train = np.zeros([len(stream[2]), 4])
+        ordering = 'xytp'
+        for i in range(4):
+            events_train[:, i] = stream[i][:]
 
-    X_train = events_train.astype(int)
-    y_train = stream[4]
-    digind_train = getdigind(stream)
+        X_train = events_train.astype(int)
+        y_train = stream[4]
+        digind_train = getdigind(stream)
 
-    nb_pola = stream[-1]
-    # Dataset w/o any tranformations
-    train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train,
-                                        transform=tonic.transforms.AERtoVector(nb_pola = nb_pola))
-    #train_loader = torch.utils.data.DataLoader(train_dataset_normal, batch_size=1)
-    name_net = hotshom.get_fname()
+        nb_pola = stream[-1]
+        # Dataset w/o any tranformations
+        train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train,
+                                            transform=tonic.transforms.AERtoVector(nb_pola = nb_pola))
+        #train_loader = torch.utils.data.DataLoader(train_dataset_normal, batch_size=1)
+        name_net = hotshom.get_fname()
     
     return train_dataset, nb_pola, name_net
 
@@ -125,7 +134,7 @@ def fit_data(name,
         optimizer = torch.optim.Adam(
             logistic_model.parameters(), lr=learning_rate, betas=betas, amsgrad=amsgrad
         )
-        print('quoi?')
+
         for epoch in range(int(num_epochs)):
             losses = []
             for X, label in loader:
@@ -242,3 +251,25 @@ def runjit(timestr, name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, jit
             pickle.dump([score_T, jit_t, score_S, jit_s], file, pickle.HIGHEST_PROTOCOL)
         
     return score_T, jit_t, score_S, jit_s 
+
+def classification_results(pred_target, true_target, nb_test, verbose=False):
+    accuracy = []
+    onlinac = np.zeros(10000) # vector that has size bigger than all event stream size
+    for pred_target_, true_target_ in zip(pred_target, true_target):
+        accuracy.append(np.mean(pred_target_ == true_target_))
+        fill_pred = pred_target_[-1]*np.ones(len(onlinac)-len(pred_target_))
+        fill_true = true_target_[-1]*np.ones(len(onlinac)-len(pred_target_))
+        #fill_pred[:] = np.NaN
+        #fill_true[:] = np.NaN
+        pred_target_ = np.concatenate([pred_target_,fill_pred])
+        true_target_ = np.concatenate([true_target_,fill_true])
+        onlinac+=(pred_target_ == true_target_)
+        
+    if verbose:
+        print(f'{np.mean(accuracy)=:.3f}')
+        plt.plot(onlinac[:5000]/nb_test);
+        plt.xlabel('number of events');
+        plt.ylabel('online accuracy');
+        plt.title('LR classification results evolution as a function of the number of events');
+    
+    return np.mean(accuracy), onlinac
