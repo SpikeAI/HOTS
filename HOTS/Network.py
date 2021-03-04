@@ -21,7 +21,7 @@ class network(object):
              .plotactiv -> plots the activation map of each layer
              """
 
-    def __init__(self,
+    def __init__(self,  timestr = None,
                         # architecture of the network (default=Lagorce2017)
                         nbclust = 4,
                         K_clust = 2, # nbclust(L+1) = K_clust*nbclust(L)
@@ -51,6 +51,7 @@ class network(object):
         self.jitter = jitter # != from jitonic, this jitter is added at the layer output, creating an average pooling
         self.onbon = False
         self.name = 'hots'
+        self.date = timestr
         tau *= 1e3 # to enter tau in ms
         if to_record:
             self.stats = [[]]*nblay
@@ -328,7 +329,7 @@ class network(object):
         return out, activout
 
     def get_fname(self):
-        timestr = '2021-02-16'
+        timestr = self.date
         algo = self.L[0].algo
         arch = [self.L[i].kernel.shape[1] for i in range(len(self.L))]
         R = [self.L[i].R for i in range(len(self.L))]

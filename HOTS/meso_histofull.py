@@ -1,5 +1,5 @@
-
 from mix_Network import network, histoscore
+from Tools import netparam
 name = 'homhots'
 sigma = None
 pooling = False
@@ -10,47 +10,6 @@ tau = 5
 nblay = 3
 nbclust = 4
 filt = 2
-def netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter):
-    if name=='hots':
-        homeo = False
-        homeotest = False
-        krnlinit = 'first'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nblay=nblay, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter)
-        hotshom = hotshom.learning1by1()
-    elif name=='homhots':
-        homeo = True
-        homeotest = True
-        krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nblay=nblay, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter)
-        hotshom = hotshom.learningall()
-    elif name=='onlyonline':
-        homeo = False
-        homeotest = False
-        krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nblay=nblay, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter)
-        hotshom = hotshom.learningall()
-    return hotshom, homeotest
-
-def runjit(hotshom, jit_s, jit_t, homeotest, trainhistomap, nb_test):
-    score_S = []
-    score_T = []
-    for i in jit_s:
-        i = round(i,1)
-        jitonic = [None,i]
-        testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
-        JS_score = histoscore(trainhistomap,testhistomap, verbose = False)
-        print(f'loading... - spatial jitter = {i} - score = {JS_score}',end='\r')
-        score_S.append(JS_score)
-
-    for j in jit_t:
-        j = round(j,1)
-        jitonic = [j,None]
-        testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
-        JS_score = histoscore(trainhistomap,testhistomap, verbose = False)
-        print(f'loading... - temporal jitter = {j} - score = {JS_score}',end='\r')
-        score_T.append(JS_score)
-        
-    return score_S, score_T
 
 nethots, homeotest = netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter)
 
