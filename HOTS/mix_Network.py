@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from mix_Layer import layer
 from mix_TimeSurface import TimeSurface
 from mix_Stats import stats
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import tonic
 import os
 import pickle
