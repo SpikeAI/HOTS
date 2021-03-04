@@ -30,7 +30,7 @@ nb_train = 60000
 ds = 120
 nb_test = nb_test//ds
 nb_train = nb_train//ds
-print(f'training set size: {nb_train} - testing set: {nb_test})
+print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 
 timestr = '2021-02-16'
