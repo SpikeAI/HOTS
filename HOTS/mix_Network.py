@@ -217,8 +217,8 @@ class network(object):
 
     def running(self, homeotest=False, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
 
-        output = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
-        if output:
+        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
+        if loaded:
             return output
         else:
             loader, ordering, nbclass = self.load(dataset, trainset=train, jitonic=jitonic)
@@ -234,7 +234,11 @@ class network(object):
             yout = []
             polout = []
             labout = []
-            labelmap = []
+            if train:
+                labelmap = np.zeros([nbclass, len(self.L[-1].cumhisto)])
+                labelcount = np.zeros(nbclass)
+            else:
+                labelmap = []
 
             x_index = ordering.find("x")
             y_index = ordering.find("y")
@@ -263,8 +267,12 @@ class network(object):
                         labout.append(target.item())
 
                 if not LR:
-                    data = (target.item(),self.L[-1].cumhisto.copy())
-                    labelmap.append(data)
+                    if train:
+                        labelmap[target.item(),:] += self.L[-1].cumhisto/np.sum(self.L[-1].cumhisto)
+                        labelcount[target.item()] += 1
+                    else: 
+                        data = (target.item(),self.L[-1].cumhisto.copy())
+                        labelmap.append(data)
                     eventsout = []
             if LR:
                 camsize = self.TS[-1].camsize
@@ -279,6 +287,10 @@ class network(object):
                 self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=True)
                 output = eventsout
             else:
+                if train:
+                    for i in range(len(labelcount)):
+                        labelmap[i,:] /= labelcount[i]
+                    
                 self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
                 output = labelmap
             return output
@@ -364,6 +376,7 @@ class network(object):
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
 
     def load_output(self, dataset, homeo, nb, train, jitonic, LR):
+        loaded = False
         output = []
         if dataset=='nmnist':
             dataset = 'EXP_03_NMNIST'
@@ -379,12 +392,11 @@ class network(object):
             f_name = f_name+'_histo'
         f_name = f_name +'.pkl'
         print(f_name)
-        if not os.path.isfile(f_name):
-            return output
-        else:
+        if os.path.isfile(f_name):
             with open(f_name, 'rb') as file:
                 output = pickle.load(file)
-        return output
+            loaded = True
+        return output, loaded
 
 
 ##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
@@ -780,10 +792,10 @@ def accuracy(trainmap,testmap,measure):
     total = 0
     for i in range(len(testmap)):
         dist = np.zeros([len(trainmap)])
-        for k in range(len(trainmap)):
+        for k in range(trainmap.shape[0]):
             histest = testmap[i][1]/np.sum(testmap[i][1])
             #print(testmap[i][1])
-            histrain = trainmap[k][1]/np.sum(trainmap[k][1])
+            histrain = trainmap[k,:]/np.sum(trainmap[k,:])
             if measure=='bhatta':
                 dist[k] = BattachaNorm(histest,histrain)
             elif measure=='eucli':
@@ -794,22 +806,22 @@ def accuracy(trainmap,testmap,measure):
                 dist[k] = KullbackLeibler(histest,histrain)
             elif measure == 'JS':
                 dist[k] = JensenShannon(histest,histrain)
-        if testmap[i][0]==trainmap[np.argmin(dist)][0]:
+        if testmap[i][0]== np.argmin(dist):
             accuracy+=1
         total+=1
     return accuracy/total
 
-def knn(trainmap,testmap,k):
-    from sklearn.neighbors import KNeighborsClassifier
+#def knn(trainmap,testmap,k):
+#    from sklearn.neighbors import KNeighborsClassifier
     
-    X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
-    knn = KNeighborsClassifier(n_neighbors=k)
-    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
-    accuracy = 0
-    for i in range(len(testmap)):
-        if knn.predict([testmap[i][1]/np.sum(testmap[i][1])])==testmap[i][0]:
-            accuracy += 1
-    return accuracy/len(testmap)
+#    X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
+#    knn = KNeighborsClassifier(n_neighbors=k)
+#    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
+#    accuracy = 0
+#    for i in range(len(testmap)):
+#        if knn.predict([testmap[i][1]/np.sum(testmap[i][1])])==testmap[i][0]:
+#            accuracy += 1
+#    return accuracy/len(testmap)
 
 def histoscore(trainmap,testmap,k=6, verbose = True):
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
@@ -817,13 +829,13 @@ def histoscore(trainmap,testmap,k=6, verbose = True):
     eucl_score = accuracy(trainmap, testmap, 'eucli')
     KL_score = accuracy(trainmap,testmap,'KL')
     JS_score = accuracy(trainmap,testmap,'JS')
-    knn_score = knn(trainmap,testmap,k)
-    k2 = k//2
-    k2nn_score = knn(trainmap,testmap,k2)
+    #knn_score = knn(trainmap,testmap,k)
+    #k2 = k//2
+    #k2nn_score = knn(trainmap,testmap,k2)
     if verbose:
         print(47*'-'+'SCORES'+47*'-')
         print(f'Classification scores with HOTS measures: bhatta = {bhat_score*100}% - eucli = {eucl_score*100}% - norm = {norm_score*100}%')
-        print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
+        #print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
         print(f'Classification scores with entropy: Kullback-Leibler = {KL_score*100}% - Jensen-Shannon = {JS_score*100}%')
         print(100*'-')
     return JS_score
