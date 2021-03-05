@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from TimeSurface import TimeSurface
 import matplotlib.pyplot as plt
-from IPython import display
+#from IPython import display
 
 class layer(object):
     """layer makes the computations within a layer of the HOTS network based on the methods from Lagorce et al. 2017. 
