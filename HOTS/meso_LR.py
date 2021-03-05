@@ -46,7 +46,7 @@ record_path = '../Records/EXP_03_NMNIST/models/'
 for name in ['raw','hots','homhots']:
     tic()
     learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
-    model, loss = fit_data(name_net, learn_set, nb_train, nb_pola,l earning_rate, num_epochs, betas, verbose=True)
+    model, loss = fit_data(name_net, learn_set, nb_train, nb_pola, learning_rate, num_epochs, betas, verbose=True)
     test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
     pred_target, true_target = predict_data(test_set, model, nb_test)
     mean_acc, online_acc = classification_results(pred_target, true_target, nb_test)
