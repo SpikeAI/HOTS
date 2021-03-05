@@ -6,12 +6,18 @@ from os.path import isfile
 import time
 import numpy as np
 import tonic
+import matplotlib.pyplot as plt
 
 def tic():
     global ttic
     ttic = time.time()
 def toc():
     print(f'Done in {time.time() - ttic:.3f} s')
+    
+    
+#_________________________________FOR_LR_ON_HOTS____________________________________________
+#___________________________________________________________________________________________
+
 
 class AERtoVectDataset(Dataset):
     """makes a dataset allowing aer_to_vect() transform from tonic
@@ -57,10 +63,10 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, nb_digit, train, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr):
+def get_loader(name, path, nb_digit, train, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr):
 
     if name=='raw':
-        name_net = f'{timestr}_{name}'
+        name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
         download = False
         train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
                                   train=train, download=download,
@@ -95,7 +101,7 @@ def get_loader(name, nb_digit, train, filt, tau, nblay, nbclust, sigma, homeinv,
         train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train,
                                             transform=tonic.transforms.AERtoVector(nb_pola = nb_pola))
         #train_loader = torch.utils.data.DataLoader(train_dataset_normal, batch_size=1)
-        name_net = hotshom.get_fname()
+        name_net = f'{path}{hotshom.get_fname()}_LR_{nb_digit}.pkl'
     
     return train_dataset, nb_pola, name_net
 
@@ -109,8 +115,8 @@ def fit_data(name,
             betas,
             verbose=False, #**kwargs
         ):
-    
     if isfile(name):
+        print('loading existing model')
         with open(name, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
@@ -161,7 +167,7 @@ def fit_data(name,
             
     return logistic_model, losses
 
-def predict_data(test_set, model, 
+def predict_data(test_set, model, nb_test,
             verbose=False, **kwargs
         ):
     
@@ -191,6 +197,14 @@ def predict_data(test_set, model,
 
     return pred_target, true_target
 
+#___________________________________________________________________________________________
+#___________________________________________________________________________________________
+
+
+#_______________________________TO_RUN_HOTS_________________________________________________
+#___________________________________________________________________________________________
+
+
 
 def netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr):
     if name=='hots':
@@ -219,11 +233,11 @@ def netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr):
         hotshom = hotshom.learningall()
     return hotshom, homeotest
 
-def runjit(timestr, name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, verbose=False):
+def runjit(timestr, name, path, filt, tau, nblay, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, verbose=False):
     
     hotshom, homeotest = netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
     
-    f_name = f'../Records/EXP_03_NMNIST/{hotshom.get_fname()}_jitter_histo_{nb_train}_{nb_test}.pkl'
+    f_name = f'{path}{hotshom.get_fname()}_jitter_histo_{nb_train}_{nb_test}.pkl'
     if isfile(f_name):
         with open(f_name, 'rb') as file:
             score_T, jit_t, score_S, jit_s = pickle.load(file)
@@ -249,7 +263,16 @@ def runjit(timestr, name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, jit
 
         with open(f_name, 'wb') as file:
             pickle.dump([score_T, jit_t, score_S, jit_s], file, pickle.HIGHEST_PROTOCOL)
-        
+            
+    if verbose:
+        jit_t, jit_s = np.sqrt(jit_t), np.sqrt(jit_s)
+        plt.subplot(1,2,1)
+        plt.plot(jit_s, score_S,'.')
+        plt.title('accuracy as a function std of of temporal jitter')
+        plt.subplot(1,2,2)
+        plt.plot(jit_t, score_T,'.')
+        plt.title('accuracy as a function of std of spatial jitter')
+        plt.show()
     return score_T, jit_t, score_S, jit_s 
 
 def classification_results(pred_target, true_target, nb_test, verbose=False):
@@ -273,3 +296,92 @@ def classification_results(pred_target, true_target, nb_test, verbose=False):
         plt.title('LR classification results evolution as a function of the number of events');
     
     return np.mean(accuracy), onlinac
+
+#___________________________________________________________________________________________
+#___________________________________________________________________________________________
+
+
+#___________________________FIT_WITH_SIGMOID________________________________________________
+#___________________________________________________________________________________________
+
+
+def fit_jitter(param,
+    theta,
+    y,
+    learning_rate=0.005,
+    batch_size=256,  # gamma=gamma,
+    num_epochs=2 ** 9 + 1,
+    betas=(0.9, 0.999),
+    verbose=False, **kwargs
+):
+    
+    torch.set_default_tensor_type("torch.DoubleTensor")
+    criterion = torch.nn.BCELoss(reduction="mean")
+
+    class LRModel_jitter(torch.nn.Module):
+        def __init__(self, bias=True, logit0=0, jitter0=0, log_wt=torch.log(2*torch.ones(1)), n_classes=10):
+            super(LRModel_jitter, self).__init__()
+            self.jitter0 = torch.nn.Parameter(jitter0 * torch.ones(1))
+            self.logit0 = torch.nn.Parameter(logit0 * torch.ones(1))
+            self.log_wt = torch.nn.Parameter(log_wt * torch.ones(1))
+            self.n_classes = n_classes
+
+        def forward(self, jitter):
+            p0 = torch.sigmoid(self.logit0)
+            p = torch.sigmoid((self.jitter0-jitter)/torch.exp(self.log_wt))
+            out = 1/self.n_classes + (1 - p0 - 1/self.n_classes) * p
+            #out = 1-p0 / 2 + (1 - p0) * torch.sigmoid((jitter-self.jitter0 )/torch.exp(self.log_wt))
+            return out
+        
+    amsgrad = True  # gives similar results
+
+    Theta, labels = torch.Tensor(theta[:, None]), torch.Tensor(y[:, None])
+    loader = DataLoader(
+        TensorDataset(Theta, labels), batch_size=batch_size, shuffle=True
+    )
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    logistic_model = LRModel_jitter(logit0=param[0],jitter0=param[1],log_wt=torch.from_numpy(param[2]))
+    logistic_model = logistic_model.to(device)
+    logistic_model.train()
+    optimizer = torch.optim.Adam(
+        logistic_model.parameters(), lr=learning_rate, betas=betas, amsgrad=amsgrad
+    )
+    for epoch in range(int(num_epochs)):
+        logistic_model.train()
+        losses = []
+        for Theta_, labels_ in loader:
+            Theta_, labels_ = Theta_.to(device), labels_.to(device)
+            outputs = logistic_model(Theta_)
+            loss = criterion(outputs, labels_)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            losses.append(loss.item())
+
+        if verbose and (epoch % (num_epochs // 32) == 0):
+            print(f"Iteration: {epoch} - Loss: {np.sum(losses)/len(theta):.5f}")
+
+    logistic_model.eval()
+    Theta, labels = torch.Tensor(theta[:, None]).to(device), torch.Tensor(y[:, None]).to(device)
+    outputs = logistic_model(Theta)
+    loss = criterion(outputs, labels).item() / len(theta)
+    fit = torch.squeeze(logistic_model(Theta)).cpu()
+    return logistic_model, loss, fit
+
+def signumber(x,nb):
+    c = np.log10(x)
+    C = int(np.floor(c))
+    b = x/10**C
+    B = np.round(b,nb)
+    if not C:
+        num = f'{B}'
+    elif C==-1:
+        num = f'{np.round(B/10,nb+1)}'
+    elif C==1:
+        num = f'{np.round(B*10,nb-1)}'
+    else:
+        num = f'{B}e{C}'
+    return num

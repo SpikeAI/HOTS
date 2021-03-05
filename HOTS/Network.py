@@ -190,7 +190,7 @@ class network(object):
 
     def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
 
-        onbon = False
+        self.onbon = False
         model = self.load_model(dataset)
         if model:
             return model
@@ -544,9 +544,9 @@ class network(object):
 
         pbar.close()
 
-        score1=accuracy(trainmap,labelmap,'bhatta')
-        score2=accuracy(trainmap,labelmap,'eucli')
-        score3=accuracy(trainmap,labelmap,'norm')
+        score1=accuracy_lagorce(trainmap,labelmap,'bhatta')
+        score2=accuracy_lagorce(trainmap,labelmap,'eucli')
+        score3=accuracy_lagorce(trainmap,labelmap,'norm')
         print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
 
         return labelmap, [score1,score2,score3]
@@ -802,10 +802,9 @@ def accuracy(trainmap,testmap,measure):
     accuracy=0
     total = 0
     for i in range(len(testmap)):
-        dist = np.zeros([len(trainmap)])
+        dist = np.zeros([trainmap.shape[0]])
+        histest = testmap[i][1]/np.sum(testmap[i][1])
         for k in range(trainmap.shape[0]):
-            histest = testmap[i][1]/np.sum(testmap[i][1])
-            #print(testmap[i][1])
             histrain = trainmap[k,:]/np.sum(trainmap[k,:])
             if measure=='bhatta':
                 dist[k] = BattachaNorm(histest,histrain)
@@ -818,6 +817,30 @@ def accuracy(trainmap,testmap,measure):
             elif measure == 'JS':
                 dist[k] = JensenShannon(histest,histrain)
         if testmap[i][0]== np.argmin(dist):
+            accuracy+=1
+        total+=1
+    return accuracy/total
+
+def accuracy_lagorce(trainmap,testmap,measure):
+    accuracy=0
+    total = 0
+    for i in range(len(testmap)):
+        dist = np.zeros([len(trainmap)])
+        histest = testmap[i][1]/np.sum(testmap[i][1])
+        #print(i, histest)
+        for k in range(len(trainmap)):
+            histrain = trainmap[k][1]/np.sum(trainmap[k][1])
+            if measure=='bhatta':
+                dist[k] = BattachaNorm(histest,histrain)
+            elif measure=='eucli':
+                dist[k] = EuclidianNorm(histest,histrain)
+            elif measure=='norm':
+                dist[k] = NormalizedNorm(histest,histrain)
+            elif measure == 'KL':
+                dist[k] = KullbackLeibler(histest,histrain)
+            elif measure == 'JS':
+                dist[k] = JensenShannon(histest,histrain)
+        if testmap[i][0]==trainmap[np.argmin(dist)][0]:
             accuracy+=1
         total+=1
     return accuracy/total
