@@ -1,3 +1,6 @@
+
+import sys
+sys.path.append('../HOTS')
 from Tools import tic,toc, get_loader, fit_data, predict_data, classification_results
 
 #_________NETWORK_PARAMETERS______________________
@@ -30,7 +33,7 @@ nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
-      
+
 #_______________LR_PARAMETERS__________________
 learning_rate = 0.005
 beta1, beta2 = 0.9, 0.999

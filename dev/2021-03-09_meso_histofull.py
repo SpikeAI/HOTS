@@ -1,3 +1,6 @@
+
+import sys
+sys.path.append('../HOTS')
 from Tools import runjit
 import numpy as np
 
@@ -36,19 +39,19 @@ print(f'training set size: {nb_train} - testing set: {nb_test}')
 timestr = '2021-02-16'
 record_path = '../Records/EXP_03_NMNIST/'
 
-score_T, jit_t, score_S, jit_s = runjit(timestr, 
-                                        name, 
+score_T, jit_t, score_S, jit_s = runjit(timestr,
+                                        name,
                                         record_path,
-                                        filt, 
-                                        tau, 
-                                        nblay, 
-                                        nbclust, 
-                                        sigma, 
-                                        homeinv, 
-                                        jitter, 
-                                        jit_s, 
-                                        jit_t, 
-                                        nb_train, 
-                                        nb_test, 
+                                        filt,
+                                        tau,
+                                        nblay,
+                                        nbclust,
+                                        sigma,
+                                        homeinv,
+                                        jitter,
+                                        jit_s,
+                                        jit_t,
+                                        nb_train,
+                                        nb_test,
                                         verbose=True
                                        )
