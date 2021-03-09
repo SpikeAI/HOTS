@@ -281,7 +281,7 @@ class network(object):
                     if train:
                         labelmap[target.item(),:] += self.L[-1].cumhisto/np.sum(self.L[-1].cumhisto)
                         labelcount[target.item()] += 1
-                    else: 
+                    else:
                         data = (target.item(),self.L[-1].cumhisto.copy())
                         labelmap.append(data)
                     eventsout = []
@@ -301,7 +301,7 @@ class network(object):
                 if train:
                     for i in range(len(labelcount)):
                         labelmap[i,:] /= labelcount[i]
-                    
+
                 self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
                 output = labelmap
             return output
@@ -825,9 +825,11 @@ def accuracy_lagorce(trainmap,testmap,measure):
     accuracy=0
     total = 0
     for i in range(len(testmap)):
-        dist = np.zeros([len(trainmap)])
-        histest = testmap[i][1]/np.sum(testmap[i][1])
-        #print(i, histest)
+        dist = np.zeros(len(trainmap))
+        # print(i, testmap[i][1])
+        # print(i, np.sum(testmap[i][1][1]))
+        # print('doh', testmap[i][1][1])
+        histest = testmap[i][1][1]/np.sum(testmap[i][1][1])
         for k in range(len(trainmap)):
             histrain = trainmap[k][1]/np.sum(trainmap[k][1])
             if measure=='bhatta':
@@ -847,7 +849,7 @@ def accuracy_lagorce(trainmap,testmap,measure):
 
 #def knn(trainmap,testmap,k):
 #    from sklearn.neighbors import KNeighborsClassifier
-    
+
 #    X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
 #    knn = KNeighborsClassifier(n_neighbors=k)
 #    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])

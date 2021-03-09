@@ -57,10 +57,13 @@ class TimeSurface(object):
             p = np.zeros((self.spatpmat.shape[0]))
             p[int(pev)]=1
             pev = p.copy()
+        #else: # TODO: check the following: if isinstance(pev, torch.Tensor):#
         elif pev.size<2:
+            # print(pev)
             p = np.zeros((self.spatpmat.shape[0]))
             p[int(pev)]=1
             pev = p.copy()
+
         if self.iev==0:
             self.iev += 1
             self.t = tev
