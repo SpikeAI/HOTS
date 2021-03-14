@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 import numpy as np
-#from IPython import display
+from IPython import display
 import copy
 
 class TimeSurface(object):
@@ -57,10 +57,13 @@ class TimeSurface(object):
             p = np.zeros((self.spatpmat.shape[0]))
             p[int(pev)]=1
             pev = p.copy()
+        #else: # TODO: check the following: if isinstance(pev, torch.Tensor):#
         elif pev.size<2:
+            # print(pev)
             p = np.zeros((self.spatpmat.shape[0]))
             p[int(pev)]=1
             pev = p.copy()
+
         if self.iev==0:
             self.iev += 1
             self.t = tev
@@ -94,7 +97,7 @@ class TimeSurface(object):
             #for i in range(len(polz)):
                 #self.spatpmat[polz[i], xev, yev] = np.exp(-self.beta*(1-pev[polz[i]])/self.tau)
             # making time surface
-            
+
             #print(timesurf.shape, xev, yev)
             timesurf = self.getts()
             #if xev<self.R or xev+self.R>self.camsize[0]:
@@ -102,13 +105,13 @@ class TimeSurface(object):
             #print(timesurf.shape)
             if np.sum(timesurf[:,self.R,self.R])==0:
                 print('TS pas centrée', xev, yev)
-            
+
             if self.sigma is not None:
                 X_p, Y_p = np.meshgrid(np.arange(-self.R, self.R+1),
                                          np.arange(-self.R, self.R+1))
                 radius = np.sqrt(X_p**2 + Y_p**2)
                 mask_circular = np.exp(- .5 * radius**2 / self.R ** 2 / self.sigma**2)
-                timesurf *= mask_circular 
+                timesurf *= mask_circular
 
             #if self.camsize[1]-(self.y+1)<self.R or self.camsize[0]-(self.x+1)<self.R:
                 #self.plote()
@@ -128,7 +131,7 @@ class TimeSurface(object):
         if len(card[0])>minact:
             activ = True
         return TS, activ
-    
+
     def getts(self):
         xshift = copy.copy(self.x)
         yshift = copy.copy(self.y)
@@ -146,7 +149,7 @@ class TimeSurface(object):
             temp_spatpmat = np.lib.pad(temp_spatpmat,((0,0),(0,0),(0,self.R)),'symmetric')
         timesurf = temp_spatpmat[:,int(xshift-self.R):int(xshift+self.R)+1,int(yshift-self.R):int(yshift+self.R)+1]
         return timesurf
-        
+
     def plote(self, gamma=2.2):
 
         timesurf = self.getts()
