@@ -56,10 +56,11 @@ L:
 	git commit -m'results : figures ' figures.ipynb
 	git push
 M:    
-	$(JN) HOTS_EXP_11_LR_sequential.ipynb
-	git commit -m'results : LR ' HOTS_EXP_11_LR_sequential.ipynb
+	$(JN) BASICS_04_Hacks.ipynb
+	git commit -m'results : basics ' BASICS_04_Hacks.ipynb
 	git push
 N:
 	$(JN) HOTS_EXP_03_Pytorch_LR.ipynb
 	git commit -m 'EXP 03 results' HOTS_EXP_03_Pytorch_LR.ipynb
 	git push
+    

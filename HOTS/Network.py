@@ -829,7 +829,7 @@ def accuracy_lagorce(trainmap,testmap,measure):
         # print(i, testmap[i][1])
         # print(i, np.sum(testmap[i][1][1]))
         # print('doh', testmap[i][1][1])
-        histest = testmap[i][1][1]/np.sum(testmap[i][1][1])
+        histest = testmap[i][1]/np.sum(testmap[i][1])
         for k in range(len(trainmap)):
             histrain = trainmap[k][1]/np.sum(trainmap[k][1])
             if measure=='bhatta':
