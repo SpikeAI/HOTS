@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 import numpy as np
-from IPython import display
 import copy
 
 class TimeSurface(object):
@@ -171,9 +170,7 @@ class TimeSurface(object):
         sub3 = fig.add_subplot(1,3,3)
         sub3.imshow((timesurf[1].T)**gamma, cmap= plt.cm.plasma)
         sub3.set_title('ON time-surface')
-        plt.close("all")
-        display.clear_output(wait=True)
-        display.display(fig)
+        plt.show()
 
 
     def plot3D(self, gamma=2.2):
