@@ -128,7 +128,7 @@ class network(object):
         return loader, eventset.ordering, len(eventset.classes)
 
 
-    def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
+    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
 
         self.onbon = True
         model = self.load_model(dataset)
@@ -188,7 +188,7 @@ class network(object):
             return self
 
 
-    def learningall(self, nb_digit=2, dataset='nmnist', diginit=True, jitonic=[None,None]):
+    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None]):
 
         self.onbon = False
         model = self.load_model(dataset)
