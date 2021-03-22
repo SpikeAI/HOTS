@@ -246,7 +246,7 @@ def runjit(timestr, name, path, filt, tau, nblay, nbclust, sigma, homeinv, jitte
         score_S = []
         score_T = []
         for i in jit_s:
-            i = round(i,1)
+            i = round(i,2)
             jitonic = [None,i]
             testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
             JS_score = histoscore(trainhistomap,testhistomap, verbose = verbose)
@@ -254,7 +254,7 @@ def runjit(timestr, name, path, filt, tau, nblay, nbclust, sigma, homeinv, jitte
             score_S.append(JS_score)
 
         for j in jit_t:
-            j = round(j,1)
+            j = round(j,0)
             jitonic = [j,None]
             testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
             JS_score = histoscore(trainhistomap,testhistomap, verbose = verbose)
@@ -268,11 +268,12 @@ def runjit(timestr, name, path, filt, tau, nblay, nbclust, sigma, homeinv, jitte
         jit_t, jit_s = np.sqrt(jit_t), np.sqrt(jit_s)
         plt.subplot(1,2,1)
         plt.plot(jit_s, score_S,'.')
-        plt.title('accuracy as a function std of of temporal jitter')
+        plt.title('accuracy as a function of \n std of spatial jitter')
         plt.subplot(1,2,2)
         plt.plot(jit_t, score_T,'.')
-        plt.title('accuracy as a function of std of spatial jitter')
+        plt.title('accuracy as a function of \n std of temporal jitter')
         plt.show()
+        jit_t, jit_s = jit_t**2, jit_s**2
     return score_T, jit_t, score_S, jit_s 
 
 def classification_results(pred_target, true_target, nb_test, verbose=False):
