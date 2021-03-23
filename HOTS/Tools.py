@@ -56,7 +56,7 @@ class AERtoVectDataset(Dataset):
 class LRtorch(torch.nn.Module):
     #torch.nn.Module -> Base class for all neural network modules
     def __init__(self, N, n_classes, bias=True):
-        super(LRtorch, self).__init__() 
+        super(LRtorch, self).__init__()
         self.linear = torch.nn.Linear(N, n_classes, bias=bias)
         self.nl = torch.nn.Softmax(dim=1)
 
@@ -75,9 +75,9 @@ def get_loader(name, path, nb_digit, train, filt, tau, nblay, nbclust, sigma, ho
         nb_pola = 2
     else:
         hotshom, homeotest = netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
-        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, LR=True)
+        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, outstyle='LR')
 
-        # get indices for transitions from one digit to another 
+        # get indices for transitions from one digit to another
         def getdigind(stream):
             t = np.array(stream[2])
             newdig = [0]
@@ -274,7 +274,7 @@ def runjit(timestr, name, path, filt, tau, nblay, nbclust, sigma, homeinv, jitte
         plt.title('accuracy as a function of \n std of temporal jitter')
         plt.show()
         jit_t, jit_s = jit_t**2, jit_s**2
-    return score_T, jit_t, score_S, jit_s 
+    return score_T, jit_t, score_S, jit_s
 
 def classification_results(pred_target, true_target, nb_test, verbose=False):
     accuracy = []
@@ -304,7 +304,6 @@ def classification_results(pred_target, true_target, nb_test, verbose=False):
 
 #___________________________FIT_WITH_SIGMOID________________________________________________
 #___________________________________________________________________________________________
-
 
 def fit_jitter(param,
     theta,
@@ -386,3 +385,110 @@ def signumber(x,nb):
     else:
         num = f'{B}e{C}'
     return num
+
+#___________________________________________________________________________________________
+#___________________________________________________________________________________________
+
+
+#___________________________HISTOGRAM_CLASSIFICATION________________________________________
+#___________________________________________________________________________________________
+
+def histoscore_lagorce(trainmap,testmap, verbose = True):
+    bhat_score = accuracy_lagorce(trainmap, testmap, 'bhatta')
+    norm_score = accuracy_lagorce(trainmap, testmap, 'norm')
+    eucl_score = accuracy_lagorce(trainmap, testmap, 'eucli')
+    KL_score = accuracy_lagorce(trainmap,testmap,'KL')
+    JS_score = accuracy_lagorce(trainmap,testmap,'JS')
+    if verbose:
+        print(47*'-'+'SCORES'+47*'-')
+        print(f'Classification scores with HOTS measures: bhatta = {np.round(bhat_score*100)}% - eucli = {np.round(eucl_score*100)}% - norm = {np.round(norm_score*100)}%')
+        print(f'Classification scores with entropy: Kullback-Leibler = {np.round(KL_score*100)}% - Jensen-Shannon = {np.round(JS_score*100)}%')
+        print(100*'-')
+    return JS_score
+
+def histoscore(trainmap,testmap, verbose = True):
+    bhat_score = accuracy(trainmap, testmap, 'bhatta')
+    norm_score = accuracy(trainmap, testmap, 'norm')
+    eucl_score = accuracy(trainmap, testmap, 'eucli')
+    KL_score = accuracy(trainmap,testmap,'KL')
+    JS_score = accuracy(trainmap,testmap,'JS')
+    if verbose:
+        print(47*'-'+'SCORES'+47*'-')
+        print(f'Classification scores with HOTS measures: bhatta = {np.round(bhat_score*100)}% - eucli = {np.round(eucl_score*100)}% - norm = {np.round(norm_score*100)}%')
+        print(f'Classification scores with entropy: Kullback-Leibler = {np.round(KL_score*100)}% - Jensen-Shannon = {np.round(JS_score*100)}%')
+        print(100*'-')
+    return JS_score
+
+def knn(trainmap,testmap,k):
+    from sklearn.neighbors import KNeighborsClassifier
+
+    X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
+    accuracy = 0
+    for i in range(len(testmap)):
+        if knn.predict([testmap[i][1]/np.sum(testmap[i][1])])==testmap[i][0]:
+            accuracy += 1
+    return accuracy/len(testmap)
+
+def EuclidianNorm(hist1,hist2):
+    return np.linalg.norm(hist1-hist2)
+
+def NormalizedNorm(hist1,hist2):
+    return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
+
+def BattachaNorm(hist1, hist2):
+    return -np.log(np.sum(np.sqrt(hist1*hist2)))
+
+def KullbackLeibler(hist_test, hist_train):
+    return np.sum(hist_test*np.log(hist_test/hist_train))
+
+def JensenShannon(hist1, hist2):
+    hist3 = (hist1+hist2)*0.5
+    return (KullbackLeibler(hist1,hist3)+KullbackLeibler(hist2,hist3))*0.5
+
+def accuracy_lagorce(trainmap,testmap,measure):
+    accuracy=0
+    total = 0
+    for i in range(len(testmap)):
+        dist = np.zeros([trainmap.shape[0]])
+        histest = testmap[i][1]/np.sum(testmap[i][1])
+        for k in range(trainmap.shape[0]):
+            histrain = trainmap[k,:]/np.sum(trainmap[k,:])
+            if measure=='bhatta':
+                dist[k] = BattachaNorm(histest,histrain)
+            elif measure=='eucli':
+                dist[k] = EuclidianNorm(histest,histrain)
+            elif measure=='norm':
+                dist[k] = NormalizedNorm(histest,histrain)
+            elif measure == 'KL':
+                dist[k] = KullbackLeibler(histest,histrain)
+            elif measure == 'JS':
+                dist[k] = JensenShannon(histest,histrain)
+        if testmap[i][0]== np.argmin(dist):
+            accuracy+=1
+        total+=1
+    return accuracy/total
+
+def accuracy(trainmap,testmap,measure):
+    accuracy=0
+    total = 0
+    for i in range(len(testmap)):
+        dist = np.zeros(len(trainmap))
+        histest = testmap[i][1]/np.sum(testmap[i][1])
+        for k in range(len(trainmap)):
+            histrain = trainmap[k][1]/np.sum(trainmap[k][1])
+            if measure=='bhatta':
+                dist[k] = BattachaNorm(histest,histrain)
+            elif measure=='eucli':
+                dist[k] = EuclidianNorm(histest,histrain)
+            elif measure=='norm':
+                dist[k] = NormalizedNorm(histest,histrain)
+            elif measure == 'KL':
+                dist[k] = KullbackLeibler(histest,histrain)
+            elif measure == 'JS':
+                dist[k] = JensenShannon(histest,histrain)
+        if testmap[i][0]==trainmap[np.argmin(dist)][0]:
+            accuracy+=1
+        total+=1
+    return accuracy/total

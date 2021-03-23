@@ -131,6 +131,7 @@ class network(object):
     def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
 
         self.onbon = True
+        print(self.get_fname())
         model = self.load_model(dataset)
         if model:
             return model
@@ -191,18 +192,16 @@ class network(object):
     def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None]):
 
         self.onbon = False
+        print(self.get_fname())
         model = self.load_model(dataset)
         if model:
             return model
         else:
 
             loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
-
             pbar = tqdm(total=nb_digit*nbclass)
-
             nbloadz = np.zeros([nbclass])
             while np.sum(nbloadz)<nb_digit*nbclass:
-            #for idig in range(nb_digit):
                 if diginit:
                     for i in range(len(self.L)):
                         self.TS[i].spatpmat[:] = 0
@@ -220,32 +219,28 @@ class network(object):
             pbar.close()
             for l in range(len(self.L)):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
-
             self.save_model(dataset)
-
             return self
 
+    def running(self, homeotest=False, train=True, outstyle='histav', nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+        if not train and outstyle=='histav': 
+            outstyle = 'histo'
 
-    def running(self, homeotest=False, train=True, LR=False, nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
-
-        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, LR)
+        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle)
         if loaded:
             return output
         else:
             loader, ordering, nbclass = self.load(dataset, trainset=train, jitonic=jitonic)
-
             homeomod = self.L[0].homeo
-
             for i in range(len(self.L)):
                 self.L[i].homeo=homeotest
-
             pbar = tqdm(total=nb_digit)
             timout = []
             xout = []
             yout = []
             polout = []
             labout = []
-            if train:
+            if outstyle=='histav':
                 labelmap = np.zeros([nbclass, len(self.L[-1].cumhisto)])
                 labelcount = np.zeros(nbclass)
             else:
@@ -270,39 +265,35 @@ class network(object):
                                             events[0][iev][t_index].item(), \
                                             events[0][iev][p_index].item(), \
                                             to_record=to_record)
-                    if LR and activout:
+                    if outstyle=='LR' and activout:
                         xout.append(out[x_index])
                         yout.append(out[y_index])
                         timout.append(out[t_index])
                         polout.append(out[p_index])
                         labout.append(target.item())
 
-                if not LR:
-                    if train:
-                        labelmap[target.item(),:] += self.L[-1].cumhisto/np.sum(self.L[-1].cumhisto)
-                        labelcount[target.item()] += 1
-                    else:
-                        data = (target.item(),self.L[-1].cumhisto.copy())
-                        labelmap.append(data)
-                    eventsout = []
-            if LR:
+                if outstyle=='histav':
+                    labelmap[target.item(),:] += self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto)
+                    labelcount[target.item()] += 1
+                if outstyle=='histo':
+                    data = (target.item(),self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto))
+                    labelmap.append(data)
+            
+            for i in range(len(self.L)):
+                self.L[i].homeo=homeomod
+            pbar.close()
+                
+            if outstyle=='LR':
                 camsize = self.TS[-1].camsize
                 nbpola = self.L[-1].kernel.shape[1]
                 eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
-            pbar.close()
-
-            for i in range(len(self.L)):
-                self.L[i].homeo=homeomod
-
-            if LR:
-                self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=True)
+                self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='LR')
                 output = eventsout
             else:
-                if train:
+                if outstyle=='histav':
                     for i in range(len(labelcount)):
                         labelmap[i,:] /= labelcount[i]
-
-                self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, LR=False)
+                self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle=outstyle)
                 output = labelmap
             return output
 
@@ -367,7 +358,7 @@ class network(object):
                 model = pickle.load(file)
         return model
 
-    def save_output(self, evout, homeo, dataset, nb, train, jitonic, LR):
+    def save_output(self, evout, homeo, dataset, nb, train, jitonic, outstyle):
         if dataset=='nmnist':
             dataset = 'EXP_03_NMNIST'
         else: print('define a path for this dataset')
@@ -377,16 +368,14 @@ class network(object):
             path = f'../Records/{dataset}/test/'
         if not os.path.exists(path):
             os.makedirs(path)
-        f_name = path+self.name+f'_{nb}_{jitonic}'
+        f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
         if homeo:
             f_name = f_name+'_homeo'
-        if not LR:
-            f_name = f_name+'_histo'
         f_name = f_name +'.pkl'
         with open(f_name, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
 
-    def load_output(self, dataset, homeo, nb, train, jitonic, LR):
+    def load_output(self, dataset, homeo, nb, train, jitonic, outstyle):
         loaded = False
         output = []
         if dataset=='nmnist':
@@ -396,11 +385,9 @@ class network(object):
             path = f'../Records/{dataset}/train/'
         else:
             path = f'../Records/{dataset}/test/'
-        f_name = path+self.name+f'_{nb}_{jitonic}'
+        f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
         if homeo:
             f_name = f_name+'_homeo'
-        if not LR:
-            f_name = f_name+'_histo'
         f_name = f_name +'.pkl'
         print(f_name)
         if os.path.isfile(f_name):
@@ -847,18 +834,6 @@ def accuracy_lagorce(trainmap,testmap,measure):
         total+=1
     return accuracy/total
 
-#def knn(trainmap,testmap,k):
-#    from sklearn.neighbors import KNeighborsClassifier
-
-#    X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
-#    knn = KNeighborsClassifier(n_neighbors=k)
-#    knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
-#    accuracy = 0
-#    for i in range(len(testmap)):
-#        if knn.predict([testmap[i][1]/np.sum(testmap[i][1])])==testmap[i][0]:
-#            accuracy += 1
-#    return accuracy/len(testmap)
-
 def histoscore(trainmap,testmap,k=6, verbose = True):
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
     norm_score = accuracy(trainmap, testmap, 'norm')
@@ -875,50 +850,6 @@ def histoscore(trainmap,testmap,k=6, verbose = True):
         print(f'Classification scores with entropy: Kullback-Leibler = {np.round(KL_score*100)}% - Jensen-Shannon = {np.round(JS_score*100)}%')
         print(100*'-')
     return JS_score
-
-def spatial_jitter(
-    x_index, y_index,
-    sensor_size,
-    variance_x=1,
-    variance_y=1,
-    sigma_x_y=0,
-    ):
-    """Changes position for each pixel by drawing samples from a multivariate
-    Gaussian distribution with the following properties:
-        mean = [x,y]
-        covariance matrix = [[variance_x, sigma_x_y],[sigma_x_y, variance_y]]
-    Jittered events that lie outside the focal plane will be dropped if clip_outliers is True.
-    Args:
-        events: ndarray of shape [num_events, num_event_channels]
-        ordering: ordering of the event tuple inside of events, if None
-                  the system will take a guess through
-                  guess_event_ordering_numpy. This function requires 'x'
-                  and 'y' to be in the ordering
-        variance_x: squared sigma value for the distribution in the x direction
-        variance_y: squared sigma value for the distribution in the y direction
-        sigma_x_y: changes skewness of distribution, only change if you want shifts along diagonal axis.
-        integer_coordinates: when True, shifted x and y values will be integer coordinates
-        clip_outliers: when True, events that have been jittered outside the focal plane will be dropped.
-    Returns:
-        spatially jittered set of events.
-    """
-
-    shifts = np.random.multivariate_normal(
-        [0, 0], [[variance_x, sigma_x_y], [sigma_x_y, variance_y]]
-    )
-
-    shifts = shifts.round()
-
-    xs = (x_index + shifts[0])
-    ys = (y_index + shifts[1])
-
-    if xs<0: xs=0
-    elif xs>sensor_size[0]-1: xs = sensor_size[0]-1
-    if ys<0: ys=0
-    elif ys>sensor_size[1]-1: ys = sensor_size[1]-1
-
-    return xs, ys
-
 
 #__________________OLD_CODE___________________________________________________________________________
 #_____________________________________________________________________________________________________

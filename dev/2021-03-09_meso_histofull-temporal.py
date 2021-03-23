@@ -16,14 +16,15 @@ tau = 5
 nblay = 3
 nbclust = 4
 filt = 2
+#timestr = '2021-03-01'
 
 #______________________________________________
 #______________________________________________
 
 #_______________JITTER_________________________
-jit_s = np.arange(0,6,0.2)
-jit_t = np.array([0.0])
-#jit_t = np.arange(0,300,10)
+#jit_s = np.arange(0,6,0.2)
+jit_s = np.array([0.0])
+jit_t = np.arange(0,300,10)
 jit_s, jit_t = jit_s**2, jit_t**2
 #______________________________________________
 
@@ -53,5 +54,5 @@ score_T, jit_t, score_S, jit_s = runjit(timestr,
                                         jit_t,
                                         nb_train,
                                         nb_test,
-                                        verbose=False
+                                        verbose=True
                                        )
