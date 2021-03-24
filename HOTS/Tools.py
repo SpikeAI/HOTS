@@ -117,6 +117,7 @@ def fit_data(name,
         ):
     if isfile(name):
         print('loading existing model')
+        print(name)
         with open(name, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
