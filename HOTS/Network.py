@@ -23,9 +23,9 @@ class network(object):
 
     def __init__(self,  timestr = None,
                         # architecture of the network (default=Lagorce2017)
-                        nbclust = 4,
-                        K_clust = 2, # nbclust(L+1) = K_clust*nbclust(L)
-                        nblay = 3,
+                        nbclust = [4, 8, 16],
+                        #K_clust = 2, # nbclust(L+1) = K_clust*nbclust(L)
+                        #nblay = 3,
                         # parameters of time-surfaces and datasets
                         tau = 10, #timestamp en millisec/
                         K_tau = 10,
@@ -53,6 +53,7 @@ class network(object):
         self.name = 'hots'
         self.date = timestr
         tau *= 1e3 # to enter tau in ms
+        nblay = len(nbclust)
         if to_record:
             self.stats = [[]]*nblay
         self.TS = [[]]*nblay
@@ -60,14 +61,15 @@ class network(object):
         for lay in range(nblay):
             if lay == 0:
                 self.TS[lay] = TimeSurface(R, tau, camsize, nbpolcam, pola, filt, sigma)
-                self.L[lay] = layer(R, nbclust, pola, nbpolcam, homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R, nbclust[lay], pola, nbpolcam, homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
-                    self.stats[lay] = stats(nbclust, camsize)
+                    self.stats[lay] = stats(nbclust[lay], camsize)
             else:
-                self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
-                self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
+                self.TS[lay] = TimeSurface(R*(K_R**lay), tau*(K_tau**lay), camsize, nbclust[lay-1], pola, filt, sigma)
+                #self.L[lay] = layer(R*(K_R**lay), nbclust*(K_clust**lay), pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
+                self.L[lay] = layer(R*(K_R**lay), nbclust[lay], pola, nbclust[lay-1], homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
                 if to_record:
-                    self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
+                    self.stats[lay] = stats(nbclust[lay], camsize)
 
 ##___________________________________________________________________________________________
 
@@ -125,19 +127,17 @@ class network(object):
                 self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
             self.TS[0].spatpmat = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
             self.stats[0].actmap = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
-        return loader, eventset.ordering, len(eventset.classes)
-
+        return loader, eventset.ordering, eventset.classes
 
     def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
-
         self.onbon = True
         print(self.get_fname())
         model = self.load_model(dataset)
         if model:
             return model
         else:
-
-            loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
+            loader, ordering, classes = self.load(dataset, jitonic=jitonic)
+            nbclass = len(classes)
             #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
             eventslist = []
             nbloadz = np.zeros([nbclass])
@@ -183,11 +183,8 @@ class network(object):
                 pbar.close()
             for l in range(len(self.L)):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
-
             self.save_model(dataset)
-
             return self
-
 
     def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None]):
 
@@ -197,8 +194,8 @@ class network(object):
         if model:
             return model
         else:
-
-            loader, ordering, nbclass = self.load(dataset, jitonic=jitonic)
+            loader, ordering, classes = self.load(dataset, jitonic=jitonic)
+            nbclass = len(classes)
             pbar = tqdm(total=nb_digit*nbclass)
             nbloadz = np.zeros([nbclass])
             while np.sum(nbloadz)<nb_digit*nbclass:
@@ -222,15 +219,14 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def running(self, homeotest=False, train=True, outstyle='histav', nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
-        if not train and outstyle=='histav': 
-            outstyle = 'histo'
+    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
 
         output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle)
         if loaded:
             return output
         else:
-            loader, ordering, nbclass = self.load(dataset, trainset=train, jitonic=jitonic)
+            loader, ordering, classes = self.load(dataset, trainset=train, jitonic=jitonic)
+            nbclass = len(classes)
             homeomod = self.L[0].homeo
             for i in range(len(self.L)):
                 self.L[i].homeo=homeotest
@@ -240,11 +236,10 @@ class network(object):
             yout = []
             polout = []
             labout = []
-            if outstyle=='histav':
-                labelmap = np.zeros([nbclass, len(self.L[-1].cumhisto)])
-                labelcount = np.zeros(nbclass)
-            else:
-                labelmap = []
+            labelmap = []
+
+            labelmapav = np.zeros([nbclass, len(self.L[-1].cumhisto)])
+            labelcount = np.zeros(nbclass)
 
             x_index = ordering.find("x")
             y_index = ordering.find("y")
@@ -272,16 +267,21 @@ class network(object):
                         polout.append(out[p_index])
                         labout.append(target.item())
 
-                if outstyle=='histav':
-                    labelmap[target.item(),:] += self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto)
+                if train: 
+                    labelmapav[target.item(),:] += self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto)
                     labelcount[target.item()] += 1
-                if outstyle=='histo':
-                    data = (target.item(),self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto))
-                    labelmap.append(data)
+                    for i in range(len(labelcount)):
+                            labelmapav[i,:] /= max(labelcount[i],1)
+                data = (target.item(),self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto))
+                labelmap.append(data)
             
             for i in range(len(self.L)):
                 self.L[i].homeo=homeomod
             pbar.close()
+            
+            self.save_output(labelmapav, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histav')
+            self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histo')
+            output = labelmap
                 
             if outstyle=='LR':
                 camsize = self.TS[-1].camsize
@@ -289,12 +289,7 @@ class network(object):
                 eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
                 self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='LR')
                 output = eventsout
-            else:
-                if outstyle=='histav':
-                    for i in range(len(labelcount)):
-                        labelmap[i,:] /= labelcount[i]
-                self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle=outstyle)
-                output = labelmap
+
             return output
 
     def run(self, x, y, t, p, learn=False, to_record=False):
@@ -324,7 +319,7 @@ class network(object):
         algo = self.L[0].algo
         arch = [self.L[i].kernel.shape[1] for i in range(len(self.L))]
         R = [self.L[i].R for i in range(len(self.L))]
-        tau = [self.TS[i].tau for i in range(len(self.TS))]
+        tau = [np.round(self.TS[i].tau*1e-3,1) for i in range(len(self.TS))]
         homeo = self.L[0].homeo
         homparam = self.L[0].homparam
         krnlinit = self.L[0].krnlinit
@@ -332,12 +327,13 @@ class network(object):
         onebyone = self.onbon
         f_name = f'{timestr}_{algo}_{krnlinit}_{sigma}_{homeo}_{homparam}_{arch}_{tau}_{R}_{onebyone}'
         self.name = f_name
-        #print(self.name)
         return f_name
 
     def save_model(self, dataset):
         if dataset=='nmnist':
             path = f'../Records/EXP_03_NMNIST/models/'
+        elif dataset=='cars':
+            path = '../Records/EXP_04_NCARS/models'
         else: print('define a path for this dataset')
         if not os.path.exists(path):
             os.makedirs(path)
@@ -349,6 +345,8 @@ class network(object):
         model = []
         if dataset=='nmnist':
             path = f'../Records/EXP_03_NMNIST/models/'
+        elif dataset=='cars':
+            path = '../Records/EXP_04_NCARS/models'
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
         if not os.path.isfile(f_name):
@@ -361,6 +359,8 @@ class network(object):
     def save_output(self, evout, homeo, dataset, nb, train, jitonic, outstyle):
         if dataset=='nmnist':
             dataset = 'EXP_03_NMNIST'
+        elif dataset=='cars':
+            path = 'EXP_04_NCARS'
         else: print('define a path for this dataset')
         if train:
             path = f'../Records/{dataset}/train/'
@@ -380,6 +380,8 @@ class network(object):
         output = []
         if dataset=='nmnist':
             dataset = 'EXP_03_NMNIST'
+        elif dataset=='cars':
+            path = 'EXP_04_NCARS'
         else: print('define a path for this dataset')
         if train:
             path = f'../Records/{dataset}/train/'
@@ -445,9 +447,7 @@ class network(object):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
             pbar.close()
 
-
     def traininglagorce(self, nb_digit=None, dataset='simple', to_record=True):
-
         if dataset == 'simple':
             path = "../Data/alphabet_ExtractedStabilized.mat"
             image_list=list(np.arange(0, 36))
@@ -614,7 +614,12 @@ class network(object):
                     axi.set_xticks(())
                     axi.set_yticks(())
 
+##________________CUSTOM NETWORK_____________________________________________________________
+##___________________________________________________________________________________________
 
+#class customnetwork(network):
+    
+                    
 ##________________POOLING NETWORK____________________________________________________________
 ##___________________________________________________________________________________________
 
@@ -713,7 +718,8 @@ class poolingnetwork(network):
 
     def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
 
-        loader, ordering, nbclass = self.load(dataset)
+        loader, ordering, classes = self.load(dataset)
+        nbclass = len(classes)
         #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
         eventslist = []
         nbloadz = np.zeros([nbclass])

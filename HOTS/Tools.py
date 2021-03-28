@@ -63,7 +63,7 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, path, nb_digit, train, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr):
+def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, jitonic=[None,None]):
 
     if name=='raw':
         name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
@@ -74,7 +74,7 @@ def get_loader(name, path, nb_digit, train, filt, tau, nblay, nbclust, sigma, ho
                                  )
         nb_pola = 2
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr)
         stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, outstyle='LR')
 
         # get indices for transitions from one digit to another
@@ -105,9 +105,8 @@ def get_loader(name, path, nb_digit, train, filt, tau, nblay, nbclust, sigma, ho
     
     return train_dataset, nb_pola, name_net
 
-
 def fit_data(name,
-            dataset, 
+            dataset,
             nb_digit,
             nb_pola,
             learning_rate,
@@ -183,7 +182,6 @@ def predict_data(test_set, model, nb_test,
         logistic_model = model.to(device)
 
         pred_target, true_target = [], []
-
         for X, label in loader:
             X = X.to(device)
             X, label = X.squeeze(0), label.squeeze(0)
@@ -206,50 +204,49 @@ def predict_data(test_set, model, nb_test,
 #___________________________________________________________________________________________
 
 
-
-def netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr):
+def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, nb_learn=10):
     if name=='hots':
         homeo = False
         homeotest = False
         krnlinit = 'first'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nblay=nblay, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learning1by1()
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learning1by1(dataset=dataset)
     elif name=='homhots':
         homeo = True
         homeotest = False
         krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nblay=nblay, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall()
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learningall(dataset=dataset)
     elif name=='fullhom':
         homeo = True
         homeotest = True
         krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nblay=nblay, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall()
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learningall(dataset=dataset)
     elif name=='onlyonline':
         homeo = False
         homeotest = False
         krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nblay=nblay, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall()
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learningall(dataset=dataset)
     return hotshom, homeotest
 
-def runjit(timestr, name, path, filt, tau, nblay, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, verbose=False):
+def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, dataset, verbose=False):
     
-    hotshom, homeotest = netparam(name, filt, tau, nblay, nbclust, sigma, homeinv, jitter, timestr)
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset)
     
     f_name = f'{path}{hotshom.get_fname()}_jitter_histo_{nb_train}_{nb_test}.pkl'
     if isfile(f_name):
         with open(f_name, 'rb') as file:
             score_T, jit_t, score_S, jit_s = pickle.load(file)
     else:
-        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train)
+        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, dataset=dataset)
         score_S = []
         score_T = []
         for i in jit_s:
             i = round(i,2)
             jitonic = [None,i]
-            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
             JS_score = histoscore(trainhistomap,testhistomap, verbose = verbose)
             print(f'loading... - spatial jitter = {i} - score = {JS_score}',end='\r')
             score_S.append(JS_score)
@@ -257,7 +254,7 @@ def runjit(timestr, name, path, filt, tau, nblay, nbclust, sigma, homeinv, jitte
         for j in jit_t:
             j = round(j,0)
             jitonic = [j,None]
-            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
             JS_score = histoscore(trainhistomap,testhistomap, verbose = verbose)
             print(f'loading... - temporal jitter = {j} - score = {JS_score}',end='\r')
             score_T.append(JS_score)
@@ -395,6 +392,7 @@ def signumber(x,nb):
 #___________________________________________________________________________________________
 
 def histoscore_lagorce(trainmap,testmap, verbose = True):
+    
     bhat_score = accuracy_lagorce(trainmap, testmap, 'bhatta')
     norm_score = accuracy_lagorce(trainmap, testmap, 'norm')
     eucl_score = accuracy_lagorce(trainmap, testmap, 'eucli')
@@ -413,10 +411,13 @@ def histoscore(trainmap,testmap, verbose = True):
     eucl_score = accuracy(trainmap, testmap, 'eucli')
     KL_score = accuracy(trainmap,testmap,'KL')
     JS_score = accuracy(trainmap,testmap,'JS')
+    kNN_6 = knn(trainmap,testmap,6)
+    kNN_3 = knn(trainmap,testmap,3)
     if verbose:
         print(47*'-'+'SCORES'+47*'-')
         print(f'Classification scores with HOTS measures: bhatta = {np.round(bhat_score*100)}% - eucli = {np.round(eucl_score*100)}% - norm = {np.round(norm_score*100)}%')
         print(f'Classification scores with entropy: Kullback-Leibler = {np.round(KL_score*100)}% - Jensen-Shannon = {np.round(JS_score*100)}%')
+        print(f'Classification scores with k-NN: 3-NN = {np.round(kNN_3*100)}% - 6-NN = {np.round(kNN_6*100)}%')
         print(100*'-')
     return JS_score
 
