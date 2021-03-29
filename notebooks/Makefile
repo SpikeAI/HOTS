@@ -1,4 +1,4 @@
-default: E
+default: F E
 
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
@@ -24,3 +24,8 @@ E:
 	git commit -m 'EXP 05 results' HOTS_EXP_05_architectures.ipynb
 	git push
     
+F: 
+	python3 archiz.py
+	python3 homhots_full.py
+	python3 homhots_ncars.py
+	python3 homhots_poker.py
