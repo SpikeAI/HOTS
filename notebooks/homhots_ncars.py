@@ -28,22 +28,24 @@ dataset = 'cars'
 
 nb_test = 4396 + 4211
 nb_train = 7940 + 7482
-ds = 1200
+ds = 120
 nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 
-timestr = '2021-03-28'
+timestr = '2021-03-29'
 record_path = '../Records/EXP_04_NCARS/'
 
 print('classic HOTS and homeoHOTS')
-for name in ['homhots', 'hots']:
-    print('clustering...')
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, nb_learn=50)
-    print('training...')
-    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
-    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
-    print('testing...')
-    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
-    JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
+name = 'homhots'
+for tau in [0.1, 1, 2, 5, 10, 20]:
+    for R in [2, 5, 10, 20]:
+        print('clustering...')
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
+        print('training...')
+        #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
+        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
+        print('testing...')
+        testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
+        JS_score = histoscore(trainhistomap,testhistomap, verbose = True)

@@ -101,12 +101,19 @@ class network(object):
                                 train=trainset, download=download,
                                 transform=transform)
         elif dataset == 'poker':
+            if trainset:
+                path+='pips_train/'
+            else:
+                path+='pips_test/'
+            if not os.path.exists(path):
+                download=True
             eventset = tonic.datasets.POKERDVS(save_to='../Data/',
-                                train=trainset,
+                                train=trainset, download=download,
                                 transform=transform)
         elif dataset == 'gesture':
+            download = True
             eventset = tonic.datasets.DVSGesture(save_to='../Data/',
-                                train=trainset,
+                                train=trainset, download=download,
                                 transform=transform)
         elif dataset == 'cars':
             if trainset:
@@ -116,10 +123,11 @@ class network(object):
             if not os.path.exists(path):
                 download=True
             eventset = tonic.datasets.NCARS(save_to='../Data/',
-                                train=trainset,
+                                train=trainset, download=download,
                                 transform=transform)
         elif dataset == 'ncaltech':
             eventset = tonic.datasets.NCALTECH101(save_to='../Data/',
+                                train=trainset, download=download,
                                 transform=transform)
         else: print('incorrect dataset')
 
@@ -341,7 +349,9 @@ class network(object):
         elif dataset=='cars':
             path = '../Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
-            path = '../Records/EXP_05_POKERDVS/models/'         
+            path = '../Records/EXP_05_POKERDVS/models/' 
+        elif dataset=='gesture':
+            path = '../Records/EXP_06_DVSGESTURE/models/' 
         else: print('define a path for this dataset')
         if not os.path.exists(path):
             os.makedirs(path)
@@ -357,6 +367,8 @@ class network(object):
             path = '../Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
             path = '../Records/EXP_05_POKERDVS/models/'  
+        elif dataset=='gesture':
+            path = '../Records/EXP_06_DVSGESTURE/models/' 
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
         if not os.path.isfile(f_name):
@@ -373,6 +385,8 @@ class network(object):
             direc = 'EXP_04_NCARS'
         elif dataset=='poker':
             direc = 'EXP_05_POKERDVS'
+        elif dataset=='gesture':
+            direc = 'EXP_06_DVSGESTURE'
         else: print('define a path for this dataset')
         if train:
             path = f'../Records/{direc}/train/'
@@ -396,6 +410,8 @@ class network(object):
             direc = 'EXP_04_NCARS'
         elif dataset=='poker':
             direc = 'EXP_05_POKERDVS'
+        elif dataset=='gesture':
+            direc = 'EXP_06_DVSGESTURE'
         else: print('define a path for this dataset')
         if train:
             path = f'../Records/{direc}/train/'

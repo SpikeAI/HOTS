@@ -11,6 +11,7 @@ homeinv = False
 jitonic = [None,None] #[temporal, spatial]
 jitter = False
 tau = 5
+R = 2
 filt = 2
 nbclust = [4,8,16]
 #______________________________________________
@@ -34,13 +35,15 @@ nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 
-timestr = '2021-03-28'
+timestr = '2021-03-29'
 record_path = '../Records/EXP_05_POKERDVS/'
 
 print('classic HOTS and homeoHOTS')
-for name in ['homhots', 'hots']:
+#for name in ['homhots', 'hots']:
+name = 'homhots'
+for tau in [0.1, 1, 2, 5, 10, 20]:
     print('clustering...')
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, nb_learn=50)
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print('training...')
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)

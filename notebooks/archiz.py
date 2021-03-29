@@ -11,6 +11,7 @@ homeinv = False
 jitonic = [None,None] #[temporal, spatial]
 jitter = False
 tau = 5
+R = 2
 filt = 2
 nbclust = [4,8,16]
 #______________________________________________
@@ -41,7 +42,7 @@ for nbclust in [[8,16],[8,8,16],[16,8,16],[8,16,32],[16,32,64]]:
     print(f'architecture: {nbclust}')
     for name in ['homhots', 'hots']:
         print('clustering...')
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset)
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
         print('training...')
         #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
         trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')

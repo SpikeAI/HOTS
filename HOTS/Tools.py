@@ -202,31 +202,31 @@ def predict_data(test_set, model, nb_test,
 #_______________________________TO_RUN_HOTS_________________________________________________
 #___________________________________________________________________________________________
 
-def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, nb_learn=10):
+def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10):
     if name=='hots':
         homeo = False
         homeotest = False
         krnlinit = 'first'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learning1by1(dataset=dataset)
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn)
     elif name=='homhots':
         homeo = True
         homeotest = False
         krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset)
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn)
     elif name=='fullhom':
         homeo = True
         homeotest = True
         krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset)
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn)
     elif name=='onlyonline':
         homeo = False
         homeotest = False
         krnlinit = 'rdn'
-        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset)
+        hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn)
     return hotshom, homeotest
 
 def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, dataset, verbose=False):
