@@ -24,18 +24,18 @@ nbclust = [4,8,16]
 #______________________________________________
 
 #_______________NB_OF_DIGITS___________________
-dataset = 'cars'
+dataset = 'poker'
 
-nb_test = 4396 + 4211
-nb_train = 7940 + 7482
-ds = 1200
+nb_test = 20
+nb_train = 48
+ds = 1
 nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 
 timestr = '2021-03-28'
-record_path = '../Records/EXP_04_NCARS/'
+record_path = '../Records/EXP_05_POKERDVS/'
 
 print('classic HOTS and homeoHOTS')
 for name in ['homhots', 'hots']:

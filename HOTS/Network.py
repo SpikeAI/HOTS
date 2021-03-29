@@ -88,12 +88,19 @@ class network(object):
             transform = None
 
         download=False
+        path = '../Data/'
         if dataset == 'nmnist':
-            path = '../Data/'
             if trainset:
                 path+='Train/'
             else:
                 path+='Test/'
+            if not os.path.exists(path):
+                download=True
+        elif dataset == 'cars':
+            if trainset:
+                path+='ncars-train/'
+            else:
+                path+='ncars-test/'
             if not os.path.exists(path):
                 download=True
 
@@ -333,7 +340,9 @@ class network(object):
         if dataset=='nmnist':
             path = f'../Records/EXP_03_NMNIST/models/'
         elif dataset=='cars':
-            path = '../Records/EXP_04_NCARS/models'
+            path = '../Records/EXP_04_NCARS/models/'
+        elif dataset=='poker':
+            path = '../Records/EXP_05_POKERDVS/models/'         
         else: print('define a path for this dataset')
         if not os.path.exists(path):
             os.makedirs(path)
@@ -346,7 +355,9 @@ class network(object):
         if dataset=='nmnist':
             path = f'../Records/EXP_03_NMNIST/models/'
         elif dataset=='cars':
-            path = '../Records/EXP_04_NCARS/models'
+            path = '../Records/EXP_04_NCARS/models/'
+        elif dataset=='poker':
+            path = '../Records/EXP_05_POKERDVS/models/'  
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
         if not os.path.isfile(f_name):
@@ -358,14 +369,16 @@ class network(object):
 
     def save_output(self, evout, homeo, dataset, nb, train, jitonic, outstyle):
         if dataset=='nmnist':
-            dataset = 'EXP_03_NMNIST'
+            direc = 'EXP_03_NMNIST'
         elif dataset=='cars':
-            path = 'EXP_04_NCARS'
+            direc = 'EXP_04_NCARS'
+        elif dataset=='poker':
+            direc = 'EXP_05_POKERDVS'
         else: print('define a path for this dataset')
         if train:
-            path = f'../Records/{dataset}/train/'
+            path = f'../Records/{direc}/train/'
         else:
-            path = f'../Records/{dataset}/test/'
+            path = f'../Records/{direc}/test/'
         if not os.path.exists(path):
             os.makedirs(path)
         f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
@@ -379,14 +392,16 @@ class network(object):
         loaded = False
         output = []
         if dataset=='nmnist':
-            dataset = 'EXP_03_NMNIST'
+            direc = 'EXP_03_NMNIST'
         elif dataset=='cars':
-            path = 'EXP_04_NCARS'
+            direc = 'EXP_04_NCARS'
+        elif dataset=='poker':
+            direc = 'EXP_05_POKERDVS'
         else: print('define a path for this dataset')
         if train:
-            path = f'../Records/{dataset}/train/'
+            path = f'../Records/{direc}/train/'
         else:
-            path = f'../Records/{dataset}/test/'
+            path = f'../Records/{direc}/test/'
         f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
         if homeo:
             f_name = f_name+'_homeo'

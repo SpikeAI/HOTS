@@ -27,7 +27,7 @@ nbclust = [4,8,16]
 dataset = 'nmnist'
 nb_test = 10000
 nb_train = 60000
-ds = 1200
+ds = 1
 nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
@@ -43,7 +43,7 @@ for nbclust in [[8,16],[8,8,16],[16,8,16],[8,16,32],[16,32,64]]:
         print('clustering...')
         hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset)
         print('training...')
-        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
+        #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
         trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
         print('testing...')
         testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
