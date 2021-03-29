@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../HOTS')
-from Tools import netparam, histoscore
+from Tools import netparam, histoscore, histoscore_lagorce
 import numpy as np
 
 #_________NETWORK_PARAMETERS___________________
@@ -33,7 +33,7 @@ nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 
-timestr = '2021-03-28'
+timestr = '2021-03-29'
 record_path = '../Records/EXP_03_NMNIST/'
 
 print('classic HOTS and homeoHOTS')
@@ -42,7 +42,10 @@ for name in ['homhots', 'hots']:
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset)
     print('training...')
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
-    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
     print('testing...')
     testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
-    JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
+    
+    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
+    #JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
+    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histav')
+    #JS_score = histoscore_lagorce(trainhistomap,testhistomap, verbose = True)

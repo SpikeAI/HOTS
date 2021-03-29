@@ -14,7 +14,6 @@ def tic():
 def toc():
     print(f'Done in {time.time() - ttic:.3f} s')
     
-    
 #_________________________________FOR_LR_ON_HOTS____________________________________________
 #___________________________________________________________________________________________
 
@@ -403,7 +402,7 @@ def histoscore_lagorce(trainmap,testmap, verbose = True):
         print(f'Classification scores with HOTS measures: bhatta = {np.round(bhat_score*100)}% - eucli = {np.round(eucl_score*100)}% - norm = {np.round(norm_score*100)}%')
         print(f'Classification scores with entropy: Kullback-Leibler = {np.round(KL_score*100)}% - Jensen-Shannon = {np.round(JS_score*100)}%')
         print(100*'-')
-    return JS_score
+    return bhat_score, norm_score, eucl_score, KL_score, JS_score
 
 def histoscore(trainmap,testmap, verbose = True):
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
@@ -419,7 +418,7 @@ def histoscore(trainmap,testmap, verbose = True):
         print(f'Classification scores with entropy: Kullback-Leibler = {np.round(KL_score*100)}% - Jensen-Shannon = {np.round(JS_score*100)}%')
         print(f'Classification scores with k-NN: 3-NN = {np.round(kNN_3*100)}% - 6-NN = {np.round(kNN_6*100)}%')
         print(100*'-')
-    return JS_score
+    return bhat_score, norm_score, eucl_score, KL_score, JS_score, kNN_3, kNN_6
 
 def knn(trainmap,testmap,k):
     from sklearn.neighbors import KNeighborsClassifier
