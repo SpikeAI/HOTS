@@ -203,7 +203,7 @@ def predict_data(test_set, model, nb_test,
 #___________________________________________________________________________________________
 
 
-def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, nb_learn=10):
+def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset='nmnist', nb_learn=10):
     if name=='hots':
         homeo = False
         homeotest = False

@@ -96,13 +96,6 @@ class network(object):
                 path+='Test/'
             if not os.path.exists(path):
                 download=True
-        elif dataset == 'cars':
-            if trainset:
-                path+='ncars-train/'
-            else:
-                path+='ncars-test/'
-            if not os.path.exists(path):
-                download=True
 
             eventset = tonic.datasets.NMNIST(save_to='../Data/',
                                 train=trainset, download=download,
@@ -116,6 +109,12 @@ class network(object):
                                 train=trainset,
                                 transform=transform)
         elif dataset == 'cars':
+            if trainset:
+                path+='ncars-train/'
+            else:
+                path+='ncars-test/'
+            if not os.path.exists(path):
+                download=True
             eventset = tonic.datasets.NCARS(save_to='../Data/',
                                 train=trainset,
                                 transform=transform)
