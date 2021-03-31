@@ -52,6 +52,7 @@ class network(object):
         self.onbon = False
         self.name = 'hots'
         self.date = timestr
+        self.sensor_size = [None,None]
         tau *= 1e3 # to enter tau in ms
         nblay = len(nbclust)
         if to_record:
@@ -111,7 +112,12 @@ class network(object):
                                 train=trainset, download=download,
                                 transform=transform)
         elif dataset == 'gesture':
-            download = True
+            if trainset:
+                path+='ibmGestureTrain/'
+            else:
+                path+='ibmGestureTest/'
+            if not os.path.exists(path):
+                download=True
             eventset = tonic.datasets.DVSGesture(save_to='../Data/',
                                 train=trainset, download=download,
                                 transform=transform)
@@ -141,6 +147,9 @@ class network(object):
                 self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
             self.TS[0].spatpmat = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
             self.stats[0].actmap = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
+        
+        self.sensor_size = eventset.sensor_size
+        
         return loader, eventset.ordering, eventset.classes
 
     def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
@@ -324,8 +333,9 @@ class network(object):
             else:
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
-        #if self.TS[0].iev//500==0:
-            #self.TS[0].plote()
+        #if self.TS[0].iev%500==0:
+        #    print(self.TS[0].iev)
+        #    self.TS[0].plote()
         return out, activout
 
     def get_fname(self):

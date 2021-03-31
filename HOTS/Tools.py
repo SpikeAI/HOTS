@@ -7,6 +7,7 @@ import time
 import numpy as np
 import tonic
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def tic():
     global ttic
@@ -62,7 +63,7 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, jitonic=[None,None]):
+def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None]):
 
     if name=='raw':
         name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
@@ -73,10 +74,11 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
                                  )
         nb_pola = 2
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr)
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
         stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, outstyle='LR')
-
         # get indices for transitions from one digit to another
+        
+        #TODO: save in event stream from network.running directly
         def getdigind(stream):
             t = np.array(stream[2])
             newdig = [0]
@@ -119,11 +121,9 @@ def fit_data(name,
         with open(name, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
-    
         torch.set_default_tensor_type("torch.DoubleTensor")
         criterion = torch.nn.BCELoss(reduction="mean")
         amsgrad = True #or False gives similar results
-
         generator = torch.Generator().manual_seed(42)
         sampler = torch.utils.data.RandomSampler(dataset, replacement=True, num_samples=nb_digit, generator=generator)
         loader = tonic.datasets.DataLoader(dataset, sampler=sampler)
@@ -139,7 +139,7 @@ def fit_data(name,
         optimizer = torch.optim.Adam(
             logistic_model.parameters(), lr=learning_rate, betas=betas, amsgrad=amsgrad
         )
-
+        pbar = tqdm(total=int(num_epochs))
         for epoch in range(int(num_epochs)):
             losses = []
             for X, label in loader:
@@ -157,10 +157,11 @@ def fit_data(name,
                 loss.backward()
                 optimizer.step()
                 losses.append(loss.item())
-
-            if verbose and (epoch % (num_epochs // 32) == 0):
-                print(f"Iteration: {epoch} - Loss: {np.mean(losses):.5f}")
                 
+            pbar.update(1)
+            #if verbose and (epoch % (num_epochs // 32) == 0):
+            #    print(f"Iteration: {epoch} - Loss: {np.mean(losses):.5f}")
+        pbar.close()
         with open(name, 'wb') as file:
             pickle.dump([logistic_model, losses], file, pickle.HIGHEST_PROTOCOL)
             
@@ -179,7 +180,8 @@ def predict_data(test_set, model, nb_test,
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         logistic_model = model.to(device)
-
+        
+        pbar = tqdm(total=len(test_set.digind)-1)
         pred_target, true_target = [], []
         for X, label in loader:
             X = X.to(device)
@@ -192,6 +194,8 @@ def predict_data(test_set, model, nb_test,
 
             pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
             true_target.append(labels.numpy())
+            pbar.update(1)
+        pbar.close()
 
     return pred_target, true_target
 
@@ -203,6 +207,7 @@ def predict_data(test_set, model, nb_test,
 #___________________________________________________________________________________________
 
 def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10):
+    print(dataset)
     if name=='hots':
         homeo = False
         homeotest = False
