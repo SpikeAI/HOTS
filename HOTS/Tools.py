@@ -429,7 +429,7 @@ def knn(trainmap,testmap,k, weights = 'uniform'):
     from sklearn.neighbors import KNeighborsClassifier
 
     X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
-    knn = KNeighborsClassifier(n_neighbors=k, weights=weights, metric = JensenShannon)
+    knn = KNeighborsClassifier(n_neighbors=k, weights=weights)#, metric = JensenShannon)
     knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
     accuracy = 0
     for i in range(len(testmap)):
