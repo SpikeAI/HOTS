@@ -58,7 +58,7 @@ for tau in torange:
 ind_tmax = np.argmax(meanscore)
 
 tau = torange(ind_tmax)
-for R in [1, 2, 5, 10, 20]:
+for R in [1, 2, 5, 10]:
     print('clustering...')
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=5, maxevts  = max_nbevents)
     print('training...')
@@ -67,4 +67,4 @@ for R in [1, 2, 5, 10, 20]:
     print('testing...')
     testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset, maxevts  = max_nbevents)
     score = histoscore(trainhistomap,testhistomap, verbose = True)
-    meanscore.append(np.mean(JS_score))
+    meanscore.append(np.mean(score))

@@ -154,10 +154,9 @@ class network(object):
         self.stats[0].actmap = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
         
 
-    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None):
+    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, verbose=True):
         self.onbon = True
-        print(self.get_fname())
-        model = self.load_model(dataset)
+        model = self.load_model(dataset, verbose)
         if model:
             return model
         else:
@@ -188,7 +187,7 @@ class network(object):
                             self.TS[l].spatpmat[:] = 0
                             self.TS[l].iev = 0
                     if maxevts is not None:
-                        N_max = maxevts
+                        N_max = min(maxevts, events.shape[1])
                     else: 
                         N_max = events.shape[1]
                     for iev in range(N_max):
@@ -221,11 +220,10 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None):
+    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, verbose=True):
 
         self.onbon = False
-        print(self.get_fname())
-        model = self.load_model(dataset)
+        model = self.load_model(dataset, verbose)
         if model:
             return model
         else:
@@ -249,7 +247,7 @@ class network(object):
                     nbloadz[target]+=1
                     pbar.update(1)
                     if maxevts is not None:
-                        N_max = maxevts
+                        N_max = min(maxevts, events.shape[1])
                     else: 
                         N_max = events.shape[1]
                     for iev in range(N_max):
@@ -266,9 +264,9 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, to_record=False):
+    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, to_record=False, verbose=True):
 
-        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle)
+        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle, verbose)
         if loaded:
             return output
         else:
@@ -308,7 +306,7 @@ class network(object):
                     events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
                     events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
                 if maxevts is not None:
-                    N_max = maxevts
+                    N_max = min(maxevts, events.shape[1])
                 else: 
                     N_max = events.shape[1]
                 for iev in range(N_max):
@@ -379,7 +377,7 @@ class network(object):
         algo = self.L[0].algo
         arch = [self.L[i].kernel.shape[1] for i in range(len(self.L))]
         R = [self.L[i].R for i in range(len(self.L))]
-        tau = [np.round(self.TS[i].tau*1e-3,1) for i in range(len(self.TS))]
+        tau = [np.round(self.TS[i].tau*1e-3,2) for i in range(len(self.TS))]
         homeo = self.L[0].homeo
         homparam = self.L[0].homparam
         krnlinit = self.L[0].krnlinit
@@ -405,7 +403,7 @@ class network(object):
         with open(f_name, 'wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
 
-    def load_model(self, dataset):
+    def load_model(self, dataset, verbose):
         model = []
         if dataset=='nmnist':
             path = f'../Records/EXP_03_NMNIST/models/'
@@ -417,6 +415,8 @@ class network(object):
             path = '../Records/EXP_06_DVSGESTURE/models/' 
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
+        if verbose:
+            print(f_name)
         if not os.path.isfile(f_name):
             return model
         else:
@@ -447,7 +447,7 @@ class network(object):
         with open(f_name, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
 
-    def load_output(self, dataset, homeo, nb, train, jitonic, outstyle):
+    def load_output(self, dataset, homeo, nb, train, jitonic, outstyle, verbose):
         loaded = False
         output = []
         if dataset=='nmnist':
@@ -467,7 +467,8 @@ class network(object):
         if homeo:
             f_name = f_name+'_homeo'
         f_name = f_name +'.pkl'
-        print(f_name)
+        if verbose:
+            print(f_name)
         if os.path.isfile(f_name):
             with open(f_name, 'rb') as file:
                 output = pickle.load(file)

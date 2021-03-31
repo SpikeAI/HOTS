@@ -206,32 +206,33 @@ def predict_data(test_set, model, nb_test,
 #_______________________________TO_RUN_HOTS_________________________________________________
 #___________________________________________________________________________________________
 
-def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10):
-    print(dataset)
+def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10, maxevts = None, verbose = False):
+    if verbose:
+        print(f'The dataset used is: {dataset}')
     if name=='hots':
         homeo = False
         homeotest = False
         krnlinit = 'first'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn)
+        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
     elif name=='homhots':
         homeo = True
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
     elif name=='fullhom':
         homeo = True
         homeotest = True
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
     elif name=='onlyonline':
         homeo = False
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
     return hotshom, homeotest
 
 def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, dataset, verbose=False):
@@ -424,11 +425,11 @@ def histoscore(trainmap,testmap, verbose = True):
         print(100*'-')
     return bhat_score, norm_score, eucl_score, KL_score, JS_score, kNN_3, kNN_6
 
-def knn(trainmap,testmap,k):
+def knn(trainmap,testmap,k, weights = 'uniform'):
     from sklearn.neighbors import KNeighborsClassifier
 
     X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
-    knn = KNeighborsClassifier(n_neighbors=k)
+    knn = KNeighborsClassifier(n_neighbors=k, weights=weights, metric = JensenShannon)
     knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
     accuracy = 0
     for i in range(len(testmap)):
@@ -478,7 +479,9 @@ def accuracy_lagorce(trainmap,testmap,measure):
 def accuracy(trainmap,testmap,measure):
     accuracy=0
     total = 0
+    pbar = tqdm(total=int(len(testmap)))
     for i in range(len(testmap)):
+        pbar.update(1)
         dist = np.zeros(len(trainmap))
         histest = testmap[i][1]/np.sum(testmap[i][1])
         for k in range(len(trainmap)):
