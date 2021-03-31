@@ -181,6 +181,8 @@ class network(object):
                         size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
                         size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
                         self.sensformat((int(size_x.item()),int(size_y.item())))
+                        events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
+                        events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
                     if diginit:
                         for l in range(n+1):
                             self.TS[l].spatpmat[:] = 0
@@ -238,9 +240,11 @@ class network(object):
                         self.TS[i].iev = 0
                 events, target = next(iter(loader))
                 if dataset=='cars':
-                    size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
-                    size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
+                    size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])+1
+                    size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])+1
                     self.sensformat((int(size_x.item()),int(size_y.item())))
+                    events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
+                    events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
                 if nbloadz[target]<nb_digit:
                     nbloadz[target]+=1
                     pbar.update(1)
@@ -301,6 +305,8 @@ class network(object):
                     size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
                     size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
                     self.sensformat((int(size_x.item()),int(size_y.item())))
+                    events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
+                    events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
                 if maxevts is not None:
                     N_max = maxevts
                 else: 

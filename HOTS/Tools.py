@@ -1,4 +1,4 @@
-from Network import network, histoscore
+from Network import network
 import torch
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 import pickle
