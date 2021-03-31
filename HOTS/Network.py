@@ -52,7 +52,6 @@ class network(object):
         self.onbon = False
         self.name = 'hots'
         self.date = timestr
-        self.sensor_size = [None,None]
         tau *= 1e3 # to enter tau in ms
         nblay = len(nbclust)
         if to_record:
@@ -138,21 +137,24 @@ class network(object):
         else: print('incorrect dataset')
 
         loader = tonic.datasets.DataLoader(eventset, shuffle=True)
-
+        
         if eventset.sensor_size!=self.TS[0].camsize:
             print('sensor formatting...')
-            for i in range(1,len(self.TS)):
-                self.TS[i].camsize = eventset.sensor_size
-                self.TS[i].spatpmat = np.zeros((self.L[i-1].kernel.shape[1],eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
-                self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
-            self.TS[0].spatpmat = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
-            self.stats[0].actmap = np.zeros((2,eventset.sensor_size[0]+1,eventset.sensor_size[1]+1))
-        
-        self.sensor_size = eventset.sensor_size
+            self.sensformat(eventset.sensor_size)
         
         return loader, eventset.ordering, eventset.classes
+        
+    def sensformat(self,sensor_size):
+        for i in range(1,len(self.TS)):
+            self.TS[i].camsize = sensor_size
+            self.TS[i].spatpmat = np.zeros((self.L[i-1].kernel.shape[1],sensor_size[0]+1,sensor_size[1]+1))
+            self.stats[i].actmap = np.zeros((self.L[i-1].kernel.shape[1],sensor_size[0]+1,sensor_size[1]+1))
+        self.TS[0].camsize = sensor_size
+        self.TS[0].spatpmat = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
+        self.stats[0].actmap = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
+        
 
-    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None]):
+    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None):
         self.onbon = True
         print(self.get_fname())
         model = self.load_model(dataset)
@@ -175,11 +177,19 @@ class network(object):
                 for idig in range(nb_digit*nbclass):
                     pbar.update(1)
                     events = eventslist[idig]
+                    if dataset=='cars':
+                        size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
+                        size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
+                        self.sensformat((int(size_x.item()),int(size_y.item())))
                     if diginit:
                         for l in range(n+1):
                             self.TS[l].spatpmat[:] = 0
                             self.TS[l].iev = 0
-                    for iev in range(events.shape[1]):
+                    if maxevts is not None:
+                        N_max = maxevts
+                    else: 
+                        N_max = events.shape[1]
+                    for iev in range(N_max):
                         x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
                                     events[0,iev,ordering.find("y")].item(), \
                                     events[0,iev,ordering.find("t")].item(), \
@@ -209,7 +219,7 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None]):
+    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None):
 
         self.onbon = False
         print(self.get_fname())
@@ -227,22 +237,32 @@ class network(object):
                         self.TS[i].spatpmat[:] = 0
                         self.TS[i].iev = 0
                 events, target = next(iter(loader))
+                if dataset=='cars':
+                    size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
+                    size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
+                    self.sensformat((int(size_x.item()),int(size_y.item())))
                 if nbloadz[target]<nb_digit:
                     nbloadz[target]+=1
                     pbar.update(1)
-                    for iev in range(events.shape[1]):
+                    if maxevts is not None:
+                        N_max = maxevts
+                    else: 
+                        N_max = events.shape[1]
+                    for iev in range(N_max):
                         self.run(events[0][iev][ordering.find("x")].item(), \
                                  events[0][iev][ordering.find("y")].item(), \
                                  events[0][iev][ordering.find("t")].item(), \
                                  events[0][iev][ordering.find("p")].item(), \
                                  learn=True, to_record=True)
+                        #if self.TS[0].iev%1000==0:
+                        #    self.TS[0].plote()
             pbar.close()
             for l in range(len(self.L)):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
             self.save_model(dataset)
             return self
 
-    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', to_record=False):
+    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, to_record=False):
 
         output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle)
         if loaded:
@@ -277,7 +297,15 @@ class network(object):
                     #self.stats[i].actmap[:] = 0
                 pbar.update(1)
                 events, target = next(iter(loader))
-                for iev in range(events.shape[1]):
+                if dataset=='cars':
+                    size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
+                    size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
+                    self.sensformat((int(size_x.item()),int(size_y.item())))
+                if maxevts is not None:
+                    N_max = maxevts
+                else: 
+                    N_max = events.shape[1]
+                for iev in range(N_max):
                     out, activout = self.run(events[0][iev][x_index].item(), \
                                             events[0][iev][y_index].item(), \
                                             events[0][iev][t_index].item(), \
@@ -305,7 +333,6 @@ class network(object):
             if train: 
                 self.save_output(labelmapav, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histav')
             self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histo')
-            output = labelmap
                 
             if outstyle=='LR':
                 camsize = self.TS[-1].camsize
@@ -313,6 +340,10 @@ class network(object):
                 eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
                 self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='LR')
                 output = eventsout
+            elif outstyle=='histo':
+                output = labelmap
+            elif outstyle=='histav':
+                output = labelmapav
 
             return output
 
@@ -334,9 +365,7 @@ class network(object):
             else:
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
-        #if self.TS[0].iev%500==0:
-        #    print(self.TS[0].iev)
-        #    self.TS[0].plote()
+
         return out, activout
 
     def get_fname(self):
@@ -441,6 +470,7 @@ class network(object):
 
 
 ##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
+##___________________________________________________________________________________________
 
     def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
 
@@ -572,14 +602,15 @@ class network(object):
 
         pbar.close()
 
-        score1=accuracy_lagorce(trainmap,labelmap,'bhatta')
-        score2=accuracy_lagorce(trainmap,labelmap,'eucli')
-        score3=accuracy_lagorce(trainmap,labelmap,'norm')
-        print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
+        #score1=accuracy_lagorce(trainmap,labelmap,'bhatta')
+        #score2=accuracy_lagorce(trainmap,labelmap,'eucli')
+        #score3=accuracy_lagorce(trainmap,labelmap,'norm')
+        #print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
 
-        return labelmap, [score1,score2,score3]
+        return labelmap#, [score1,score2,score3]
 
 ##___________________PLOTTING________________________________________________________________
+##___________________________________________________________________________________________
 
     def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
         '''
@@ -654,11 +685,6 @@ class network(object):
                     axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
                     axi.set_xticks(())
                     axi.set_yticks(())
-
-##________________CUSTOM NETWORK_____________________________________________________________
-##___________________________________________________________________________________________
-
-#class customnetwork(network):
     
                     
 ##________________POOLING NETWORK____________________________________________________________
@@ -812,91 +838,6 @@ class poolingnetwork(network):
             self.stats[l].histo = self.L[l].cumhisto.copy()
         return loader, ordering
 
-
-##__________________TOOLS____________________________________________________________________
-##___________________________________________________________________________________________
-
-def EuclidianNorm(hist1,hist2):
-    return np.linalg.norm(hist1-hist2)
-
-def NormalizedNorm(hist1,hist2):
-    return np.linalg.norm(hist1-hist2)/(np.linalg.norm(hist1)*np.linalg.norm(hist2))
-
-def BattachaNorm(hist1, hist2):
-    return -np.log(np.sum(np.sqrt(hist1*hist2)))
-
-def KullbackLeibler(hist_test, hist_train):
-    return np.sum(hist_test*np.log(hist_test/hist_train))
-
-def JensenShannon(hist1, hist2):
-    hist3 = (hist1+hist2)*0.5
-    return (KullbackLeibler(hist1,hist3)+KullbackLeibler(hist2,hist3))*0.5
-
-def accuracy(trainmap,testmap,measure):
-    accuracy=0
-    total = 0
-    for i in range(len(testmap)):
-        dist = np.zeros([trainmap.shape[0]])
-        histest = testmap[i][1]/np.sum(testmap[i][1])
-        for k in range(trainmap.shape[0]):
-            histrain = trainmap[k,:]/np.sum(trainmap[k,:])
-            if measure=='bhatta':
-                dist[k] = BattachaNorm(histest,histrain)
-            elif measure=='eucli':
-                dist[k] = EuclidianNorm(histest,histrain)
-            elif measure=='norm':
-                dist[k] = NormalizedNorm(histest,histrain)
-            elif measure == 'KL':
-                dist[k] = KullbackLeibler(histest,histrain)
-            elif measure == 'JS':
-                dist[k] = JensenShannon(histest,histrain)
-        if testmap[i][0]== np.argmin(dist):
-            accuracy+=1
-        total+=1
-    return accuracy/total
-
-def accuracy_lagorce(trainmap,testmap,measure):
-    accuracy=0
-    total = 0
-    for i in range(len(testmap)):
-        dist = np.zeros(len(trainmap))
-        # print(i, testmap[i][1])
-        # print(i, np.sum(testmap[i][1][1]))
-        # print('doh', testmap[i][1][1])
-        histest = testmap[i][1]/np.sum(testmap[i][1])
-        for k in range(len(trainmap)):
-            histrain = trainmap[k][1]/np.sum(trainmap[k][1])
-            if measure=='bhatta':
-                dist[k] = BattachaNorm(histest,histrain)
-            elif measure=='eucli':
-                dist[k] = EuclidianNorm(histest,histrain)
-            elif measure=='norm':
-                dist[k] = NormalizedNorm(histest,histrain)
-            elif measure == 'KL':
-                dist[k] = KullbackLeibler(histest,histrain)
-            elif measure == 'JS':
-                dist[k] = JensenShannon(histest,histrain)
-        if testmap[i][0]==trainmap[np.argmin(dist)][0]:
-            accuracy+=1
-        total+=1
-    return accuracy/total
-
-def histoscore(trainmap,testmap,k=6, verbose = True):
-    bhat_score = accuracy(trainmap, testmap, 'bhatta')
-    norm_score = accuracy(trainmap, testmap, 'norm')
-    eucl_score = accuracy(trainmap, testmap, 'eucli')
-    KL_score = accuracy(trainmap,testmap,'KL')
-    JS_score = accuracy(trainmap,testmap,'JS')
-    #knn_score = knn(trainmap,testmap,k)
-    #k2 = k//2
-    #k2nn_score = knn(trainmap,testmap,k2)
-    if verbose:
-        print(47*'-'+'SCORES'+47*'-')
-        print(f'Classification scores with HOTS measures: bhatta = {np.round(bhat_score*100)}% - eucli = {np.round(eucl_score*100)}% - norm = {np.round(norm_score*100)}%')
-        #print(f'Classification scores with kNN: {k2}-NN = {k2nn_score*100}% - {k}-NN = {knn_score*100}%')
-        print(f'Classification scores with entropy: Kullback-Leibler = {np.round(KL_score*100)}% - Jensen-Shannon = {np.round(JS_score*100)}%')
-        print(100*'-')
-    return JS_score
 
 #__________________OLD_CODE___________________________________________________________________________
 #_____________________________________________________________________________________________________
