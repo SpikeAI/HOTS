@@ -27,8 +27,8 @@ nbclust = [4,8,16]
 #_______________NB_OF_DIGITS___________________
 dataset = 'gesture'
 
-nb_test = 20
-nb_train = 48
+nb_test = 264
+nb_train = 1077
 ds = 1
 nb_test = nb_test//ds
 nb_train = nb_train//ds
@@ -43,7 +43,7 @@ print('classic HOTS and homeoHOTS')
 name = 'homhots'
 for tau in [0.1, 1, 2, 5, 10, 20]:
     print('clustering...')
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=2)
     print('training...')
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)

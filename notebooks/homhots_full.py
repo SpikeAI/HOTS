@@ -28,7 +28,7 @@ nbclust = [4,8,16]
 dataset = 'nmnist'
 nb_test = 10000
 nb_train = 60000
-ds = 1
+ds = 1200
 nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
@@ -39,12 +39,12 @@ record_path = '../Records/EXP_03_NMNIST/'
 
 print('classic HOTS and homeoHOTS')
 for name in ['homhots', 'hots']:
-    print('clustering...')
+    print(f'{name} clustering...')
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
-    print('training...')
-    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
-    print('testing...')
-    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
+    print(f'{name} training...')
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='LR')
+    print(f'{name} testing...')
+    testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
     
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
     #JS_score = histoscore(trainhistomap,testhistomap, verbose = True)

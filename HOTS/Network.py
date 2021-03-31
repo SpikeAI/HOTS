@@ -302,7 +302,8 @@ class network(object):
                 self.L[i].homeo=homeomod
             pbar.close()
             
-            self.save_output(labelmapav, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histav')
+            if train: 
+                self.save_output(labelmapav, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histav')
             self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histo')
             output = labelmap
                 
