@@ -11,6 +11,7 @@ homeinv = False
 jitonic = [None,None] #[temporal, spatial]
 jitter = False
 tau = 5
+R = 2
 filt = 2
 nbclust = [4,8,16]
 #______________________________________________
@@ -39,13 +40,29 @@ record_path = '../Records/EXP_04_NCARS/'
 
 print('classic HOTS and homeoHOTS')
 name = 'homhots'
-for tau in [0.1, 1, 2, 5, 10, 20]:
-    for R in [2, 5, 10, 20]:
-        print('clustering...')
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
-        print('training...')
-        #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
-        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
-        print('testing...')
-        testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
-        JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
+meanscore = []
+torange = [0.1, 1, 2, 5, 10, 20]
+for tau in torange:
+    print('clustering...')
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
+    print('training...')
+    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
+    print('testing...')
+    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
+    score = histoscore(trainhistomap,testhistomap, verbose = True)
+    meanscore.append(np.mean(score))
+    
+ind_tmax = np.argmax(meanscore)
+
+tau = torange[ind_tmax]
+for R in [1, 2, 5, 10, 20]:
+    print('clustering...')
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
+    print('training...')
+    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
+    print('testing...')
+    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
+    score = histoscore(trainhistomap,testhistomap, verbose = True)
+    meanscore.append(np.mean(JS_score))
