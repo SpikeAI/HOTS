@@ -43,7 +43,7 @@ print('classic HOTS and homeoHOTS')
 #for name in ['homhots', 'hots']:
 name = 'homhots'
 meanscore = []
-torange = [0.1, 1, 2, 5, 10, 20]
+torange = [0.1, 1, 2, 5, 10, 20, 30, 40, 50, 60]
 for tau in torange:
     print('clustering...')
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=5, maxevts  = max_nbevents)
@@ -57,7 +57,7 @@ for tau in torange:
     
 ind_tmax = np.argmax(meanscore)
 
-tau = torange(ind_tmax)
+tau = torange[ind_tmax]
 for R in [1, 2, 5, 10]:
     print('clustering...')
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=5, maxevts  = max_nbevents)

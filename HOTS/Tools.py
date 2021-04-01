@@ -479,9 +479,9 @@ def accuracy_lagorce(trainmap,testmap,measure):
 def accuracy(trainmap,testmap,measure):
     accuracy=0
     total = 0
-    pbar = tqdm(total=int(len(testmap)))
+    #pbar = tqdm(total=int(len(testmap)))
     for i in range(len(testmap)):
-        pbar.update(1)
+        #pbar.update(1)
         dist = np.zeros(len(trainmap))
         histest = testmap[i][1]/np.sum(testmap[i][1])
         for k in range(len(trainmap)):
@@ -499,4 +499,5 @@ def accuracy(trainmap,testmap,measure):
         if testmap[i][0]==trainmap[np.argmin(dist)][0]:
             accuracy+=1
         total+=1
+    #pbar.close()
     return accuracy/total

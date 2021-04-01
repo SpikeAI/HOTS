@@ -332,6 +332,7 @@ class network(object):
             
             for i in range(len(self.L)):
                 self.L[i].homeo=homeomod
+                
             pbar.close()
             
             if train: 
