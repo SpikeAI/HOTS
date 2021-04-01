@@ -38,7 +38,7 @@ timestr = '2021-03-29'
 record_path = '../Records/EXP_03_NMNIST/'
 
 print('classic HOTS and homeoHOTS')
-for name in ['hots', 'homhots']:
+for name in ['homhots', 'hots']:
     print(f'{name} clustering...')
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print(f'{name} training...')

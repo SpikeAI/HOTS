@@ -43,7 +43,7 @@ record_path = '../Records/EXP_03_NMNIST/models/'
 
 results = []
 
-for name in ['hots','homhots']:
+for name in ['homhots','hots']:
     print(f'get training set for {name}...')
     learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print(f'LR fit for {name}...')
