@@ -13,7 +13,7 @@ jitter = False
 tau = 5
 R = 2
 filt = 2
-nbclust = [4,8,16]
+nbclust = [4,8,16] 
 #______________________________________________
 #______________________________________________
 
@@ -28,7 +28,7 @@ nbclust = [4,8,16]
 dataset = 'nmnist'
 nb_test = 10000
 nb_train = 60000
-ds = 20
+ds = 1000
 nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
@@ -42,11 +42,11 @@ for name in ['homhots', 'hots']:
     for i in range(ds):
         timestr = '2021-03-29'+str(i)
         print(f'{name} clustering...')
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, subset_size = nb_train)
         print(f'{name} training...')
-        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='LR')
+        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='LR', subset_size = nb_train)
         print(f'{name} testing...')
-        testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, jitonic=jitonic)
+        testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, subset_size = nb_test)
     
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
     #JS_score = histoscore(trainhistomap,testhistomap, verbose = True)

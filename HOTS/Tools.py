@@ -206,7 +206,7 @@ def predict_data(test_set, model, nb_test,
 #_______________________________TO_RUN_HOTS_________________________________________________
 #___________________________________________________________________________________________
 
-def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10, maxevts = None, verbose = False):
+def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10, maxevts = None, subset_size = None, verbose = False):
     if verbose:
         print(f'The dataset used is: {dataset}')
     if name=='hots':
@@ -214,25 +214,25 @@ def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset,
         homeotest = False
         krnlinit = 'first'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
+        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, verbose=verbose)
     elif name=='homhots':
         homeo = True
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, verbose=verbose)
     elif name=='fullhom':
         homeo = True
         homeotest = True
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, verbose=verbose)
     elif name=='onlyonline':
         homeo = False
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, verbose=verbose)
     return hotshom, homeotest
 
 def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, dataset, verbose=False):
@@ -409,7 +409,7 @@ def histoscore_lagorce(trainmap,testmap, verbose = True):
         print(100*'-')
     return bhat_score, norm_score, eucl_score, KL_score, JS_score
 
-def histoscore(trainmap,testmap, verbose = True):
+def histoscore(trainmap,testmap, weights='distance',verbose = True):
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
     norm_score = accuracy(trainmap, testmap, 'norm')
     eucl_score = accuracy(trainmap, testmap, 'eucli')
@@ -425,11 +425,11 @@ def histoscore(trainmap,testmap, verbose = True):
         print(100*'-')
     return bhat_score, norm_score, eucl_score, KL_score, JS_score, kNN_3, kNN_6
 
-def knn(trainmap,testmap,k, weights = 'uniform'):
+def knn(trainmap,testmap,k, weights = 'uniform', metric = 'euclidean'):
     from sklearn.neighbors import KNeighborsClassifier
 
     X_train = np.array([trainmap[i][1]/np.sum(trainmap[i][1]) for i in range(len(trainmap))]).reshape(len(trainmap),len(trainmap[0][1]))
-    knn = KNeighborsClassifier(n_neighbors=k, weights=weights)#, metric = JensenShannon)
+    knn = KNeighborsClassifier(n_neighbors=k, weights=weights, metric = metric)
     knn.fit(X_train,[trainmap[i][0] for i in range(len(trainmap))])
     accuracy = 0
     for i in range(len(testmap)):
