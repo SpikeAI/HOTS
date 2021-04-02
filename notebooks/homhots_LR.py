@@ -30,6 +30,7 @@ nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 #_______________LR_PARAMETERS__________________
+num_workers = 30
 learning_rate = 0.005
 beta1, beta2 = 0.9, 0.999
 betas = (beta1, beta2)
@@ -47,11 +48,11 @@ for name in ['homhots','hots']:
     print(f'get training set for {name}...')
     learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print(f'LR fit for {name}...')
-    model, loss = fit_data(name_net, learn_set, nb_train, nb_pola, learning_rate, num_epochs, betas, verbose=True)
+    model, loss = fit_data(name_net, learn_set, nb_train, nb_pola, learning_rate, num_epochs, betas, num_workers=num_workers, verbose=True)
     print(f'get testing set for {name}...')
     test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print(f'prediction for {name}...')
-    pred_target, true_target = predict_data(test_set, model, nb_test)
+    pred_target, true_target = predict_data(test_set, model, nb_test, num_workers=num_workers)
     mean_acc, online_acc = classification_results(pred_target, true_target, nb_test)
     print(f'Classification performance for {name}: {mean_acc}')
     results.append([pred_target, true_target, mean_acc, online_acc])

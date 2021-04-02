@@ -31,6 +31,8 @@ F2:
 	python3 homhots_ncars.py
 F3:
 	python3 homhots_archiz.py
+F4:
+	python3 homhots_LR.py
 
 G:
 	$(JN) HOTS_EXP_06_PokerDVS.ipynb

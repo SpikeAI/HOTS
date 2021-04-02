@@ -113,6 +113,7 @@ def fit_data(name,
             learning_rate,
             num_epochs,
             betas,
+            num_workers=0,
             verbose=False, #**kwargs
         ):
     if isfile(name):
@@ -126,7 +127,7 @@ def fit_data(name,
         amsgrad = True #or False gives similar results
         generator = torch.Generator().manual_seed(42)
         sampler = torch.utils.data.RandomSampler(dataset, replacement=True, num_samples=nb_digit, generator=generator)
-        loader = tonic.datasets.DataLoader(dataset, sampler=sampler)
+        loader = tonic.datasets.DataLoader(dataset, sampler=sampler, num_workers=num_workers)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f'device -> {device}')
@@ -167,7 +168,7 @@ def fit_data(name,
             
     return logistic_model, losses
 
-def predict_data(test_set, model, nb_test,
+def predict_data(test_set, model, nb_test, num_workers=0,
             verbose=False, **kwargs
         ):
     
@@ -175,7 +176,7 @@ def predict_data(test_set, model, nb_test,
 
         generator=torch.Generator().manual_seed(42)
         sampler = torch.utils.data.RandomSampler(test_set, replacement=True, num_samples=nb_test, generator=generator)
-        loader = tonic.datasets.DataLoader(test_set, sampler=sampler)
+        loader = tonic.datasets.DataLoader(test_set, sampler=sampler, num_workers=num_workers)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
