@@ -24,10 +24,12 @@ E:
 	git commit -m 'EXP 05 results' HOTS_EXP_05_architectures.ipynb
 	git push
 
-F:
+F1:
 	python3 homhots_LR.py
+F2:
 	python3 homhots_full.py
-	python3 archiz.py
+F3:
+	python3 homhots_archiz.py
 
 G:
 	$(JN) HOTS_EXP_06_PokerDVS.ipynb
