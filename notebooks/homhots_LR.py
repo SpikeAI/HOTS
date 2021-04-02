@@ -29,7 +29,6 @@ nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
-
 #_______________LR_PARAMETERS__________________
 learning_rate = 0.005
 beta1, beta2 = 0.9, 0.999
@@ -44,7 +43,7 @@ record_path = '../Records/EXP_03_NMNIST/models/'
 
 results = []
 
-for name in ['hots','homhots']:
+for name in ['homhots','hots']:
     print(f'get training set for {name}...')
     learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print(f'LR fit for {name}...')

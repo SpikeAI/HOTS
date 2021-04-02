@@ -7,6 +7,8 @@ from tqdm import tqdm
 import tonic
 import os
 import pickle
+from torch import Generator
+from torch.utils.data import SubsetRandomSampler
 
 class network(object):
     """network is an Hierarchical network described in Lagorce et al. 2017 (HOTS). It loads event stream with the tonic package.
@@ -73,7 +75,7 @@ class network(object):
 
 ##___________________________________________________________________________________________
 
-    def load(self, dataset, trainset=True, jitonic=[None,None]):
+    def load(self, dataset, trainset=True, jitonic=[None,None], subset_size = None):
         self.jitonic = jitonic
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
@@ -135,8 +137,17 @@ class network(object):
                                 train=trainset, download=download,
                                 transform=transform)
         else: print('incorrect dataset')
-
-        loader = tonic.datasets.DataLoader(eventset, shuffle=True)
+            
+        if subset_size is not None:
+            subset_indices = []
+            for i in range(len(eventset.classes)):
+                all_ind = np.where(np.array(eventset.targets)==i)[0]
+                subset_indices += all_ind[:subset_size//len(eventset.classes)].tolist()
+            g_cpu = Generator()
+            subsampler = SubsetRandomSampler(subset_indices, g_cpu)
+            loader = tonic.datasets.DataLoader(eventset, batch_size=1, shuffle=False, sampler=subsampler)
+        else:
+            loader = tonic.datasets.DataLoader(eventset, shuffle=True)
         
         if eventset.sensor_size!=self.TS[0].camsize:
             print('sensor formatting...')
@@ -154,14 +165,13 @@ class network(object):
         self.stats[0].actmap = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
         
 
-    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None):
+    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, subset_size = None, verbose=True):
         self.onbon = True
-        print(self.get_fname())
-        model = self.load_model(dataset)
+        model = self.load_model(dataset, verbose)
         if model:
             return model
         else:
-            loader, ordering, classes = self.load(dataset, jitonic=jitonic)
+            loader, ordering, classes = self.load(dataset, jitonic=jitonic, subset_size=subset_size)
             nbclass = len(classes)
             #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
             eventslist = []
@@ -188,7 +198,7 @@ class network(object):
                             self.TS[l].spatpmat[:] = 0
                             self.TS[l].iev = 0
                     if maxevts is not None:
-                        N_max = maxevts
+                        N_max = min(maxevts, events.shape[1])
                     else: 
                         N_max = events.shape[1]
                     for iev in range(N_max):
@@ -221,15 +231,14 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None):
+    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, subset_size=None, verbose=True):
 
         self.onbon = False
-        print(self.get_fname())
-        model = self.load_model(dataset)
+        model = self.load_model(dataset, verbose)
         if model:
             return model
         else:
-            loader, ordering, classes = self.load(dataset, jitonic=jitonic)
+            loader, ordering, classes = self.load(dataset, jitonic=jitonic, subset_size=subset_size)
             nbclass = len(classes)
             pbar = tqdm(total=nb_digit*nbclass)
             nbloadz = np.zeros([nbclass])
@@ -249,7 +258,7 @@ class network(object):
                     nbloadz[target]+=1
                     pbar.update(1)
                     if maxevts is not None:
-                        N_max = maxevts
+                        N_max = min(maxevts, events.shape[1])
                     else: 
                         N_max = events.shape[1]
                     for iev in range(N_max):
@@ -266,13 +275,13 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, to_record=False):
+    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, subset_size=None, to_record=False, verbose=True):
 
-        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle)
+        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle, verbose)
         if loaded:
             return output
         else:
-            loader, ordering, classes = self.load(dataset, trainset=train, jitonic=jitonic)
+            loader, ordering, classes = self.load(dataset, trainset=train, jitonic=jitonic, subset_size=subset_size)
             nbclass = len(classes)
             homeomod = self.L[0].homeo
             for i in range(len(self.L)):
@@ -308,7 +317,7 @@ class network(object):
                     events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
                     events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
                 if maxevts is not None:
-                    N_max = maxevts
+                    N_max = min(maxevts, events.shape[1])
                 else: 
                     N_max = events.shape[1]
                 for iev in range(N_max):
@@ -334,6 +343,7 @@ class network(object):
             
             for i in range(len(self.L)):
                 self.L[i].homeo=homeomod
+                
             pbar.close()
             
             if train: 
@@ -379,7 +389,7 @@ class network(object):
         algo = self.L[0].algo
         arch = [self.L[i].kernel.shape[1] for i in range(len(self.L))]
         R = [self.L[i].R for i in range(len(self.L))]
-        tau = [np.round(self.TS[i].tau*1e-3,1) for i in range(len(self.TS))]
+        tau = [np.round(self.TS[i].tau*1e-3,2) for i in range(len(self.TS))]
         homeo = self.L[0].homeo
         homparam = self.L[0].homparam
         krnlinit = self.L[0].krnlinit
@@ -405,7 +415,7 @@ class network(object):
         with open(f_name, 'wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
 
-    def load_model(self, dataset):
+    def load_model(self, dataset, verbose):
         model = []
         if dataset=='nmnist':
             path = f'../Records/EXP_03_NMNIST/models/'
@@ -417,6 +427,8 @@ class network(object):
             path = '../Records/EXP_06_DVSGESTURE/models/' 
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
+        if verbose:
+            print(f_name)
         if not os.path.isfile(f_name):
             return model
         else:
@@ -447,7 +459,7 @@ class network(object):
         with open(f_name, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
 
-    def load_output(self, dataset, homeo, nb, train, jitonic, outstyle):
+    def load_output(self, dataset, homeo, nb, train, jitonic, outstyle, verbose):
         loaded = False
         output = []
         if dataset=='nmnist':
@@ -467,7 +479,8 @@ class network(object):
         if homeo:
             f_name = f_name+'_homeo'
         f_name = f_name +'.pkl'
-        print(f_name)
+        if verbose:
+            print(f_name)
         if os.path.isfile(f_name):
             with open(f_name, 'rb') as file:
                 output = pickle.load(file)

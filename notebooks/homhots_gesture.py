@@ -29,7 +29,8 @@ dataset = 'gesture'
 
 nb_test = 264
 nb_train = 1077
-ds = 1
+ds = 10
+max_nbevents = 50000
 nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
@@ -41,12 +42,29 @@ record_path = '../Records/EXP_06_DVSGESTURE/'
 print('classic HOTS and homeoHOTS')
 #for name in ['homhots', 'hots']:
 name = 'homhots'
-for tau in [0.1, 1, 2, 5, 10, 20]:
+meanscore = []
+torange = [0.1, 1, 2, 5, 10, 20, 30, 40, 50, 60]
+for tau in torange:
     print('clustering...')
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=2)
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=5, maxevts  = max_nbevents)
     print('training...')
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
-    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset, maxevts  = max_nbevents)
     print('testing...')
-    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
-    JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
+    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset, maxevts  = max_nbevents)
+    score = histoscore(trainhistomap,testhistomap, verbose = True)
+    meanscore.append(np.mean(score))
+    
+ind_tmax = np.argmax(meanscore)
+
+tau = torange[ind_tmax]
+for R in [1, 2, 5, 10]:
+    print('clustering...')
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=5, maxevts  = max_nbevents)
+    print('training...')
+    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset, maxevts  = max_nbevents)
+    print('testing...')
+    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset, maxevts  = max_nbevents)
+    score = histoscore(trainhistomap,testhistomap, verbose = True)
+    meanscore.append(np.mean(score))
