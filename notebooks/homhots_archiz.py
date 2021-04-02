@@ -37,7 +37,7 @@ timestr = '2021-03-29'
 record_path = '../Records/EXP_03_NMNIST/'
 
 print('classic HOTS and homeoHOTS')
-for nbclust in [[8,16],[8,8,16],[16,8,16],[8,16,32],[16,32,64]]:
+for nbclust in [[8,16],[4,8,16],[8,8,16],[16,8,16],[8,16,32],[16,32,64]]:
     print(f'architecture: {nbclust}')
     for name in ['homhots', 'hots']:
         print('clustering...')
