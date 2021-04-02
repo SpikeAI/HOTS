@@ -42,7 +42,7 @@ for name in ['homhots', 'hots']:
     print(f'{name} clustering...')
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print(f'{name} training...')
-    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='LR')
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train)
     print(f'{name} testing...')
     for i in range(ds):
         testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, kfold = ds, kfold_ind=i)
