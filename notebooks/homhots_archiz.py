@@ -23,7 +23,6 @@ nbclust = [4,8,16]
 #jit_t = np.arange(0,300,10)
 #jit_s, jit_t = jit_s**2, jit_t**2
 #______________________________________________
-
 #_______________NB_OF_DIGITS___________________
 dataset = 'nmnist'
 nb_test = 10000

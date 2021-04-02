@@ -26,10 +26,10 @@ nbclust = [4,8,16]
 
 #_______________NB_OF_DIGITS___________________
 dataset = 'cars'
-
+nb_learn = 50
 nb_test = 4396 + 4211
 nb_train = 7940 + 7482
-ds = 120
+ds = 1
 nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
@@ -39,33 +39,15 @@ timestr = '2021-03-29'
 record_path = '../Records/EXP_04_NCARS/'
 
 print('classic HOTS and homeoHOTS')
-name = 'homhots'
-meanscore = []
-torange = [0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20]
-torange = [5, 10]
-for tau in torange:
-    for i in range(10):
-        timestr = '2021-03-29'+str(i)
-        print('clustering...')
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
-        print('training...')
-        #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
-        trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
-        print('testing...')
-        testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
-        score = histoscore(trainhistomap,testhistomap, verbose = True)
-        meanscore.append(np.mean(score))
-    
-#ind_tmax = np.argmax(meanscore)
-
-#tau = torange[ind_tmax]
-#for R in [1, 2, 3, 4, 5]:
-#    print('clustering...')
-#    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
-#    print('training...')
-    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='LR')
-#    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo', dataset=dataset)
-#    print('testing...')
-#    testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, dataset=dataset)
-#    score = histoscore(trainhistomap,testhistomap, verbose = True)
-#    meanscore.append(np.mean(score))
+for name in ['homhots', 'hots']:
+    print(f'{name} clustering...')
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
+    print(f'{name} training...')
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo', dataset=dataset)
+    print(f'{name} testing...')
+    testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset)    
+    print('KFolds')  
+    kfold = 20
+    nb_test = nb_test//kfold
+    for kfold_ind in range(kfold):
+        testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset, kfold = None, kfold_ind = None,)

@@ -75,7 +75,7 @@ class network(object):
 
 ##___________________________________________________________________________________________
 
-    def load(self, dataset, trainset=True, jitonic=[None,None], subset_size = None):
+    def load(self, dataset, trainset=True, jitonic=[None,None], subset_size = None, kfold = None, kfold_ind = None):
         self.jitonic = jitonic
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
@@ -146,6 +146,16 @@ class network(object):
             g_cpu = Generator()
             subsampler = SubsetRandomSampler(subset_indices, g_cpu)
             loader = tonic.datasets.DataLoader(eventset, batch_size=1, shuffle=False, sampler=subsampler)
+        elif kfold is not None: 
+            subset_indices = []
+            subset_size = len(testset)//kfold
+            for i in range(len(testset.classes)):
+                all_ind = np.where(np.array(testset.targets)==i)[0]
+                subset_indices += all_ind[kfold_ind*subset_size//len(testset.classes):
+                            min((kfold_ind+1)*subset_size//len(testset.classes), len(testset)-1)].tolist()
+            g_cpu = Generator()
+            subsampler = SubsetRandomSampler(subset_indices, g_cpu)
+            loader = tonic.datasets.DataLoader(testset, batch_size=1, shuffle=False, sampler=subsampler)
         else:
             loader = tonic.datasets.DataLoader(eventset, shuffle=True)
         
@@ -163,9 +173,8 @@ class network(object):
         self.TS[0].camsize = sensor_size
         self.TS[0].spatpmat = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
         self.stats[0].actmap = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
-        
 
-    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, subset_size = None, verbose=True):
+    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, subset_size = None, kfold = None, kfold_ind = None, verbose=True):
         self.onbon = True
         model = self.load_model(dataset, verbose)
         if model:
@@ -231,7 +240,7 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, subset_size=None, verbose=True):
+    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, subset_size=None, kfold = None, kfold_ind = None, verbose=True):
 
         self.onbon = False
         model = self.load_model(dataset, verbose)
@@ -275,9 +284,9 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, subset_size=None, to_record=False, verbose=True):
+    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, subset_size=None, kfold = None, kfold_ind = None, to_record=False, verbose=True):
 
-        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle, verbose)
+        output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle, kfold_ind, verbose)
         if loaded:
             return output
         else:
@@ -347,14 +356,14 @@ class network(object):
             pbar.close()
             
             if train: 
-                self.save_output(labelmapav, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histav')
-            self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histo')
+                self.save_output(labelmapav, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histav', kfold_ind=kfold_ind)
+            self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histo', kfold_ind=kfold_ind)
                 
             if outstyle=='LR':
                 camsize = self.TS[-1].camsize
                 nbpola = self.L[-1].kernel.shape[1]
                 eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
-                self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='LR')
+                self.save_output(eventsout, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='LR', kfold_ind=kfold_ind)
                 output = eventsout
             elif outstyle=='histo':
                 output = labelmap
@@ -436,7 +445,7 @@ class network(object):
                 model = pickle.load(file)
         return model
 
-    def save_output(self, evout, homeo, dataset, nb, train, jitonic, outstyle):
+    def save_output(self, evout, homeo, dataset, nb, train, jitonic, outstyle, kfold_ind):
         if dataset=='nmnist':
             direc = 'EXP_03_NMNIST'
         elif dataset=='cars':
@@ -453,13 +462,15 @@ class network(object):
         if not os.path.exists(path):
             os.makedirs(path)
         f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
+        if kfold_ind is not None:
+            f_name+='_'+str(kfold_ind)
         if homeo:
             f_name = f_name+'_homeo'
         f_name = f_name +'.pkl'
         with open(f_name, 'wb') as file:
             pickle.dump(evout, file, pickle.HIGHEST_PROTOCOL)
 
-    def load_output(self, dataset, homeo, nb, train, jitonic, outstyle, verbose):
+    def load_output(self, dataset, homeo, nb, train, jitonic, outstyle, kfold_ind, verbose):
         loaded = False
         output = []
         if dataset=='nmnist':
@@ -476,6 +487,8 @@ class network(object):
         else:
             path = f'../Records/{direc}/test/'
         f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
+        if kfold_ind is not None:
+            f_name+='_'+str(kfold_ind)
         if homeo:
             f_name = f_name+'_homeo'
         f_name = f_name +'.pkl'
