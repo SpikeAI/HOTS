@@ -25,9 +25,10 @@ E:
 	git push
 
 F1:
-	python3 homhots_LR.py
-F2:
 	python3 homhots_full.py
+	python3 homhots_nmnist_Kfold.py
+F2:
+	python3 homhots_ncars.py
 F3:
 	python3 homhots_archiz.py
 
