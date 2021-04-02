@@ -33,6 +33,8 @@ F3:
 	python3 homhots_archiz.py
 F4:
 	python3 homhots_LR.py
+F5:
+	python3 homhots_nmnist_jitter.py
 
 G:
 	$(JN) HOTS_EXP_06_PokerDVS.ipynb
