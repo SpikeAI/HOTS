@@ -25,5 +25,6 @@ E:
 	git push
     
 F:
+	python3 homhots_LR.py
 	python3 homhots_full.py
 	python3 archiz.py
