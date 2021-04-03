@@ -41,7 +41,7 @@ record_path = '../Records/EXP_04_NCARS/'
 print('classic HOTS and homeoHOTS')
 for name in ['homhots', 'hots']:
     print(f'{name} clustering...')
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=50)
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=nb_learn)
     print(f'{name} training...')
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo', dataset=dataset)
     print(f'{name} testing...')
