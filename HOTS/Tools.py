@@ -96,6 +96,7 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
         X_train = events_train.astype(int)
         y_train = stream[4]
         digind_train = getdigind(stream)
+
         if ds_ev is not None:
             X_train = X_train[::ds_ev,:]
             y_train = y_train[::ds_ev]

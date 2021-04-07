@@ -35,8 +35,8 @@ nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 #timestr = '2021-04-06' for a ds_ev = 4
-timestr = '2021-04-06' 
-ds_ev = 4
+timestr = '2021-03-29'
+ds_ev = 1
 record_path = '../Records/EXP_06_DVSGESTURE/'
 
 print('classic HOTS and homeoHOTS')
@@ -51,4 +51,4 @@ for name in ['homhots', 'hots']:
     kfold = 20
     nb_test = nb_test//kfold
     for kfold_ind in range(kfold):
-        testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset, kfold = None, kfold_ind = None, ds_ev = ds_ev)
+        testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev)
