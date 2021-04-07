@@ -61,7 +61,7 @@ for name in ['homhots','hots']:
 
 hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
 path = '../Records/EXP_03_NMNIST/'
-f_name = f'{path}{hotshom.get_fname()}_LR_results_{nb_train}_{nb_test}.pkl'
+f_name = f'{path}{hotshom.get_fname()}_LR_results_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
 
 with open(f_name, 'wb') as file:
     pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
