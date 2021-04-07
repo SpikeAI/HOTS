@@ -39,7 +39,7 @@ if __name__ == '__main__':
     #______________________________________________
 
 
-    timestr = '2021-04-07'
+    timestr = '2021-03-29'
     ds_ev_output = 10
     record_path = '../Records/EXP_03_NMNIST/models/'
 
