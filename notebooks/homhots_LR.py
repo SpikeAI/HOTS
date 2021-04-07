@@ -4,6 +4,20 @@ sys.path.append('../HOTS')
 from Tools import tic,toc, get_loader, fit_data, predict_data, classification_results, netparam
 import pickle
 
+#_________NETWORK_PARAMETERS______________________
+#______________________________________________
+name = 'homhots'
+sigma = None
+pooling = False
+homeinv = False
+jitonic = [None,None] #[temporal, spatial]
+jitter = False
+tau = 5
+R = 2
+nblay = 3
+nbclust = [4, 8, 16]
+filt = 2
+
 #_______________NB_OF_DIGITS___________________
 dataset = 'nmnist'
 nb_test = 10000
