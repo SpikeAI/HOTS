@@ -44,15 +44,15 @@ record_path = '../Records/EXP_03_NMNIST/models/'
 
 results = []
 
-ds_ev = 10
+ds_ev_output = 10
 
 for name in ['homhots','hots']:
     print(f'get training set for {name}...')
-    learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev)
+    learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
     print(f'LR fit for {name}...')
     model, loss = fit_data(name_net, learn_set, nb_train, nb_pola, learning_rate, num_epochs, betas, num_workers=num_workers, verbose=True)
     print(f'get testing set for {name}...')
-    test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev)
+    test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
     print(f'prediction for {name}...')
     pred_target, true_target = predict_data(test_set, model, nb_test, num_workers=num_workers)
     mean_acc, online_acc = classification_results(pred_target, true_target, nb_test)
