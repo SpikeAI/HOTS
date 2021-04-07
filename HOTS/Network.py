@@ -174,7 +174,7 @@ class network(object):
         self.TS[0].spatpmat = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
         self.stats[0].actmap = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
 
-    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, subset_size = None, kfold = None, kfold_ind = None, verbose=True):
+    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, subset_size = None, kfold = None, kfold_ind = None, ds_ev = None, verbose=True):
         self.onbon = True
         model = self.load_model(dataset, verbose)
         if model:
@@ -196,6 +196,7 @@ class network(object):
                 for idig in range(nb_digit*nbclass):
                     pbar.update(1)
                     events = eventslist[idig]
+                    
                     if dataset=='cars':
                         size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
                         size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
@@ -206,10 +207,13 @@ class network(object):
                         for l in range(n+1):
                             self.TS[l].spatpmat[:] = 0
                             self.TS[l].iev = 0
+                    if ds_ev is not None:
+                        events = events[:,::ds_ev,:]
                     if maxevts is not None:
                         N_max = min(maxevts, events.shape[1])
                     else: 
                         N_max = events.shape[1]
+                        
                     for iev in range(N_max):
                         x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
                                     events[0,iev,ordering.find("y")].item(), \
@@ -240,7 +244,7 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, subset_size=None, kfold = None, kfold_ind = None, verbose=True):
+    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, subset_size=None, kfold = None, kfold_ind = None, ds_ev = None, verbose=True):
 
         self.onbon = False
         model = self.load_model(dataset, verbose)
@@ -257,19 +261,22 @@ class network(object):
                         self.TS[i].spatpmat[:] = 0
                         self.TS[i].iev = 0
                 events, target = next(iter(loader))
-                if dataset=='cars':
-                    size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])+1
-                    size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])+1
-                    self.sensformat((int(size_x.item()),int(size_y.item())))
-                    events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
-                    events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
                 if nbloadz[target]<nb_digit:
                     nbloadz[target]+=1
                     pbar.update(1)
+                    if ds_ev is not None:
+                        events = events[:,::ds_ev,:]
                     if maxevts is not None:
                         N_max = min(maxevts, events.shape[1])
                     else: 
                         N_max = events.shape[1]
+                    if dataset=='cars':
+                        size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])+1
+                        size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])+1
+                        self.sensformat((int(size_x.item()),int(size_y.item())))
+                        events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
+                        events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
+                    
                     for iev in range(N_max):
                         self.run(events[0][iev][ordering.find("x")].item(), \
                                  events[0][iev][ordering.find("y")].item(), \
@@ -284,7 +291,7 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, subset_size=None, kfold = None, kfold_ind = None, to_record=False, verbose=True):
+    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, subset_size=None, kfold = None, kfold_ind = None, ds_ev = None, to_record=False, verbose=True):
 
         output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle, kfold_ind, verbose)
         if loaded:
@@ -319,16 +326,19 @@ class network(object):
                     #self.stats[i].actmap[:] = 0
                 pbar.update(1)
                 events, target = next(iter(loader))
+                if ds_ev is not None:
+                    events = events[:,::ds_ev,:]
+                if maxevts is not None:
+                    N_max = min(maxevts, events.shape[1])
+                else: 
+                    N_max = events.shape[1]
                 if dataset=='cars':
                     size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
                     size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
                     self.sensformat((int(size_x.item()),int(size_y.item())))
                     events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
                     events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
-                if maxevts is not None:
-                    N_max = min(maxevts, events.shape[1])
-                else: 
-                    N_max = events.shape[1]
+                    
                 for iev in range(N_max):
                     out, activout = self.run(events[0][iev][x_index].item(), \
                                             events[0][iev][y_index].item(), \

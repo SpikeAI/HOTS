@@ -63,7 +63,7 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None]):
+def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None], ds_ev = None):
 
     if name=='raw':
         name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
@@ -97,6 +97,10 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
         y_train = stream[4]
         digind_train = getdigind(stream)
 
+        if ds_ev is not None:
+            X_train = X_train[::ds_ev,:]
+            y_train = y_train[::ds_ev]
+
         nb_pola = stream[-1]
         # Dataset w/o any tranformations
         train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train,
@@ -127,7 +131,7 @@ def fit_data(name,
         amsgrad = True #or False gives similar results
         generator = torch.Generator().manual_seed(42)
         sampler = torch.utils.data.RandomSampler(dataset, replacement=True, num_samples=nb_digit, generator=generator)
-        loader = tonic.datasets.DataLoader(dataset, sampler=sampler, num_workers=num_workers)
+        loader = tonic.datasets.DataLoader(dataset, batch_size=100, sampler=sampler, num_workers=num_workers)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f'device -> {device}')
@@ -207,7 +211,7 @@ def predict_data(test_set, model, nb_test, num_workers=0,
 #_______________________________TO_RUN_HOTS_________________________________________________
 #___________________________________________________________________________________________
 
-def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10, maxevts = None, subset_size = None, kfold = None, kfold_ind = None, verbose = False):
+def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10, maxevts = None, subset_size = None, kfold = None, kfold_ind = None, ds_ev = None, verbose = False):
     if verbose:
         print(f'The dataset used is: {dataset}')
     if name=='hots':
@@ -215,25 +219,25 @@ def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset,
         homeotest = False
         krnlinit = 'first'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='homhots':
         homeo = True
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='fullhom':
         homeo = True
         homeotest = True
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='onlyonline':
         homeo = False
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     return hotshom, homeotest
 
 def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, dataset, verbose=False):
