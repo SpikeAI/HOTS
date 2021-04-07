@@ -28,27 +28,6 @@ nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 #_______________LR_PARAMETERS__________________
-num_workers = 12
-learning_rate = 0.005
-beta1, beta2 = 0.9, 0.999
-betas = (beta1, beta2)
-num_epochs = 2 ** 5 + 1
-#num_epochs = 2 ** 9 + 1
-print(f'number of epochs: {num_epochs}')
-#______________________________________________
-
-#______________________________________________
-
-#_______________NB_OF_DIGITS___________________
-dataset = 'nmnist'
-nb_test = 10000
-nb_train = 60000
-ds = 1
-nb_test = nb_test//ds
-nb_train = nb_train//ds
-print(f'training set size: {nb_train} - testing set: {nb_test}')
-#______________________________________________
-#_______________LR_PARAMETERS__________________
 num_workers = 16
 learning_rate = 0.005
 beta1, beta2 = 0.9, 0.999
@@ -57,6 +36,7 @@ num_epochs = 2 ** 5 + 1
 #num_epochs = 2 ** 9 + 1
 print(f'number of epochs: {num_epochs}')
 #______________________________________________
+
 
 ds_ev_output = 10
 record_path = '../Records/EXP_03_NMNIST/models/'
@@ -74,9 +54,9 @@ for name in ['homhots','hots', 'raw']:
     print(f'Classification performance for {name}: {mean_acc}')
     results.append([pred_target, true_target, mean_acc, online_acc])
 
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
-    path = '../Records/EXP_03_NMNIST/'
-    f_name = f'{path}{hotshom.get_fname()}_LR_results_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
+hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
+path = '../Records/EXP_03_NMNIST/'
+f_name = f'{path}{hotshom.get_fname()}_LR_results_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
 
 with open(f_name, 'wb') as file:
     pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
