@@ -30,7 +30,7 @@ nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
 #_______________LR_PARAMETERS__________________
-num_workers = 0
+num_workers = 10
 learning_rate = 0.005
 beta1, beta2 = 0.9, 0.999
 betas = (beta1, beta2)
