@@ -46,7 +46,7 @@ results = []
 
 ds_ev_output = 10
 
-for name in ['homhots','hots']:
+for name in ['homhots','hots', 'raw']:
     print(f'get training set for {name}...')
     learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
     print(f'LR fit for {name}...')
