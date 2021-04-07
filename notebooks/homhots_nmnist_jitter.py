@@ -43,7 +43,7 @@ for name in ['homhots', 'hots']:
     print(f'{name} training...')
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo')
     print(f'{name} testing...')
-    ds = 5
+    ds = 10
     nb_test = nb_test//ds
     for i in jit_s:
         i = round(i,2)

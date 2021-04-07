@@ -131,7 +131,7 @@ def fit_data(name,
         amsgrad = True #or False gives similar results
         generator = torch.Generator().manual_seed(42)
         sampler = torch.utils.data.RandomSampler(dataset, replacement=True, num_samples=nb_digit, generator=generator)
-        loader = tonic.datasets.DataLoader(dataset, batch_size=100, sampler=sampler, num_workers=num_workers)
+        loader = tonic.datasets.DataLoader(dataset, sampler=sampler, num_workers=num_workers)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f'device -> {device}')
