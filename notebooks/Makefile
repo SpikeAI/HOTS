@@ -1,4 +1,4 @@
-default: F4 F6
+default: F7 F2 F4
 
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
@@ -38,6 +38,8 @@ F5:
 	python3 homhots_nmnist_jitter.py
 F6:
 	python3 homhots_gesture.py
+F7:
+	python3 homhots_ncars_bigger.py
 
 G:
 	$(JN) HOTS_EXP_06_PokerDVS.ipynb
