@@ -36,6 +36,9 @@ print(f'training set size: {nb_train} - testing set: {nb_test}')
 timestr = '2021-03-29'
 record_path = '../Records/EXP_03_NMNIST/'
 
+ds = 10
+nb_test = nb_test//ds
+
 print('classic HOTS and homeoHOTS')
 for name in ['homhots', 'hots']:
     print(f'{name} clustering...')
@@ -43,8 +46,7 @@ for name in ['homhots', 'hots']:
     print(f'{name} training...')
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo')
     print(f'{name} testing...')
-    ds = 10
-    nb_test = nb_test//ds
+
     for i in jit_s:
         i = round(i,2)
         jitonic = [None,i]
