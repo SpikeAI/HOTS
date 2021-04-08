@@ -48,6 +48,7 @@ for name in ['homhots', 'hots']:
     testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset)
     print('KFolds')
     kfold = 20
+    nb_test = 4396 + 4211
     nb_test = nb_test//kfold
     for kfold_ind in range(kfold):
         testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset, kfold = kfold, kfold_ind = kfold_ind)
