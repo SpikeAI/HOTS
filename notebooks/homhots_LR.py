@@ -15,7 +15,6 @@ if __name__ == '__main__':
     jitter = False
     tau = 5
     R = 2
-    nblay = 3
     nbclust = [4, 8, 16]
     filt = 2
 
@@ -58,9 +57,9 @@ if __name__ == '__main__':
         print(f'Classification performance for {name}: {mean_acc}')
         results.append([pred_target, true_target, mean_acc, online_acc])
 
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
+
     path = '../Records/EXP_03_NMNIST/'
-    f_name = f'{path}LR_results_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
+    f_name = f'{path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
 
     with open(f_name, 'wb') as file:
         pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
