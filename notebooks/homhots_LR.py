@@ -22,9 +22,8 @@ if __name__ == '__main__':
     dataset = 'nmnist'
     nb_test = 10000
     nb_train = 60000
-    ds = 1200
+    ds = 1
     nb_test = nb_test//ds
-    nb_test = 10
     nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
     #______________________________________________
