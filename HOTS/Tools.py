@@ -187,7 +187,7 @@ def predict_data(test_set, model, nb_test, num_workers=0,
 
         logistic_model = model.to(device)
         
-        pbar = tqdm(total=len(test_set.digind)-1)
+        pbar = tqdm(total=nb_test)
         pred_target, true_target = [], []
         for X, label in loader:
             X = X.to(device)
