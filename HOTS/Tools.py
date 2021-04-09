@@ -98,8 +98,9 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
         if ds_ev is not None:
             X_train = X_train[::ds_ev,:]
             y_train = y_train[::ds_ev]
+
+        digind_train = getdigind(np.array(X_train[:,2]))
         
-        digind_train = getdigind(np.array(X_train[2]))
 
         nb_pola = stream[-1]
         # Dataset w/o any tranformations
@@ -191,15 +192,13 @@ def predict_data(test_set, model, nb_test, num_workers=0,
         for X, label in loader:
             X = X.to(device)
             X, label = X.squeeze(0), label.squeeze(0)
-
             n_events = X.shape[0]
             labels = label*torch.ones(n_events).type(torch.LongTensor)
-
+            
             outputs = logistic_model(X)
-            print(outputs)
 
             pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
-            true_target.append(labels.numpy())
+            true_target.append(labels.cpu().numpy())
             pbar.update(1)
         pbar.close()
 
