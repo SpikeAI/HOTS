@@ -79,8 +79,7 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
         # get indices for transitions from one digit to another
         
         #TODO: save in event stream from network.running directly
-        def getdigind(stream):
-            t = np.array(stream[2])
+        def getdigind(t):
             newdig = [0]
             for i in range(len(t)-1):
                 if t[i]>t[i+1]:
@@ -100,7 +99,7 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
             X_train = X_train[::ds_ev,:]
             y_train = y_train[::ds_ev]
         
-        digind_train = getdigind(stream)
+        digind_train = getdigind(np.array(stream[2]))
 
         nb_pola = stream[-1]
         # Dataset w/o any tranformations
