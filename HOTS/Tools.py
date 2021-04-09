@@ -196,6 +196,7 @@ def predict_data(test_set, model, nb_test, num_workers=0,
             labels = label*torch.ones(n_events).type(torch.LongTensor)
 
             outputs = logistic_model(X)
+            print(outputs)
 
             pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
             true_target.append(labels.numpy())
