@@ -99,7 +99,7 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
             X_train = X_train[::ds_ev,:]
             y_train = y_train[::ds_ev]
         
-        digind_train = getdigind(np.array(stream[2]))
+        digind_train = getdigind(np.array(X_train[2]))
 
         nb_pola = stream[-1]
         # Dataset w/o any tranformations
