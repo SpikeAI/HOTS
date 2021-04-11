@@ -63,19 +63,25 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None], ds_ev = None):
+def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None], ds_ev = None, verbose = True):
 
     if name=='raw':
         name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
         download = False
-        train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
+        if dataset == 'nmnist':
+            train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
+                                  train=train, download=download,
+                                  transform=tonic.transforms.AERtoVector()
+                                 )
+        elif dataset == 'poker':
+            train_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
                                   transform=tonic.transforms.AERtoVector()
                                  )
         nb_pola = 2
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
-        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, outstyle='LR')
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, verbose=verbose)
+        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, outstyle='LR', verbose = verbose)
         # get indices for transitions from one digit to another
         
         #TODO: save in event stream from network.running directly
@@ -88,9 +94,15 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
             return newdig
 
         events_train = np.zeros([len(stream[2]), 4])
-        ordering = 'xytp'
-        for i in range(4):
-            events_train[:, i] = stream[i][:]
+        if dataset == 'nmnist':
+            ordering = 'xytp'
+        elif dataset == 'poker':
+            ordering = 'txyp'
+            
+        events_train[:, ordering.find("x")] = stream[0][:]
+        events_train[:, ordering.find("y")] = stream[1][:]
+        events_train[:, ordering.find("t")] = stream[2][:]
+        events_train[:, ordering.find("p")] = stream[3][:]
 
         X_train = events_train.astype(int)
         y_train = stream[4]
@@ -100,7 +112,6 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
             y_train = y_train[::ds_ev]
 
         digind_train = getdigind(np.array(X_train[:,2]))
-        
 
         nb_pola = stream[-1]
         # Dataset w/o any tranformations
@@ -122,8 +133,9 @@ def fit_data(name,
             verbose=False, #**kwargs
         ):
     if isfile(name):
-        print('loading existing model')
-        print(name)
+        if verbose:
+            print('loading existing model')
+            print(name)
         with open(name, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
@@ -415,6 +427,7 @@ def histoscore_lagorce(trainmap,testmap, verbose = True):
     return bhat_score, norm_score, eucl_score, KL_score, JS_score
 
 def histoscore(trainmap,testmap, weights='distance',verbose = True):
+    
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
     norm_score = accuracy(trainmap, testmap, 'norm')
     eucl_score = accuracy(trainmap, testmap, 'eucli')

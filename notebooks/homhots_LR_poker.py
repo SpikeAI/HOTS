@@ -7,21 +7,20 @@ import pickle
 if __name__ == '__main__':
     #_________NETWORK_PARAMETERS______________________
     #______________________________________________
-    name = 'homhots'
     sigma = None
     pooling = False
     homeinv = False
     jitonic = [None,None] #[temporal, spatial]
     jitter = False
-    tau = 5
+    tau = 0.07
     R = 2
     nbclust = [4, 8, 16]
     filt = 2
 
     #_______________NB_OF_DIGITS___________________
-    dataset = 'nmnist'
-    nb_test = 10000
-    nb_train = 60000
+    dataset = 'poker'
+    nb_test = 20
+    nb_train = 48
     ds = 1
     nb_test = nb_test//ds
     nb_train = nb_train//ds
@@ -38,9 +37,9 @@ if __name__ == '__main__':
     #______________________________________________
 
 
-    timestr = '2021-03-29'
-    ds_ev_output = 10
-    record_path = '../Records/EXP_03_NMNIST/models/'
+    timestr = '2021-03-28'
+    ds_ev_output = 1
+    record_path = '../Records/EXP_05_POKERDVS/models/'
     results = []
 
     for name in ['homhots','hots', 'raw']:
@@ -57,7 +56,7 @@ if __name__ == '__main__':
         results.append([pred_target, true_target, mean_acc, online_acc])
 
 
-    path = '../Records/EXP_03_NMNIST/'
+    path = '../Records/EXP_05_POKERDVS/'
     f_name = f'{path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
 
     with open(f_name, 'wb') as file:

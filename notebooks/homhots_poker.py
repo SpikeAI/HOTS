@@ -10,7 +10,7 @@ pooling = False
 homeinv = False
 jitonic = [None,None] #[temporal, spatial]
 jitter = False
-tau = 0.1
+tau = 0.07
 R = 2
 filt = 2
 nbclust = [4,8,16]
@@ -26,7 +26,6 @@ nbclust = [4,8,16]
 
 #_______________NB_OF_DIGITS___________________
 dataset = 'poker'
-
 nb_test = 20
 nb_train = 48
 ds = 1
