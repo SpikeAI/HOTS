@@ -359,7 +359,7 @@ class network(object):
                             labelmapav[i,:] /= max(labelcount[i],1)
                 data = (target.item(),self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto))
                 labelmap.append(data)
-            
+
             for i in range(len(self.L)):
                 self.L[i].homeo=homeomod
                 
