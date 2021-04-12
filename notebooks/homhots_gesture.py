@@ -34,20 +34,22 @@ nb_test = nb_test//ds
 nb_train = nb_train//ds
 print(f'training set size: {nb_train} - testing set: {nb_test}')
 #______________________________________________
-
+#timestr = '2021-04-06' for a ds_ev = 4
 timestr = '2021-03-29'
+ds_ev = 1
 record_path = '../Records/EXP_06_DVSGESTURE/'
 
 print('classic HOTS and homeoHOTS')
 for name in ['homhots', 'hots']:
     print(f'{name} clustering...')
-    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
+    hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev)
     print(f'{name} training...')
-    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo', dataset=dataset)
+    trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo', dataset=dataset, ds_ev = ds_ev)
     print(f'{name} testing...')
-    testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset)
+    testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset, ds_ev = ds_ev)
     print('KFolds')
     kfold = 20
+    nb_test = 264
     nb_test = nb_test//kfold
     for kfold_ind in range(kfold):
-        testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset, kfold = None, kfold_ind = None)
+        testhistomap = hotshom.running(homeotest=homeotest, train=False, nb_digit=nb_test, outstyle='histo', dataset=dataset, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev)

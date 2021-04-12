@@ -63,24 +63,29 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None]):
+def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None], ds_ev = None, verbose = True):
 
     if name=='raw':
         name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
         download = False
-        train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
+        if dataset == 'nmnist':
+            train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
+                                  train=train, download=download,
+                                  transform=tonic.transforms.AERtoVector()
+                                 )
+        elif dataset == 'poker':
+            train_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
                                   transform=tonic.transforms.AERtoVector()
                                  )
         nb_pola = 2
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
-        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, outstyle='LR')
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, verbose=verbose)
+        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, outstyle='LR', verbose = verbose)
         # get indices for transitions from one digit to another
         
         #TODO: save in event stream from network.running directly
-        def getdigind(stream):
-            t = np.array(stream[2])
+        def getdigind(t):
             newdig = [0]
             for i in range(len(t)-1):
                 if t[i]>t[i+1]:
@@ -89,13 +94,24 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
             return newdig
 
         events_train = np.zeros([len(stream[2]), 4])
-        ordering = 'xytp'
-        for i in range(4):
-            events_train[:, i] = stream[i][:]
+        if dataset == 'nmnist':
+            ordering = 'xytp'
+        elif dataset == 'poker':
+            ordering = 'txyp'
+            
+        events_train[:, ordering.find("x")] = stream[0][:]
+        events_train[:, ordering.find("y")] = stream[1][:]
+        events_train[:, ordering.find("t")] = stream[2][:]
+        events_train[:, ordering.find("p")] = stream[3][:]
 
         X_train = events_train.astype(int)
         y_train = stream[4]
-        digind_train = getdigind(stream)
+
+        if ds_ev is not None:
+            X_train = X_train[::ds_ev,:]
+            y_train = y_train[::ds_ev]
+
+        digind_train = getdigind(np.array(X_train[:,2]))
 
         nb_pola = stream[-1]
         # Dataset w/o any tranformations
@@ -117,8 +133,9 @@ def fit_data(name,
             verbose=False, #**kwargs
         ):
     if isfile(name):
-        print('loading existing model')
-        print(name)
+        if verbose:
+            print('loading existing model')
+            print(name)
         with open(name, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
@@ -182,19 +199,18 @@ def predict_data(test_set, model, nb_test, num_workers=0,
 
         logistic_model = model.to(device)
         
-        pbar = tqdm(total=len(test_set.digind)-1)
+        pbar = tqdm(total=nb_test)
         pred_target, true_target = [], []
         for X, label in loader:
             X = X.to(device)
             X, label = X.squeeze(0), label.squeeze(0)
-
             n_events = X.shape[0]
             labels = label*torch.ones(n_events).type(torch.LongTensor)
-
+            
             outputs = logistic_model(X)
 
             pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
-            true_target.append(labels.numpy())
+            true_target.append(labels.cpu().numpy())
             pbar.update(1)
         pbar.close()
 
@@ -207,7 +223,7 @@ def predict_data(test_set, model, nb_test, num_workers=0,
 #_______________________________TO_RUN_HOTS_________________________________________________
 #___________________________________________________________________________________________
 
-def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10, maxevts = None, subset_size = None, kfold = None, kfold_ind = None, verbose = False):
+def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, nb_learn=10, maxevts = None, subset_size = None, kfold = None, kfold_ind = None, ds_ev = None, verbose = False):
     if verbose:
         print(f'The dataset used is: {dataset}')
     if name=='hots':
@@ -215,25 +231,25 @@ def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset,
         homeotest = False
         krnlinit = 'first'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learning1by1(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='homhots':
         homeo = True
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='fullhom':
         homeo = True
         homeotest = True
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='onlyonline':
         homeo = False
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = None, kfold_ind = None, verbose=verbose)
+        hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     return hotshom, homeotest
 
 def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_s, jit_t, nb_train, nb_test, dataset, verbose=False):
@@ -411,6 +427,7 @@ def histoscore_lagorce(trainmap,testmap, verbose = True):
     return bhat_score, norm_score, eucl_score, KL_score, JS_score
 
 def histoscore(trainmap,testmap, weights='distance',verbose = True):
+    
     bhat_score = accuracy(trainmap, testmap, 'bhatta')
     norm_score = accuracy(trainmap, testmap, 'norm')
     eucl_score = accuracy(trainmap, testmap, 'eucli')

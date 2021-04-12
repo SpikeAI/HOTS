@@ -138,7 +138,7 @@ class network(object):
                                 train=trainset, download=download,
                                 transform=transform)
         else: print('incorrect dataset')
-            
+
         if subset_size is not None:
             subset_indices = []
             for i in range(len(eventset.classes)):
@@ -147,7 +147,7 @@ class network(object):
             g_cpu = Generator()
             subsampler = SubsetRandomSampler(subset_indices, g_cpu)
             loader = tonic.datasets.DataLoader(eventset, batch_size=1, shuffle=False, sampler=subsampler)
-        elif kfold is not None: 
+        elif kfold is not None:
             subset_indices = []
             subset_size = len(testset)//kfold
             for i in range(len(testset.classes)):
@@ -159,13 +159,13 @@ class network(object):
             loader = tonic.datasets.DataLoader(testset, batch_size=1, shuffle=False, sampler=subsampler)
         else:
             loader = tonic.datasets.DataLoader(eventset, shuffle=True)
-        
+
         if eventset.sensor_size!=self.TS[0].camsize:
             print('sensor formatting...')
             self.sensformat(eventset.sensor_size)
-        
+
         return loader, eventset.ordering, eventset.classes
-        
+
     def sensformat(self,sensor_size):
         for i in range(1,len(self.TS)):
             self.TS[i].camsize = sensor_size
@@ -197,6 +197,7 @@ class network(object):
                 for idig in range(nb_digit*nbclass):
                     pbar.update(1)
                     events = eventslist[idig]
+
                     if dataset=='cars':
                         size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
                         size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
@@ -208,11 +209,12 @@ class network(object):
                             self.TS[l].spatpmat[:] = 0
                             self.TS[l].iev = 0
                     if ds_ev is not None:
-                        events = events[0,::ds_ev,:]
+                        events = events[:,::ds_ev,:]
                     if maxevts is not None:
                         N_max = min(maxevts, events.shape[1])
-                    else: 
+                    else:
                         N_max = events.shape[1]
+
                     for iev in range(N_max):
                         x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
                                     events[0,iev,ordering.find("y")].item(), \
@@ -260,17 +262,15 @@ class network(object):
                         self.TS[i].spatpmat[:] = 0
                         self.TS[i].iev = 0
                 events, target = next(iter(loader))
-                
+
                 if nbloadz[target]<nb_digit:
                     nbloadz[target]+=1
                     pbar.update(1)
                     if ds_ev is not None:
-                        print(len(events))
-                        events = events[0,::ds_ev,:]
-                        print(len(events))
+                        events = events[:,::ds_ev,:]
                     if maxevts is not None:
                         N_max = min(maxevts, events.shape[1])
-                    else: 
+                    else:
                         N_max = events.shape[1]
                     if dataset=='cars':
                         size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])+1
@@ -328,10 +328,10 @@ class network(object):
                 pbar.update(1)
                 events, target = next(iter(loader))
                 if ds_ev is not None:
-                    events = events[0,::ds_ev,:]
+                    events = events[:,::ds_ev,:]
                 if maxevts is not None:
                     N_max = min(maxevts, events.shape[1])
-                else: 
+                else:
                     N_max = events.shape[1]
                 if dataset=='cars':
                     size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
@@ -339,7 +339,7 @@ class network(object):
                     self.sensformat((int(size_x.item()),int(size_y.item())))
                     events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
                     events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
-                    
+
                 for iev in range(N_max):
                     out, activout = self.run(events[0][iev][x_index].item(), \
                                             events[0][iev][y_index].item(), \
@@ -353,23 +353,23 @@ class network(object):
                         polout.append(out[p_index])
                         labout.append(target.item())
 
-                if train: 
+                if train:
                     labelmapav[target.item(),:] += self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto.copy())
                     labelcount[target.item()] += 1
                     for i in range(len(labelcount)):
                         labelmapav[i,:] /= max(labelcount[i],1)
                 data = (target.item(),self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto.copy()))
                 labelmap.append(data)
-            
+
             for i in range(len(self.L)):
                 self.L[i].homeo=homeomod
-                
+
             pbar.close()
-            
-            if train: 
+
+            if train:
                 self.save_output(labelmapav, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histav', kfold_ind=kfold_ind)
             self.save_output(labelmap, homeotest, dataset, nb=nb_digit, train=train, jitonic=jitonic, outstyle='histo', kfold_ind=kfold_ind)
-                
+
             if outstyle=='LR':
                 camsize = self.TS[-1].camsize
                 nbpola = self.L[-1].kernel.shape[1]
@@ -420,15 +420,15 @@ class network(object):
         return f_name
 
     def save_model(self, dataset):
-        nextcloud_path = 
+        nextcloud_path =
         if dataset=='nmnist':
             path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_03_NMNIST/models/'
         elif dataset=='cars':
             path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/' 
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/'
         elif dataset=='gesture':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/' 
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/'
         else: print('define a path for this dataset')
         if not os.path.exists(path):
             os.makedirs(path)
@@ -443,9 +443,9 @@ class network(object):
         elif dataset=='cars':
             path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/'  
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/'
         elif dataset=='gesture':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/' 
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/'
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
         if verbose:
@@ -729,8 +729,8 @@ class network(object):
                     axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
                     axi.set_xticks(())
                     axi.set_yticks(())
-    
-                    
+
+
 ##________________POOLING NETWORK____________________________________________________________
 ##___________________________________________________________________________________________
 
