@@ -76,6 +76,7 @@ class network(object):
 ##___________________________________________________________________________________________
 
     def load(self, dataset, trainset=True, jitonic=[None,None], subset_size = None, kfold = None, kfold_ind = None):
+        trainset = False
         self.jitonic = jitonic
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
@@ -174,7 +175,7 @@ class network(object):
         self.TS[0].spatpmat = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
         self.stats[0].actmap = np.zeros((2,sensor_size[0]+1,sensor_size[1]+1))
 
-    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, subset_size = None, kfold = None, kfold_ind = None, verbose=True):
+    def learning1by1(self, nb_digit=10, dataset='nmnist', diginit=True, filtering=None, jitonic=[None,None], maxevts=None, subset_size = None, kfold = None, kfold_ind = None, ds_ev = None, verbose=True):
         self.onbon = True
         model = self.load_model(dataset, verbose)
         if model:
@@ -206,6 +207,8 @@ class network(object):
                         for l in range(n+1):
                             self.TS[l].spatpmat[:] = 0
                             self.TS[l].iev = 0
+                    if ds_ev is not None:
+                        events = events[0,::ds_ev,:]
                     if maxevts is not None:
                         N_max = min(maxevts, events.shape[1])
                     else: 
@@ -240,7 +243,7 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, subset_size=None, kfold = None, kfold_ind = None, verbose=True):
+    def learningall(self, nb_digit=10, dataset='nmnist', diginit=True, jitonic=[None,None], maxevts = None, subset_size=None, kfold = None, kfold_ind = None, ds_ev = None, verbose=True):
 
         self.onbon = False
         model = self.load_model(dataset, verbose)
@@ -257,19 +260,24 @@ class network(object):
                         self.TS[i].spatpmat[:] = 0
                         self.TS[i].iev = 0
                 events, target = next(iter(loader))
-                if dataset=='cars':
-                    size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])+1
-                    size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])+1
-                    self.sensformat((int(size_x.item()),int(size_y.item())))
-                    events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
-                    events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
+                
                 if nbloadz[target]<nb_digit:
                     nbloadz[target]+=1
                     pbar.update(1)
+                    if ds_ev is not None:
+                        print(len(events))
+                        events = events[0,::ds_ev,:]
+                        print(len(events))
                     if maxevts is not None:
                         N_max = min(maxevts, events.shape[1])
                     else: 
                         N_max = events.shape[1]
+                    if dataset=='cars':
+                        size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])+1
+                        size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])+1
+                        self.sensformat((int(size_x.item()),int(size_y.item())))
+                        events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
+                        events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
                     for iev in range(N_max):
                         self.run(events[0][iev][ordering.find("x")].item(), \
                                  events[0][iev][ordering.find("y")].item(), \
@@ -284,7 +292,7 @@ class network(object):
             self.save_model(dataset)
             return self
 
-    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, subset_size=None, kfold = None, kfold_ind = None, to_record=False, verbose=True):
+    def running(self, homeotest=False, train=True, outstyle='histo', nb_digit=500, jitonic=[None,None], dataset='nmnist', maxevts = None, subset_size=None, kfold = None, kfold_ind = None, ds_ev = None, to_record=False, verbose=True):
 
         output, loaded = self.load_output(dataset, homeotest, nb_digit, train, jitonic, outstyle, kfold_ind, verbose)
         if loaded:
@@ -319,16 +327,19 @@ class network(object):
                     #self.stats[i].actmap[:] = 0
                 pbar.update(1)
                 events, target = next(iter(loader))
+                if ds_ev is not None:
+                    events = events[0,::ds_ev,:]
+                if maxevts is not None:
+                    N_max = min(maxevts, events.shape[1])
+                else: 
+                    N_max = events.shape[1]
                 if dataset=='cars':
                     size_x = max(events[0,:,ordering.find("x")])-min(events[0,:,ordering.find("x")])
                     size_y = max(events[0,:,ordering.find("y")])-min(events[0,:,ordering.find("y")])
                     self.sensformat((int(size_x.item()),int(size_y.item())))
                     events[0,:,ordering.find("x")] -= min(events[0,:,ordering.find("x")]).numpy()
                     events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
-                if maxevts is not None:
-                    N_max = min(maxevts, events.shape[1])
-                else: 
-                    N_max = events.shape[1]
+                    
                 for iev in range(N_max):
                     out, activout = self.run(events[0][iev][x_index].item(), \
                                             events[0][iev][y_index].item(), \
@@ -343,11 +354,11 @@ class network(object):
                         labout.append(target.item())
 
                 if train: 
-                    labelmapav[target.item(),:] += self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto)
+                    labelmapav[target.item(),:] += self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto.copy())
                     labelcount[target.item()] += 1
                     for i in range(len(labelcount)):
-                            labelmapav[i,:] /= max(labelcount[i],1)
-                data = (target.item(),self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto))
+                        labelmapav[i,:] /= max(labelcount[i],1)
+                data = (target.item(),self.L[-1].cumhisto.copy()/np.sum(self.L[-1].cumhisto.copy()))
                 labelmap.append(data)
             
             for i in range(len(self.L)):
@@ -409,14 +420,15 @@ class network(object):
         return f_name
 
     def save_model(self, dataset):
+        nextcloud_path = 
         if dataset=='nmnist':
-            path = f'../Records/EXP_03_NMNIST/models/'
+            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_03_NMNIST/models/'
         elif dataset=='cars':
-            path = '../Records/EXP_04_NCARS/models/'
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
-            path = '../Records/EXP_05_POKERDVS/models/' 
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/' 
         elif dataset=='gesture':
-            path = '../Records/EXP_06_DVSGESTURE/models/' 
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/' 
         else: print('define a path for this dataset')
         if not os.path.exists(path):
             os.makedirs(path)
@@ -427,13 +439,13 @@ class network(object):
     def load_model(self, dataset, verbose):
         model = []
         if dataset=='nmnist':
-            path = f'../Records/EXP_03_NMNIST/models/'
+            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_03_NMNIST/models/'
         elif dataset=='cars':
-            path = '../Records/EXP_04_NCARS/models/'
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
-            path = '../Records/EXP_05_POKERDVS/models/'  
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/'  
         elif dataset=='gesture':
-            path = '../Records/EXP_06_DVSGESTURE/models/' 
+            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/' 
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
         if verbose:
@@ -456,9 +468,9 @@ class network(object):
             direc = 'EXP_06_DVSGESTURE'
         else: print('define a path for this dataset')
         if train:
-            path = f'../Records/{direc}/train/'
+            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/train/'
         else:
-            path = f'../Records/{direc}/test/'
+            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/test/'
         if not os.path.exists(path):
             os.makedirs(path)
         f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
@@ -483,9 +495,9 @@ class network(object):
             direc = 'EXP_06_DVSGESTURE'
         else: print('define a path for this dataset')
         if train:
-            path = f'../Records/{direc}/train/'
+            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/train/'
         else:
-            path = f'../Records/{direc}/test/'
+            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/test/'
         f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
         if kfold_ind is not None:
             f_name+='_'+str(kfold_ind)
