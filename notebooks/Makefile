@@ -4,8 +4,8 @@ J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreproce
 JN=$(J) --to notebook --inplace
 
 A:    
-	$(JN) HOTS_EXP_02_NMNIST.ipynb
-	git commit -m'results : HOTS_EXP_02 ' HOTS_EXP_02_NMNIST.ipynb
+	$(JN) RESULTS_03_NMNIST.ipynb
+	git commit -m'results : RESULTS_03 ' RESULTS_03_NMNIST.ipynb
 	git push
 B:    
 	$(JN) figures.ipynb
