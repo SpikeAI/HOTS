@@ -47,14 +47,16 @@ for name in ['homhots', 'hots']:
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo')
     print(f'{name} testing...')
 
-    for i in jit_s:
-        i = round(i,2)
-        jitonic = [None,i]
-        testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, subset_size = nb_test)
-    for j in jit_t:
-        j = round(j,0)
-        jitonic = [j,None]
-        testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, subset_size = nb_test)
+    for trial in range(10):
+        hotshom.date = '2021-03-29_'+str(trial)
+        for i in jit_s:
+            i = round(i,2)
+            jitonic = [None,i]
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, subset_size = nb_test)
+        for j in jit_t:
+            j = round(j,0)
+            jitonic = [j,None]
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, subset_size = nb_test)
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
     #JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histav')
