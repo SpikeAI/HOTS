@@ -473,7 +473,7 @@ class network(object):
             path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/test/'
         if not os.path.exists(path):
             os.makedirs(path)
-        f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
+        f_name = path+self.get_fname()+f'_{nb}_{jitonic}_{outstyle}'
         if kfold_ind is not None:
             f_name+='_'+str(kfold_ind)
         if homeo:
@@ -497,8 +497,8 @@ class network(object):
         if train:
             path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/train/'
         else:
-            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/test/'
-        f_name = path+self.name+f'_{nb}_{jitonic}_{outstyle}'
+            path = f'../Records/{direc}/test/'
+        f_name = path+self.get_fname()+f'_{nb}_{jitonic}_{outstyle}'
         if kfold_ind is not None:
             f_name+='_'+str(kfold_ind)
         if homeo:
