@@ -47,7 +47,7 @@ for name in ['homhots', 'hots']:
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo')
     print(f'{name} testing...')
 
-    for trial in range(10):
+    for trial in [3]:
         hotshom.date = '2021-03-29_'+str(trial)
         for i in jit_s:
             i = round(i,2)

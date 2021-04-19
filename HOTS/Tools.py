@@ -132,6 +132,7 @@ def fit_data(name,
             num_workers=0,
             verbose=False, #**kwargs
         ):
+    
     if isfile(name):
         if verbose:
             print('loading existing model')
