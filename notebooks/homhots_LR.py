@@ -56,7 +56,6 @@ if __name__ == '__main__':
         print(f'Classification performance for {name}: {mean_acc}')
         results.append([pred_target, true_target, mean_acc, online_acc])
 
-
     path = '../Records/EXP_03_NMNIST/'
     f_name = f'{path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
 
