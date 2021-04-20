@@ -379,7 +379,6 @@ class network(object):
                 output = labelmap
             elif outstyle=='histav':
                 output = labelmapav
-
             return output
 
     def run(self, x, y, t, p, learn=False, to_record=False):
@@ -400,7 +399,6 @@ class network(object):
             else:
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
-
         return out, activout
 
     def get_fname(self):

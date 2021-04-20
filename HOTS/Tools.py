@@ -148,7 +148,8 @@ def fit_data(name,
         loader = tonic.datasets.DataLoader(dataset, sampler=sampler, num_workers=num_workers)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f'device -> {device}')
+        if verbose:
+            print(f'device -> {device} - num workers -> {num_workers}')
 
         N = dataset.sensor_size[0]*dataset.sensor_size[1]*nb_pola
         n_classes = len(dataset.classes)
@@ -178,8 +179,7 @@ def fit_data(name,
                 losses.append(loss.item())
                 
             pbar.update(1)
-            #if verbose and (epoch % (num_epochs // 32) == 0):
-            #    print(f"Iteration: {epoch} - Loss: {np.mean(losses):.5f}")
+
         pbar.close()
         with open(name, 'wb') as file:
             pickle.dump([logistic_model, losses], file, pickle.HIGHEST_PROTOCOL)
@@ -197,7 +197,9 @@ def predict_data(test_set, model, nb_test, num_workers=0,
         loader = tonic.datasets.DataLoader(test_set, sampler=sampler, num_workers=num_workers)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        if verbose:
+            print(f'device -> {device} - num workers -> {num_workers}')
+        
         logistic_model = model.to(device)
         
         pbar = tqdm(total=nb_test)
@@ -216,6 +218,26 @@ def predict_data(test_set, model, nb_test, num_workers=0,
         pbar.close()
 
     return pred_target, true_target
+
+
+def classification_results(pred_target, true_target, nb_test, verbose=False):
+    accuracy = []
+    onlinac = np.zeros(10000)
+    onlincount = np.zeros(10000)
+    for pred_target_, true_target_ in zip(pred_target, true_target):
+        accuracy.append(np.mean(pred_target_ == true_target_))
+        onlinac[:len(pred_target_)]+=(pred_target_ == true_target_)
+        onlincount[:len(pred_target_)]+=1
+        limit = np.nonzero(onlincount)[0][-1]
+        
+    if verbose:
+        print(f'{np.mean(accuracy)=:.3f}')
+        plt.plot(onlinac[:limit]/onlincount[:limit]);
+        plt.xlabel('number of events');
+        plt.ylabel('online accuracy');
+        plt.title('LR classification results evolution as a function of the number of events');
+    
+    return np.mean(accuracy), onlinac[:limit]/onlincount[:limit]
 
 #___________________________________________________________________________________________
 #___________________________________________________________________________________________
@@ -296,33 +318,11 @@ def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_
         jit_t, jit_s = jit_t**2, jit_s**2
     return score_T, jit_t, score_S, jit_s
 
-def classification_results(pred_target, true_target, nb_test, verbose=False):
-    accuracy = []
-    onlinac = np.zeros(10000) # vector that has size bigger than all event stream size
-    for pred_target_, true_target_ in zip(pred_target, true_target):
-        accuracy.append(np.mean(pred_target_ == true_target_))
-        fill_pred = pred_target_[-1]*np.ones(len(onlinac)-len(pred_target_))
-        fill_true = true_target_[-1]*np.ones(len(onlinac)-len(pred_target_))
-        #fill_pred[:] = np.NaN
-        #fill_true[:] = np.NaN
-        pred_target_ = np.concatenate([pred_target_,fill_pred])
-        true_target_ = np.concatenate([true_target_,fill_true])
-        onlinac+=(pred_target_ == true_target_)
-        
-    if verbose:
-        print(f'{np.mean(accuracy)=:.3f}')
-        plt.plot(onlinac[:5000]/nb_test);
-        plt.xlabel('number of events');
-        plt.ylabel('online accuracy');
-        plt.title('LR classification results evolution as a function of the number of events');
-    
-    return np.mean(accuracy), onlinac
-
 #___________________________________________________________________________________________
 #___________________________________________________________________________________________
 
 
-#___________________________FIT_WITH_SIGMOID________________________________________________
+#___________________________FIT_____________________________________________________________
 #___________________________________________________________________________________________
 
 def fit_jitter(param,
@@ -405,6 +405,7 @@ def signumber(x,nb):
     else:
         num = f'{B}e{C}'
     return num
+
 
 #___________________________________________________________________________________________
 #___________________________________________________________________________________________
