@@ -118,7 +118,7 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
         train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train,
                                             transform=tonic.transforms.AERtoVector(nb_pola = nb_pola))
         #train_loader = torch.utils.data.DataLoader(train_dataset_normal, batch_size=1)
-        name_net = f'{path}{hotshom.get_fname()}_LR_{nb_digit}.pkl'
+        name_net = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
     
     return train_dataset, nb_pola, name_net
 
