@@ -76,7 +76,6 @@ class network(object):
 ##___________________________________________________________________________________________
 
     def load(self, dataset, trainset=True, jitonic=[None,None], subset_size = None, kfold = None, kfold_ind = None):
-        trainset = False
         self.jitonic = jitonic
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
@@ -418,15 +417,14 @@ class network(object):
         return f_name
 
     def save_model(self, dataset):
-        nextcloud_path =
         if dataset=='nmnist':
-            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_03_NMNIST/models/'
+            path = '../Records/EXP_03_NMNIST/models/'
         elif dataset=='cars':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_04_NCARS/models/'
+            path = '../Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/'
+            path = '../Records/EXP_05_POKERDVS/models/'
         elif dataset=='gesture':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/'
+            path = '../Records/EXP_06_DVSGESTURE/models/'
         else: print('define a path for this dataset')
         if not os.path.exists(path):
             os.makedirs(path)
@@ -437,13 +435,13 @@ class network(object):
     def load_model(self, dataset, verbose):
         model = []
         if dataset=='nmnist':
-            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_03_NMNIST/models/'
+            path = '../Records/EXP_03_NMNIST/models/'
         elif dataset=='cars':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_04_NCARS/models/'
+            path = '../Records/EXP_04_NCARS/models/'
         elif dataset=='poker':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_05_POKERDVS/models/'
+            path = '../Records/EXP_05_POKERDVS/models/'
         elif dataset=='gesture':
-            path = '/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/EXP_06_DVSGESTURE/models/'
+            path = '../Records/EXP_06_DVSGESTURE/models/'
         else: print('define a path for this dataset')
         f_name = path+self.get_fname()+'.pkl'
         if verbose:
@@ -466,9 +464,9 @@ class network(object):
             direc = 'EXP_06_DVSGESTURE'
         else: print('define a path for this dataset')
         if train:
-            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/train/'
+            path = f'../Records/{direc}/train/'
         else:
-            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/test/'
+            path = f'../Records/{direc}/test/'
         if not os.path.exists(path):
             os.makedirs(path)
         f_name = path+self.get_fname()+f'_{nb}_{jitonic}_{outstyle}'
@@ -493,7 +491,7 @@ class network(object):
             direc = 'EXP_06_DVSGESTURE'
         else: print('define a path for this dataset')
         if train:
-            path = f'/Users/joe/Nextcloud/SpikeAI/HOTS_clone_laurent/Records/{direc}/train/'
+            path = f'../Records/{direc}/train/'
         else:
             path = f'../Records/{direc}/test/'
         f_name = path+self.get_fname()+f'_{nb}_{jitonic}_{outstyle}'
