@@ -224,11 +224,13 @@ def classification_results(pred_target, true_target, nb_test, verbose=False):
     accuracy = []
     onlinac = np.zeros(10000)
     onlincount = np.zeros(10000)
+    lastac = 0
     for pred_target_, true_target_ in zip(pred_target, true_target):
         accuracy.append(np.mean(pred_target_ == true_target_))
         onlinac[:len(pred_target_)]+=(pred_target_ == true_target_)
         onlincount[:len(pred_target_)]+=1
         limit = np.nonzero(onlincount)[0][-1]
+        lastac += (pred_target_[-1] == true_target_[-1])
         
     if verbose:
         print(f'{np.mean(accuracy)=:.3f}')
@@ -237,7 +239,7 @@ def classification_results(pred_target, true_target, nb_test, verbose=False):
         plt.ylabel('online accuracy');
         plt.title('LR classification results evolution as a function of the number of events');
     
-    return np.mean(accuracy), onlinac[:limit]/onlincount[:limit]
+    return np.mean(accuracy), onlinac[:limit]/onlincount[:limit], lastac/nb_test
 
 #___________________________________________________________________________________________
 #___________________________________________________________________________________________
