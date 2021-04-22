@@ -63,7 +63,7 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, jitonic=[None,None], ds_ev = None, verbose = True):
+def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, subset_size = None, jitonic=[None,None], ds_ev = None, verbose = True):
 
     if name=='raw':
         name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
@@ -80,8 +80,10 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
                                  )
         nb_pola = 2
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, verbose=verbose)
-        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, outstyle='LR', verbose = verbose)
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
+        
+        hotshom.date = timestr
+        stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, jitonic=jitonic, outstyle='LR', subset_size=subset_size, verbose = verbose)
         # get indices for transitions from one digit to another
         
         #TODO: save in event stream from network.running directly

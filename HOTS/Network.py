@@ -26,8 +26,6 @@ class network(object):
     def __init__(self,  timestr = None,
                         # architecture of the network (default=Lagorce2017)
                         nbclust = [4, 8, 16],
-                        #K_clust = 2, # nbclust(L+1) = K_clust*nbclust(L)
-                        #nblay = 3,
                         # parameters of time-surfaces and datasets
                         tau = 10, #timestamp en millisec/
                         K_tau = 10,
@@ -36,7 +34,6 @@ class network(object):
                         R = 2,
                         K_R = 2,
                         camsize = (34, 34),
-                        begin = 0, #first event indice taken into account
                         # functional parameters of the network
                         algo = 'lagorce', # among ['lagorce', 'maro', 'mpursuit']
                         krnlinit = 'rdn',
@@ -76,7 +73,7 @@ class network(object):
 ##___________________________________________________________________________________________
 
     def load(self, dataset, trainset=True, jitonic=[None,None], subset_size = None, kfold = None, kfold_ind = None):
-        self.jitonic = jitonic
+
         if jitonic[1] is not None:
             print(f'spatial jitter -> var = {jitonic[1]}')
             transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True)])
@@ -318,14 +315,13 @@ class network(object):
             t_index = ordering.find("t")
             p_index = ordering.find("p")
 
-            for idig in range(nb_digit):
+            for events, target in loader:
                 for i in range(len(self.L)):
                     self.TS[i].spatpmat[:] = 0
                     self.TS[i].iev = 0
                     self.L[i].cumhisto[:] = 1
                     #self.stats[i].actmap[:] = 0
                 pbar.update(1)
-                events, target = next(iter(loader))
                 if ds_ev is not None:
                     events = events[:,::ds_ev,:]
                 if maxevts is not None:
@@ -399,6 +395,8 @@ class network(object):
             else:
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
+        if x>33:
+            print('aïe')
         return out, activout
 
     def get_fname(self):
@@ -746,7 +744,6 @@ class poolingnetwork(network):
                         R = 2,
                         K_R = 2,
                         camsize = (34, 34),
-                        begin = 0, #first event indice taken into account
                         # functional parameters of the network
                         algo = 'lagorce', # among ['lagorce', 'maro', 'mpursuit']
                         krnlinit = 'rdn',
@@ -774,7 +771,6 @@ class poolingnetwork(network):
                         R = R,
                         K_R = K_R,
                         camsize = camsize,
-                        begin = begin,
                         algo = algo,
                         krnlinit = krnlinit,
                         hout = hout,

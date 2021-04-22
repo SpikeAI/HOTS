@@ -52,7 +52,7 @@ if __name__ == '__main__':
         test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
         print(f'prediction for {name}...')
         pred_target, true_target = predict_data(test_set, model, nb_test, num_workers=num_workers)
-        mean_acc, online_acc = classification_results(pred_target, true_target, nb_test)
+        meanac, onlinac, lastac = classification_results(pred_target, true_target, nb_test)
         print(f'Classification performance for {name}: {mean_acc}')
         results.append([pred_target, true_target, mean_acc, online_acc])
 

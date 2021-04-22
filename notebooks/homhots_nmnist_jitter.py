@@ -52,11 +52,15 @@ for name in ['homhots', 'hots']:
         for i in jit_s:
             i = round(i,2)
             jitonic = [None,i]
-            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, subset_size = nb_test)
+            if i==0:
+                jitonic = [None,None]
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outputstyle = 'LR', subset_size = nb_test)
         for j in jit_t:
             j = round(j,0)
             jitonic = [j,None]
-            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, subset_size = nb_test)
+            if j==0:
+                jitonic = [None,None]
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outputstyle = 'LR', subset_size = nb_test)
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
     #JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histav')
