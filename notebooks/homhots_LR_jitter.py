@@ -63,12 +63,14 @@ if __name__ == '__main__':
         
         #model, loss = fit_data(name_net, learn_set, nb_train, nb_pola, learning_rate, num_epochs, betas, num_workers=num_workers, verbose=True)
 
-        for trial in [1]:
+        for trial in [0]:
             timestr = '2021-03-29_'+str(trial)
             id_jit = 0
-            for i in [jit_s[-1]]:
+            for i in jit_s:
                 i = round(i,2)
                 jitonic = [None,i]
+                if i==0:
+                    jitonic = [None,None]
                 test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, subset_size = nb_test, jitonic = jitonic, ds_ev = ds_ev_output)
                 print(f'prediction for {name}...')
                 pred_target, true_target = predict_data(test_set, model, nb_test, num_workers=num_workers)
@@ -81,6 +83,8 @@ if __name__ == '__main__':
             for j in jit_t:
                 j = round(j,0)
                 jitonic = [j,None]
+                if j==0:
+                    jitonic = [None,None]
                 test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, subset_size = nb_test, jitonic = jitonic, ds_ev = ds_ev_output)
                 print(f'prediction for {name}...')
                 pred_target, true_target = predict_data(test_set, model, nb_test, num_workers=num_workers)

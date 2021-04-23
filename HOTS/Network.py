@@ -336,6 +336,9 @@ class network(object):
                     events[0,:,ordering.find("y")] -= min(events[0,:,ordering.find("y")]).numpy()
 
                 for iev in range(N_max):
+                    if events[0][iev][x_index].item()>33:
+                        print('aïe', events[0][iev][x_index].item())
+                    
                     out, activout = self.run(events[0][iev][x_index].item(), \
                                             events[0][iev][y_index].item(), \
                                             events[0][iev][t_index].item(), \
@@ -395,8 +398,6 @@ class network(object):
             else:
                 lay = len(self.TS)
         out = [x,y,t,np.argmax(p)]
-        if x>33:
-            print('aïe')
         return out, activout
 
     def get_fname(self):
