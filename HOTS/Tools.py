@@ -205,7 +205,7 @@ def predict_data(test_set, model, nb_test, num_workers=0,
         logistic_model = model.to(device)
         
         pbar = tqdm(total=nb_test)
-        pred_target, true_target = [], []
+        pred_target, true_target, likelihood = [], [], []
         for X, label in loader:
             X = X.to(device)
             X, label = X.squeeze(0), label.squeeze(0)
@@ -214,12 +214,13 @@ def predict_data(test_set, model, nb_test, num_workers=0,
             
             outputs = logistic_model(X)
 
+            likelihood.append(outputs.cpu().numpy())
             pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
             true_target.append(labels.cpu().numpy())
             pbar.update(1)
         pbar.close()
 
-    return pred_target, true_target
+    return pred_target, true_target, likelihood
 
 
 def classification_results(pred_target, true_target, nb_test, verbose=False):
@@ -343,11 +344,12 @@ def fit_jitter(param,
     criterion = torch.nn.BCELoss(reduction="mean")
 
     class LRModel_jitter(torch.nn.Module):
-        def __init__(self, bias=True, logit0=0, jitter0=0, log_wt=torch.log(2*torch.ones(1)), n_classes=10):
+        def __init__(self, bias=True, logit0=0, jitter0=0, log_wt=torch.log(2*torch.ones(1)),  n_classes=10):
             super(LRModel_jitter, self).__init__()
             self.jitter0 = torch.nn.Parameter(jitter0 * torch.ones(1))
             self.logit0 = torch.nn.Parameter(logit0 * torch.ones(1))
             self.log_wt = torch.nn.Parameter(log_wt * torch.ones(1))
+            self.n = torch.nn.Parameter(n * torch.ones(1))
             self.n_classes = n_classes
 
         def forward(self, jitter):
@@ -355,6 +357,21 @@ def fit_jitter(param,
             p = torch.sigmoid((self.jitter0-jitter)/torch.exp(self.log_wt))
             out = 1/self.n_classes + (1 - p0 - 1/self.n_classes) * p
             #out = 1-p0 / 2 + (1 - p0) * torch.sigmoid((jitter-self.jitter0 )/torch.exp(self.log_wt))
+            return out
+        
+    class NKModel_jitter(torch.nn.Module):
+        def __init__(self, bias=True, Rmax=1, jitter0=0, powa=2, low = 0.1, n_classes=10):
+            super(NKModel_jitter, self).__init__()
+            self.jitter0 = torch.nn.Parameter(jitter0 * torch.ones(1))
+            self.Rmax = torch.nn.Parameter(Rmax * torch.ones(1))
+            self.powa = torch.nn.Parameter(powa * torch.ones(1))
+            self.low = torch.nn.Parameter(low * torch.ones(1))
+            self.n_classes = n_classes
+
+        def forward(self, jitter):
+            x = jitter**self.powa
+            semisat = self.jitter0**self.powa
+            out = self.Rmax-self.Rmax*x/(x+semisat)+self.low
             return out
         
     amsgrad = True  # gives similar results
@@ -366,7 +383,8 @@ def fit_jitter(param,
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    logistic_model = LRModel_jitter(logit0=param[0],jitter0=param[1],log_wt=torch.from_numpy(param[2]))
+    #logistic_model = LRModel_jitter(logit0=param[0],jitter0=param[1],log_wt=torch.from_numpy(param[2]))
+    logistic_model = NKModel_jitter(Rmax=param[0],jitter0=param[1], powa=param[2], low = param[3])
     logistic_model = logistic_model.to(device)
     logistic_model.train()
     optimizer = torch.optim.Adam(
@@ -389,10 +407,11 @@ def fit_jitter(param,
             print(f"Iteration: {epoch} - Loss: {np.sum(losses)/len(theta):.5f}")
 
     logistic_model.eval()
-    Theta, labels = torch.Tensor(theta[:, None]).to(device), torch.Tensor(y[:, None]).to(device)
+    Theta, Theta_fine, labels = torch.Tensor(theta[:, None]).to(device), torch.arange(0,theta[-1],theta[-1]/100).to(device), torch.Tensor(y[:, None]).to(device)
     outputs = logistic_model(Theta)
     loss = criterion(outputs, labels).item() / len(theta)
-    fit = torch.squeeze(logistic_model(Theta)).cpu()
+    
+    fit = torch.squeeze(logistic_model(Theta_fine)).cpu()
     return logistic_model, loss, fit
 
 def signumber(x,nb):

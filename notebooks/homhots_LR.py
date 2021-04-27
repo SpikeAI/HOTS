@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
 
     timestr = '2021-03-29'
-    ds_ev_output = 10
+    ds_ev_output = 1
     record_path = '../Records/EXP_03_NMNIST/models/'
     results = []
 
@@ -51,10 +51,10 @@ if __name__ == '__main__':
         print(f'get testing set for {name}...')
         test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
         print(f'prediction for {name}...')
-        pred_target, true_target = predict_data(test_set, model, nb_test, num_workers=num_workers)
+        pred_target, true_target, likelihood = predict_data(test_set, model, nb_test, num_workers=num_workers)
         meanac, onlinac, lastac = classification_results(pred_target, true_target, nb_test)
-        print(f'Classification performance for {name}: {mean_acc}')
-        results.append([pred_target, true_target, mean_acc, online_acc])
+        print(f'Classification performance for {name}: {meanac}')
+        results.append([pred_target, true_target, meanac, onlinac, likelihood])
 
     path = '../Records/EXP_03_NMNIST/'
     f_name = f'{path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
