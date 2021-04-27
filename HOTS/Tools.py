@@ -334,7 +334,7 @@ def fit_jitter(param,
     y,
     learning_rate=0.005,
     batch_size=256,  # gamma=gamma,
-    num_epochs=2 ** 9 + 1,
+    num_epochs=2 ** 13 + 1,
     betas=(0.9, 0.999),
     verbose=False, **kwargs
 ):

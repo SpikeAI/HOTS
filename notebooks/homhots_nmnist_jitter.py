@@ -40,7 +40,7 @@ ds = 10
 nb_test = nb_test//ds
 
 print('classic HOTS and homeoHOTS')
-for name in ['homhots', 'hots']:
+for name in [ 'hots']:
     
     score_s1 = np.zeros([nb_trials, len(jit_s)])
     score_t1 = np.zeros([nb_trials, len(jit_t)])
@@ -55,7 +55,7 @@ for name in ['homhots', 'hots']:
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo')
     print(f'{name} testing...')
 
-    for trial in range(9):
+    for trial in range(1,9):
         hotshom.date = '2021-03-29_'+str(trial)
         id_jit = 0
         for i in jit_s:
