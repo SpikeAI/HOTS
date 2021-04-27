@@ -45,10 +45,12 @@ if __name__ == '__main__':
 
     for name in ['homhots','hots', 'raw']:
         print(f'get training set for {name}...')
+        ds_ev_output = 10
         learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
         print(f'LR fit for {name}...')
         model, loss = fit_data(name_net, learn_set, nb_train, nb_pola, learning_rate, num_epochs, betas, num_workers=num_workers, verbose=True)
         print(f'get testing set for {name}...')
+        ds_ev_output = 1
         test_set, nb_pola, name_net = get_loader(name, record_path, nb_test, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
         print(f'prediction for {name}...')
         pred_target, true_target, likelihood = predict_data(test_set, model, nb_test, num_workers=num_workers)
