@@ -66,7 +66,7 @@ class LRtorch(torch.nn.Module):
 def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, subset_size = None, jitonic=[None,None], ds_ev = None, verbose = True):
 
     if name=='raw':
-        name_net = f'{path}{timestr}_{name}_LR_{nb_digit}.pkl'
+        name_net = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}.pkl'
         download = False
         if dataset == 'nmnist':
             train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
