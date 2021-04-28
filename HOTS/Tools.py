@@ -1,6 +1,6 @@
 from Network import network
 import torch
-from torch.utils.data import Dataset, TensorDataset, DataLoader
+from torch.utils.data import Dataset, TensorDataset, DataLoader, SubsetRandomSampler
 import pickle
 from os.path import isfile
 import time
@@ -63,26 +63,51 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
 
-def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, subset_size = None, jitonic=[None,None], ds_ev = None, verbose = True):
+def get_loader(name, 
+               path, 
+               nb_digit, 
+               train, 
+               filt, tau, 
+               nbclust, 
+               sigma, 
+               homeinv, 
+               jitter, 
+               timestr, 
+               dataset, 
+               R, 
+               num_workers,
+               subset_size = None, 
+               jitonic=[None,None], 
+               ds_ev = None, 
+               verbose = True):
 
     if name=='raw':
-        name_net = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}.pkl'
         download = False
         if dataset == 'nmnist':
             train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
                                   train=train, download=download,
-                                  transform=tonic.transforms.AERtoVector()
+                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev)
                                  )
         elif dataset == 'poker':
             train_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
-                                  transform=tonic.transforms.AERtoVector()
+                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev)
                                  )
         nb_pola = 2
+        if subset_size is not None:
+            subset_indices = []
+            for i in range(len(train_dataset.classes)):
+                all_ind = np.where(np.array(train_dataset.targets)==i)[0]
+                subset_indices += all_ind[:subset_size//len(train_dataset.classes)].tolist()
+            g_cpu = torch.Generator()
+            subsampler = SubsetRandomSampler(subset_indices, g_cpu)
+            loader = tonic.datasets.DataLoader(train_dataset, batch_size=1, shuffle=False, sampler=subsampler, num_workers=num_workers)
+        else:
+            generator = torch.Generator().manual_seed(42)
+            sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=len(train_dataset), generator=generator)
+            loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
-        
-        hotshom.date = timestr
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, verbose=verbose)
         stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, jitonic=jitonic, outstyle='LR', subset_size=subset_size, verbose = verbose)
         # get indices for transitions from one digit to another
         
@@ -109,52 +134,66 @@ def get_loader(name, path, nb_digit, train, filt, tau, nbclust, sigma, homeinv, 
         X_train = events_train.astype(int)
         y_train = stream[4]
 
-        if ds_ev is not None:
-            X_train = X_train[::ds_ev,:]
-            y_train = y_train[::ds_ev]
-
         digind_train = getdigind(np.array(X_train[:,2]))
 
         nb_pola = stream[-1]
-        # Dataset w/o any tranformations
         train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train,
-                                            transform=tonic.transforms.AERtoVector(nb_pola = nb_pola))
-        #train_loader = torch.utils.data.DataLoader(train_dataset_normal, batch_size=1)
-        name_net = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
-    
-    return train_dataset, nb_pola, name_net
+                                transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev))
+        generator = torch.Generator().manual_seed(42)
+        sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
+        loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+        
+    return loader, train_dataset, nb_pola
 
 def fit_data(name,
-            dataset,
-            nb_digit,
-            nb_pola,
-            learning_rate,
-            num_epochs,
-            betas,
-            num_workers=0,
-            verbose=False, #**kwargs
+             timestr,
+             path,
+             filt,
+             tau,
+             R,
+             nbclust,
+             sigma,
+             homeinv,
+             jitter,
+             dataset,
+             nb_digit,
+             ds_ev,
+             learning_rate,
+             num_epochs,
+             betas,
+             jitonic = [None, None],
+             subset_size = None,
+             num_workers = 0,
+             verbose=False, #**kwargs
         ):
     
-    if isfile(name):
+    path = path+'models/'
+    
+    if name=='raw':
+        name_model = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}.pkl'
+    else:
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
+        name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
+    
+    if isfile(name_model):
         if verbose:
             print('loading existing model')
-            print(name)
-        with open(name, 'rb') as file:
+            print(name_model)
+        with open(name_model, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
+        loader, train_dataset, nb_pola = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+        
         torch.set_default_tensor_type("torch.DoubleTensor")
         criterion = torch.nn.BCELoss(reduction="mean")
         amsgrad = True #or False gives similar results
-        generator = torch.Generator().manual_seed(42)
-        sampler = torch.utils.data.RandomSampler(dataset, replacement=True, num_samples=nb_digit, generator=generator)
-        loader = tonic.datasets.DataLoader(dataset, sampler=sampler, num_workers=num_workers)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
             print(f'device -> {device} - num workers -> {num_workers}')
 
-        N = dataset.sensor_size[0]*dataset.sensor_size[1]*nb_pola
-        n_classes = len(dataset.classes)
+        N = train_dataset.sensor_size[0]*train_dataset.sensor_size[1]*nb_pola
+        n_classes = len(train_dataset.classes)
         logistic_model = LRtorch(N, n_classes)
         logistic_model = logistic_model.to(device)
         logistic_model.train()
@@ -183,20 +222,34 @@ def fit_data(name,
             pbar.update(1)
 
         pbar.close()
-        with open(name, 'wb') as file:
+        with open(name_model, 'wb') as file:
             pickle.dump([logistic_model, losses], file, pickle.HIGHEST_PROTOCOL)
             
     return logistic_model, losses
 
-def predict_data(test_set, model, nb_test, num_workers=0,
-            verbose=False, **kwargs
+def predict_data(model, 
+                 name,
+                 timestr,
+                 path,
+                 filt,
+                 tau,
+                 R,
+                 nbclust,
+                 sigma,
+                 homeinv,
+                 jitter,
+                 dataset,
+                 nb_digit,
+                 ds_ev,
+                 jitonic = [None, None],
+                 subset_size = None,
+                 num_workers = 0,
+                 verbose=False
         ):
     
     with torch.no_grad():
 
-        generator=torch.Generator().manual_seed(42)
-        sampler = torch.utils.data.RandomSampler(test_set, replacement=True, num_samples=nb_test, generator=generator)
-        loader = tonic.datasets.DataLoader(test_set, sampler=sampler, num_workers=num_workers)
+        loader, test_dataset, nb_pola = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
@@ -204,31 +257,27 @@ def predict_data(test_set, model, nb_test, num_workers=0,
         
         logistic_model = model.to(device)
         
-        pbar = tqdm(total=nb_test)
-        pred_target, true_target, likelihood = [], [], []
+        pbar = tqdm(total=nb_digit)
+        likelihood, true_target = [], []
         for X, label in loader:
             X = X.to(device)
             X, label = X.squeeze(0), label.squeeze(0)
             n_events = X.shape[0]
-            labels = label*torch.ones(n_events).type(torch.LongTensor)
-            
+            #labels = label*torch.ones(n_events).type(torch.LongTensor)
             outputs = logistic_model(X)
-
             likelihood.append(outputs.cpu().numpy())
-            pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
-            true_target.append(labels.cpu().numpy())
+            #pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
+            true_target.append(label.cpu().numpy())
             pbar.update(1)
         pbar.close()
 
-    return pred_target, true_target, likelihood
+    return likelihood, true_target
 
-
-def classification_results(pred_target, true_target, nb_test, verbose=False):
+def classification_results(likelihood, true_target, thres, nb_test, verbose=False):
     accuracy = []
-    onlinac = np.zeros(10000)
-    onlincount = np.zeros(10000)
+    matscor = np.zeros([len(pred_target),10000])
     lastac = 0
-    for pred_target_, true_target_ in zip(pred_target, true_target):
+    for likelihood_, true_target_ in zip(likelihood, true_target):
         accuracy.append(np.mean(pred_target_ == true_target_))
         onlinac[:len(pred_target_)]+=(pred_target_ == true_target_)
         onlincount[:len(pred_target_)]+=1
