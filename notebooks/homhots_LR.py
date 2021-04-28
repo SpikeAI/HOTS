@@ -61,5 +61,5 @@ if __name__ == '__main__':
         path = '../Records/EXP_03_NMNIST/'
         f_name = f'{path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
 
-    with open(f_name, 'wb') as file:
-        pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
+        with open(f_name, 'wb') as file:
+            pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
