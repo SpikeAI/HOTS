@@ -43,7 +43,7 @@ if __name__ == '__main__':
     record_path = '../Records/EXP_03_NMNIST/models/'
     results = []
 
-    for name in ['homhots','hots', 'raw']:
+    for name in ['homhots','hots']:#, 'raw']:
         print(f'get training set for {name}...')
         ds_ev_output = 10
         learn_set, nb_pola, name_net = get_loader(name, record_path, nb_train, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, ds_ev = ds_ev_output)
@@ -58,8 +58,8 @@ if __name__ == '__main__':
         print(f'Classification performance for {name}: {meanac}')
         results.append([pred_target, true_target, meanac, onlinac, likelihood])
 
-    path = '../Records/EXP_03_NMNIST/'
-    f_name = f'{path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
+        path = '../Records/EXP_03_NMNIST/'
+        f_name = f'{path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev_output}.pkl'
 
     with open(f_name, 'wb') as file:
         pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
