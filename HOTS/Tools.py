@@ -294,6 +294,8 @@ def classification_results(likelihood, true_target, thres, nb_test, verbose=Fals
     meanac = np.nanmean(matscor)
     onlinac = np.nanmean(matscor, axis=0)
     lastac/=nb_test
+    truepos = len(np.where(matscor==1)[0])
+    falsepos = len(np.where(matscor==0)[0])
     
     maxevents = np.where(np.isnan(onlinac)==0)[0][-1]
     onlinac = onlinac[:maxevents]
@@ -305,7 +307,7 @@ def classification_results(likelihood, true_target, thres, nb_test, verbose=Fals
         plt.ylabel('online accuracy');
         plt.title('LR classification results evolution as a function of the number of events');
     
-    return meanac, onlinac, lastac
+    return meanac, onlinac, lastac, truepos, falsepos
 
 #___________________________________________________________________________________________
 #___________________________________________________________________________________________
