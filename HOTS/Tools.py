@@ -22,26 +22,30 @@ def toc():
 class AERtoVectDataset(Dataset):
     """makes a dataset allowing aer_to_vect() transform from tonic
     """
-    classes = [
-        "0 - zero",
-        "1 - one",
-        "2 - two",
-        "3 - three",
-        "4 - four",
-        "5 - five",
-        "6 - six",
-        "7 - seven",
-        "8 - eight",
-        "9 - nine",
-    ]
-    sensor_size = [34, 34]
     ordering = "xytp"
     
-    def __init__(self, tensors, digind, transform=None, nb_pola=2):
+    def __init__(self, tensors, digind, name, transform=None, nb_pola=2):
         self.X_train, self.y_train = tensors
         assert (self.X_train.shape[0] == len(self.y_train))
         self.transform = transform
         self.digind = digind
+        if name=='nmnist':
+            self.classes = [
+                                "0 - zero",
+                                "1 - one",
+                                "2 - two",
+                                "3 - three",
+                                "4 - four",
+                                "5 - five",
+                                "6 - six",
+                                "7 - seven",
+                                "8 - eight",
+                                "9 - nine",
+                            ]
+            self.sensor_size = (34, 34)
+        elif name=='poker':
+            self.classes = ["cl", "he", "di", "sp"]
+            self.sensor_size = (35, 35)
 
     def __getitem__(self, index):
         events = self.X_train[self.digind[index]:self.digind[index+1]]
@@ -109,7 +113,6 @@ def get_loader(name,
     else:
         hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, verbose=verbose)
         stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, jitonic=jitonic, outstyle='LR', subset_size=subset_size, verbose = verbose)
-        # get indices for transitions from one digit to another
         
         #TODO: save in event stream from network.running directly
         def getdigind(t):
@@ -121,15 +124,9 @@ def get_loader(name,
             return newdig
 
         events_train = np.zeros([len(stream[2]), 4])
-        if dataset == 'nmnist':
-            ordering = 'xytp'
-        elif dataset == 'poker':
-            ordering = 'txyp'
             
-        events_train[:, ordering.find("x")] = stream[0][:]
-        events_train[:, ordering.find("y")] = stream[1][:]
-        events_train[:, ordering.find("t")] = stream[2][:]
-        events_train[:, ordering.find("p")] = stream[3][:]
+        for i in range(4):
+            events_train[:,i] = stream[i][:]
 
         X_train = events_train.astype(int)
         y_train = stream[4]
@@ -137,8 +134,7 @@ def get_loader(name,
         digind_train = getdigind(np.array(X_train[:,2]))
 
         nb_pola = stream[-1]
-        train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train,
-                                transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev))
+        train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev))
         generator = torch.Generator().manual_seed(42)
         sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
         loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
@@ -274,15 +270,33 @@ def predict_data(model,
     return likelihood, true_target
 
 def classification_results(likelihood, true_target, thres, nb_test, verbose=False):
-    accuracy = []
-    matscor = np.zeros([len(pred_target),10000])
+    
+    matscor = np.zeros([len(true_target),10000])
+    matscor[:] = np.nan
+    sample = 0
     lastac = 0
     for likelihood_, true_target_ in zip(likelihood, true_target):
-        accuracy.append(np.mean(pred_target_ == true_target_))
-        onlinac[:len(pred_target_)]+=(pred_target_ == true_target_)
-        onlincount[:len(pred_target_)]+=1
-        limit = np.nonzero(onlincount)[0][-1]
-        lastac += (pred_target_[-1] == true_target_[-1])
+        pred_target = np.zeros(len(likelihood_))
+        pred_target[:] = np.nan
+        if not thres:
+            pred_target = np.argmax(likelihood_, axis = 1)
+        else:
+            for i in range(len(likelihood_)):
+                if np.max(likelihood_[i])>thres:
+                    pred_target[i] = np.argmax(likelihood_[i])
+        for event in range(len(pred_target)):
+            if np.isnan(pred_target[event])==False:
+                matscor[sample,event] = pred_target[event]==true_target_
+        if pred_target[-1]==true_target_:
+            lastac+=1
+        sample+=1
+        
+    meanac = np.nanmean(matscor)
+    onlinac = np.nanmean(matscor, axis=0)
+    lastac/=nb_test
+    
+    maxevents = np.where(np.isnan(onlinac)==0)[0][-1]
+    onlinac = onlinac[:maxevents]
         
     if verbose:
         print(f'{np.mean(accuracy)=:.3f}')
@@ -291,7 +305,7 @@ def classification_results(likelihood, true_target, thres, nb_test, verbose=Fals
         plt.ylabel('online accuracy');
         plt.title('LR classification results evolution as a function of the number of events');
     
-    return np.mean(accuracy), onlinac[:limit]/onlincount[:limit], lastac/nb_test
+    return meanac, onlinac, lastac
 
 #___________________________________________________________________________________________
 #___________________________________________________________________________________________

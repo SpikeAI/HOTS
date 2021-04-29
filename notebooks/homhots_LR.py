@@ -3,6 +3,7 @@ import sys
 sys.path.append('../HOTS')
 from Tools import tic, toc, get_loader, fit_data, predict_data, classification_results, netparam
 import pickle
+from os.path import isfile
 
 if __name__ == '__main__':
     #_________NETWORK_PARAMETERS______________________
@@ -43,13 +44,18 @@ if __name__ == '__main__':
     path = '../Records/EXP_03_NMNIST/'
 
     for name in ['homhots','hots','raw']:
-        ds_ev = 10
-        print(f'LR fit for {name}...')
-        model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train,ds_ev, learning_rate, num_epochs,betas,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
-        ds_ev = 1
-        print(f'prediction for {name}...')
-        likelihood, true_target = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv,jitter,dataset,nb_test,ds_ev,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
-        #print(f'Classification performance for {name}: {meanac}')
         f_name = f'{path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}.pkl'
-        with open(f_name, 'wb') as file:
-            pickle.dump([likelihood, true_target], file, pickle.HIGHEST_PROTOCOL)
+        if isfile(f_name):
+            with open(f_name, 'rb') as file:
+                likelihood, true_target = pickle.load(file)
+        else:
+            ds_ev = 10
+            print(f'LR fit for {name}...')
+            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
+            ds_ev = 1
+            print(f'prediction for {name}...')
+            likelihood, true_target = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
+            with open(f_name, 'wb') as file:
+                pickle.dump([likelihood, true_target], file, pickle.HIGHEST_PROTOCOL)
+
+    return likelihood, true_target

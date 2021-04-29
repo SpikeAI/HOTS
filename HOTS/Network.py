@@ -345,10 +345,10 @@ class network(object):
                                             events[0][iev][p_index].item(), \
                                             to_record=to_record)
                     if outstyle=='LR' and activout:
-                        xout.append(out[x_index])
-                        yout.append(out[y_index])
-                        timout.append(out[t_index])
-                        polout.append(out[p_index])
+                        xout.append(out[0])
+                        yout.append(out[1])
+                        timout.append(out[2])
+                        polout.append(out[3])
                         labout.append(target.item())
 
                 if train:
@@ -511,7 +511,7 @@ class network(object):
 ##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
 ##___________________________________________________________________________________________
 
-    def learninglagorce(self, nb_cycle=3, dataset='simple', diginit=True, filtering=None):
+    def learninglagorce(self, nb_cycle=3, diginit=True, filtering=None):
 
 
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
@@ -519,8 +519,8 @@ class network(object):
         path = "../Data/alphabet_ExtractedStabilized.mat"
 
         image_list = [1, 32, 19, 22, 29]
-        image_list += image_list
-        image_list += image_list
+        for i in range(nb_cycle-1):
+            image_list += image_list
         address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
 
         #___________ SPECIAL CASE OF SIMPLE_ALPHABET DATASET _________________
@@ -557,17 +557,14 @@ class network(object):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
             pbar.close()
 
-    def traininglagorce(self, nb_digit=None, dataset='simple', to_record=True):
-        if dataset == 'simple':
-            path = "../Data/alphabet_ExtractedStabilized.mat"
-            image_list=list(np.arange(0, 36))
-            address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
-            with open('../Data/alphabet_label.pkl', 'rb') as file:
-                label_list = pickle.load(file)
-            label = label_list[:36]
-        else:
-            print('not ready yet')
-            event = []
+    def traininglagorce(self, nb_digit=None, to_record=True):
+        
+        path = "../Data/alphabet_ExtractedStabilized.mat"
+        image_list=list(np.arange(0, 36))
+        address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
+        with open('../Data/alphabet_label.pkl', 'rb') as file:
+            label_list = pickle.load(file)
+        label = label_list[:36]
 
         learn=False
         output = []
@@ -599,18 +596,14 @@ class network(object):
         pbar.close()
         return labelmap
 
-    def testinglagorce(self, trainmap, nb_digit=None, dataset='simple', to_record=True):
-
-        if dataset == 'simple':
-            path = "../Data/alphabet_ExtractedStabilized.mat"
-            image_list=list(np.arange(36, 76))
-            address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
-            with open('../Data/alphabet_label.pkl', 'rb') as file:
-                label_list = pickle.load(file)
-            label = label_list[36:76]
-        else:
-            print('not ready yet')
-            event = []
+    def testinglagorce(self, nb_digit=None, to_record=True):
+        
+        path = "../Data/alphabet_ExtractedStabilized.mat"
+        image_list=list(np.arange(36, 76))
+        address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
+        with open('../Data/alphabet_label.pkl', 'rb') as file:
+            label_list = pickle.load(file)
+        label = label_list[36:76]
 
         learn = False
         output = []
@@ -641,12 +634,7 @@ class network(object):
 
         pbar.close()
 
-        #score1=accuracy_lagorce(trainmap,labelmap,'bhatta')
-        #score2=accuracy_lagorce(trainmap,labelmap,'eucli')
-        #score3=accuracy_lagorce(trainmap,labelmap,'norm')
-        #print('bhatta:'+str(score1*100)+'% - '+'eucli:'+str(score2*100)+'% - '+'norm:'+str(score3*100)+'%')
-
-        return labelmap#, [score1,score2,score3]
+        return labelmap
 
 ##___________________PLOTTING________________________________________________________________
 ##___________________________________________________________________________________________
