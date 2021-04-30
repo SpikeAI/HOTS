@@ -51,10 +51,10 @@ if __name__ == '__main__':
         else:
             ds_ev = 10
             print(f'LR fit for {name}...')
-            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
+            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
             ds_ev = 1
             print(f'prediction for {name}...')
-            likelihood, true_target = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
+            likelihood, true_target = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
             with open(f_name, 'wb') as file:
                 pickle.dump([likelihood, true_target], file, pickle.HIGHEST_PROTOCOL)
 

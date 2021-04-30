@@ -80,6 +80,7 @@ def get_loader(name,
                dataset, 
                R, 
                num_workers,
+               tau_cla,
                subset_size = None, 
                jitonic=[None,None], 
                ds_ev = None, 
@@ -90,12 +91,12 @@ def get_loader(name,
         if dataset == 'nmnist':
             train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
                                   train=train, download=download,
-                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev)
+                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
                                  )
         elif dataset == 'poker':
             train_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
-                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev)
+                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
                                  )
         nb_pola = 2
         if subset_size is not None:
@@ -134,7 +135,7 @@ def get_loader(name,
         digind_train = getdigind(np.array(X_train[:,2]))
 
         nb_pola = stream[-1]
-        train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev))
+        train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla))
         generator = torch.Generator().manual_seed(42)
         sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
         loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
@@ -157,6 +158,7 @@ def fit_data(name,
              learning_rate,
              num_epochs,
              betas,
+             tau_cla,
              jitonic = [None, None],
              subset_size = None,
              num_workers = 0,
@@ -178,7 +180,7 @@ def fit_data(name,
         with open(name_model, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
-        loader, train_dataset, nb_pola = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+        loader, train_dataset, nb_pola = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
         
         torch.set_default_tensor_type("torch.DoubleTensor")
         criterion = torch.nn.BCELoss(reduction="mean")
@@ -237,6 +239,7 @@ def predict_data(model,
                  dataset,
                  nb_digit,
                  ds_ev,
+                 tau_cla,
                  jitonic = [None, None],
                  subset_size = None,
                  num_workers = 0,
@@ -245,7 +248,7 @@ def predict_data(model,
     
     with torch.no_grad():
 
-        loader, test_dataset, nb_pola = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+        loader, test_dataset, nb_pola = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
@@ -254,7 +257,7 @@ def predict_data(model,
         logistic_model = model.to(device)
         
         pbar = tqdm(total=nb_digit)
-        likelihood, true_target = [], []
+        likelihood, true_target, timing = [], [], []
         for X, label in loader:
             X = X.to(device)
             X, label = X.squeeze(0), label.squeeze(0)
@@ -264,6 +267,7 @@ def predict_data(model,
             likelihood.append(outputs.cpu().numpy())
             #pred_target.append(torch.argmax(outputs, dim=1).cpu().numpy())
             true_target.append(label.cpu().numpy())
+            timing.append(label.cpu().numpy())
             pbar.update(1)
         pbar.close()
 

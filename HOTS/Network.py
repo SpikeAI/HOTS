@@ -557,7 +557,7 @@ class network(object):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
             pbar.close()
 
-    def traininglagorce(self, nb_digit=None, to_record=True):
+    def traininglagorce(self, nb_digit=None, outputstyle = 'histo', to_record=True):
         
         path = "../Data/alphabet_ExtractedStabilized.mat"
         image_list=list(np.arange(0, 36))
@@ -596,7 +596,7 @@ class network(object):
         pbar.close()
         return labelmap
 
-    def testinglagorce(self, nb_digit=None, to_record=True):
+    def testinglagorce(self, nb_digit=None, outputstyle = 'histo', to_record=True):
         
         path = "../Data/alphabet_ExtractedStabilized.mat"
         image_list=list(np.arange(36, 76))
