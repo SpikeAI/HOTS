@@ -168,7 +168,6 @@ def fit_data(name,
         ):
     
     path = path+'models/'
-    print(path)
     
     if name=='raw':
         name_model = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}.pkl'
@@ -337,7 +336,6 @@ def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset,
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
-        print(hotshom.get_fname())
         hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='fullhom':
         homeo = True
