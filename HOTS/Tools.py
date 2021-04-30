@@ -112,7 +112,9 @@ def get_loader(name,
             sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=len(train_dataset), generator=generator)
             loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, verbose=verbose)
+        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
+        if not train:
+            hotshom.date = timestr
         stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, jitonic=jitonic, outstyle='LR', subset_size=subset_size, verbose = verbose)
         
         #TODO: save in event stream from network.running directly
@@ -166,6 +168,7 @@ def fit_data(name,
         ):
     
     path = path+'models/'
+    print(path)
     
     if name=='raw':
         name_model = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}.pkl'
@@ -334,6 +337,7 @@ def netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset,
         homeotest = False
         krnlinit = 'rdn'
         hotshom = network(krnlinit=krnlinit, filt=filt, tau=tau, R=R, nbclust=nbclust, homeo=homeo, sigma=sigma, homeinv=homeinv, jitter=jitter, timestr=timestr)
+        print(hotshom.get_fname())
         hotshom = hotshom.learningall(dataset=dataset, nb_digit = nb_learn, maxevts = maxevts, subset_size = subset_size, kfold = kfold, kfold_ind = kfold_ind, ds_ev = ds_ev, verbose=verbose)
     elif name=='fullhom':
         homeo = True

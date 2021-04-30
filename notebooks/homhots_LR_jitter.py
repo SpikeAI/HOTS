@@ -18,14 +18,19 @@ if __name__ == '__main__':
     R = 2
     nbclust = [4, 8, 16]
     filt = 2
+    #_______________JITTER_________________________
+    jit_s = np.arange(0,10,0.5)
+    jit_t = np.arange(0,300,10)
+    jit_s, jit_t = jit_s**2, jit_t**2
+    #______________________________________________
 
     #_______________NB_OF_DIGITS___________________
     dataset = 'nmnist'
     nb_test = 10000
     nb_train = 60000
-    ds = 10
+    ds = 1000
     nb_test = nb_test//ds
-    nb_train = nb_train//ds
+    #nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
     subset_size = ds
     nb_trials = ds
@@ -45,14 +50,15 @@ if __name__ == '__main__':
     path = '../Records/EXP_03_NMNIST/'
     
     thres = None
-
+    ds_ev = 10
+    tau_cla = 150000
+    
     for name in ['homhots','hots','raw']:
         f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:
                 likelihood, true_target = pickle.load(file)
         else:
-            ds_ev = 10
             print(f'LR fit for {name}...')
             model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas, tau_cla,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
             
