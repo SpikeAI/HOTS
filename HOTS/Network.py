@@ -461,6 +461,8 @@ class network(object):
             direc = 'EXP_05_POKERDVS'
         elif dataset=='gesture':
             direc = 'EXP_06_DVSGESTURE'
+        elif dataset=='barrel':
+            direc = 'EXP_01_LagorceKmeans'
         else: print('define a path for this dataset')
         if train:
             path = f'../Records/{direc}/train/'
@@ -557,14 +559,54 @@ class network(object):
                 self.stats[l].histo = self.L[l].cumhisto.copy()
             pbar.close()
 
-    def traininglagorce(self, nb_digit=None, outputstyle = 'histo', to_record=True):
+    def traininglagorce(self, nb_digit=None, outstyle = 'histo', to_record=True):
+        
+        class_data = {
+    "A": 0,
+    "B": 1,
+    "C": 2,
+    "D": 3,
+    "E": 4,
+    "F": 5,
+    "G": 6,
+    "H": 7,
+    "I": 8,
+    "J": 9,
+    "K": 10,
+    "L": 11,
+    "M": 12,
+    "N": 13,
+    "O": 14,
+    "P": 15,
+    "Q": 16,
+    "R": 17,
+    "S": 18,
+    "T": 19,
+    "U": 20,
+    "V": 21,
+    "W": 22,
+    "X": 23,
+    "Y": 24,
+    "Z": 25,
+    "0": 26,
+    "1": 27,
+    "2": 28,
+    "3": 29,
+    "4": 30,
+    "5": 31,
+    "6": 32,
+    "7": 33,
+    "8": 34,
+    "9": 35,
+}
         
         path = "../Data/alphabet_ExtractedStabilized.mat"
-        image_list=list(np.arange(0, 36))
+        nblist = 36
+        image_list=list(np.arange(0, nblist))
         address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
         with open('../Data/alphabet_label.pkl', 'rb') as file:
             label_list = pickle.load(file)
-        label = label_list[:36]
+        label = label_list[:nblist]
 
         learn=False
         output = []
@@ -574,6 +616,11 @@ class network(object):
         pbar = tqdm(total=nbevent)
         idx = 0
         labelmap = []
+        timout = []
+        xout = []
+        yout = []
+        polout = []
+        labout = []
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
@@ -581,7 +628,14 @@ class network(object):
 
         while count<nbevent:
             pbar.update(1)
-            self.run(address[count,0],address[count,1],time[count],polarity[count], learn, to_record)
+            out, activout = self.run(address[count,0],address[count,1],time[count],polarity[count], learn, to_record)
+            if outstyle=='LR' and activout:
+                xout.append(out[0])
+                yout.append(out[1])
+                timout.append(out[2])
+                polout.append(out[3])
+                labout.append(class_data[label[idx][0]])
+                
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
@@ -594,9 +648,54 @@ class network(object):
             count += 1
             count2 += 1
         pbar.close()
+        if outstyle=='LR':
+            camsize = self.TS[-1].camsize
+            nbpola = self.L[-1].kernel.shape[1]
+            eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
+            self.date = '2020-12-01'
+            self.save_output(eventsout, False, 'barrel', len(label), True, None, 'LR', None)
         return labelmap
 
-    def testinglagorce(self, nb_digit=None, outputstyle = 'histo', to_record=True):
+    def testinglagorce(self, nb_digit=None, outstyle = 'histo', to_record=True):
+        
+        class_data = {
+    "A": 0,
+    "B": 1,
+    "C": 2,
+    "D": 3,
+    "E": 4,
+    "F": 5,
+    "G": 6,
+    "H": 7,
+    "I": 8,
+    "J": 9,
+    "K": 10,
+    "L": 11,
+    "M": 12,
+    "N": 13,
+    "O": 14,
+    "P": 15,
+    "Q": 16,
+    "R": 17,
+    "S": 18,
+    "T": 19,
+    "U": 20,
+    "V": 21,
+    "W": 22,
+    "X": 23,
+    "Y": 24,
+    "Z": 25,
+    "0": 26,
+    "1": 27,
+    "2": 28,
+    "3": 29,
+    "4": 30,
+    "5": 31,
+    "6": 32,
+    "7": 33,
+    "8": 34,
+    "9": 35,
+}
         
         path = "../Data/alphabet_ExtractedStabilized.mat"
         image_list=list(np.arange(36, 76))
@@ -613,13 +712,24 @@ class network(object):
         pbar = tqdm(total=nbevent)
         idx = 0
         labelmap = []
+        timout = []
+        xout = []
+        yout = []
+        polout = []
+        labout = []
         for i in range(len(self.L)):
             self.TS[i].spatpmat[:] = 0
             self.TS[i].iev = 0
             self.L[i].cumhisto[:] = 1
         while count<nbevent:
             pbar.update(1)
-            self.run(address[count,0],address[count,1],time[count],polarity[count], learn, to_record)
+            out, activout = self.run(address[count,0],address[count,1],time[count],polarity[count], learn, to_record)
+            if outstyle=='LR' and activout:
+                xout.append(out[0])
+                yout.append(out[1])
+                timout.append(out[2])
+                polout.append(out[3])
+                labout.append(class_data[label[idx][0]])
             if count2==label[idx][1]:
                 data = (label[idx][0],self.L[-1].cumhisto.copy())
                 labelmap.append(data)
@@ -633,6 +743,12 @@ class network(object):
             count2 += 1
 
         pbar.close()
+        if outstyle=='LR':
+            camsize = self.TS[-1].camsize
+            nbpola = self.L[-1].kernel.shape[1]
+            eventsout = [xout,yout,timout,polout,labout,camsize,nbpola]
+            self.date = '2020-12-01'
+            self.save_output(eventsout, False, 'barrel', len(label), False, None, 'LR', None)
 
         return labelmap
 

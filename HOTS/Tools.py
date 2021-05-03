@@ -1,4 +1,4 @@
-from Network import network
+from Network import network, LoadFromMat
 import torch
 from torch.utils.data import Dataset, TensorDataset, DataLoader, SubsetRandomSampler
 import pickle
@@ -46,6 +46,9 @@ class AERtoVectDataset(Dataset):
         elif name=='poker':
             self.classes = ["cl", "he", "di", "sp"]
             self.sensor_size = (35, 35)
+        elif name=='barrel':
+            self.sensor_size = (32, 32)
+            self.classes = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"]
 
     def __getitem__(self, index):
         events = self.X_train[self.digind[index]:self.digind[index+1]]
@@ -144,6 +147,102 @@ def get_loader(name,
         
     return loader, train_dataset, nb_pola
 
+
+def get_loader_barrel(name, 
+               path, 
+               train, 
+               filt, 
+               tau, 
+               nbclust, 
+               sigma, 
+               homeinv, 
+               jitter, 
+               timestr, 
+               dataset, 
+               R, 
+               num_workers,
+               tau_cla,
+               ds_ev = 1,
+               verbose = True):
+    
+    def getdigind(t):
+            newdig = [0]
+            for i in range(len(t)-1):
+                if t[i]>t[i+1]:
+                    newdig.append(i+1)
+            newdig.append(i)
+            return newdig
+        
+    if train:
+        nb_digit = 36
+    else:
+        nb_digit = 40
+
+    if name=='raw':
+        if train:
+            path = "../Data/alphabet_ExtractedStabilized.mat"
+            image_list=list(np.arange(0, 36))
+            address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
+            with open('../Data/alphabet_label.pkl', 'rb') as file:
+                label_list = pickle.load(file)
+            label = label_list[:36]
+        else:
+            path = "../Data/alphabet_ExtractedStabilized.mat"
+            image_list=list(np.arange(36, 76))
+            address, time, polarity, list_pola = LoadFromMat(path, image_number=image_list)
+            with open('../Data/alphabet_label.pkl', 'rb') as file:
+                label_list = pickle.load(file)
+            label = label_list[36:76]
+        nb_pola = 2
+        
+        X_train = np.zeros([len(time), 4])
+        X_train[:,2] = time*1e6
+        X_train[:,0] = address[:,0]
+        X_train[:,1] = address[:,1]
+        X_train[:,3] = polarity
+        X_train = X_train.astype(int)
+        
+        y_train = []
+        for i in range(len(label)):
+            y_train.append(label[i][0])
+        y_train = np.array(y_train)
+        digind_train = getdigind(np.array(X_train[:,2]))
+        
+    else:
+        if name == 'homhots':
+            if train:
+                f_name = '../Records/EXP_01_LagorceKmeans/train/2020-12-01_lagorce_rdn_None_True_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_False_36_None_LR.pkl'
+            else: 
+                f_name = '../Records/EXP_01_LagorceKmeans/test/2020-12-01_lagorce_rdn_None_True_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_False_40_None_LR.pkl'
+            with open(f_name,'rb') as file:
+                stream = pickle.load(file)
+        elif name == 'hots':
+            if train:
+                f_name = '../Records/EXP_01_LagorceKmeans/train/2020-12-01_lagorce_first_None_False_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_True_36_None_LR.pkl'
+            else:
+                f_name = '../Records/EXP_01_LagorceKmeans/test/2020-12-01_lagorce_first_None_False_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_True_40_None_LR.pkl'
+            with open(f_name,'rb') as file:
+                stream = pickle.load(file)
+
+        events_train = np.zeros([len(stream[2]), 4])
+            
+        for i in range(4):
+            events_train[:,i] = stream[i][:]
+            
+        events_train[:,2]*=1e6
+        X_train = events_train.astype(int)
+        y_train = stream[4]
+
+        digind_train = getdigind(np.array(X_train[:,2]))
+        nb_pola = stream[-1]
+        
+    train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla))
+    generator = torch.Generator().manual_seed(42)
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
+    loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+        
+    return loader, train_dataset, nb_pola
+
 def fit_data(name,
              timestr,
              path,
@@ -172,9 +271,12 @@ def fit_data(name,
     if name=='raw':
         name_model = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}.pkl'
     else:
-        hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
-        name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
-    
+        if dataset == 'barrel':
+            name_model = f'{path}{name}_LR_{nb_digit}_{ds_ev}.pkl'
+        else:
+            hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
+            name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
+
     if isfile(name_model):
         if verbose:
             print('loading existing model')
@@ -182,7 +284,25 @@ def fit_data(name,
         with open(name_model, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
-        loader, train_dataset, nb_pola = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+        
+        if dataset=='barrel':
+            loader, train_dataset, nb_pola = get_loader_barrel(name, 
+               path, 
+               True, 
+               filt, 
+               tau, 
+               nbclust, 
+               sigma, 
+               homeinv, 
+               jitter, 
+               timestr, 
+               dataset, 
+               R, 
+               num_workers,
+               tau_cla,
+               verbose = True)
+        else:
+            loader, train_dataset, nb_pola = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
         
         torch.set_default_tensor_type("torch.DoubleTensor")
         criterion = torch.nn.BCELoss(reduction="mean")
@@ -249,8 +369,24 @@ def predict_data(model,
         ):
     
     with torch.no_grad():
-
-        loader, test_dataset, nb_pola = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+        if dataset=='barrel':
+            loader, train_dataset, nb_pola = get_loader_barrel(name, 
+               path, 
+               False, 
+               filt, 
+               tau, 
+               nbclust, 
+               sigma, 
+               homeinv, 
+               jitter, 
+               timestr, 
+               dataset, 
+               R, 
+               num_workers,
+               tau_cla,
+               verbose = True)
+        else:
+            loader, test_dataset, nb_pola = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
