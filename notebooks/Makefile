@@ -3,9 +3,17 @@ default: F7 F4
 J=jupyter nbconvert  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.timeout=0 --allow-errors --execute
 JN=$(J) --to notebook --inplace
 
-A:    
+A1:
 	$(JN) RESULTS_03_NMNIST.ipynb
 	git commit -m'results : RESULTS_03 ' RESULTS_03_NMNIST.ipynb
+	git push
+A2:
+	$(JN) RESULTS_02_PokerDVS.ipynb
+	git commit -m'results : RESULTS_02 ' RESULTS_02_PokerDVS.ipynb
+	git push
+A3:
+	$(JN) RESULTS_01_SimpleAlphabet.ipynb
+	git commit -m'results : RESULTS_01 ' RESULTS_01_SimpleAlphabet.ipynb
 	git push
 B:    
 	$(JN) figures.ipynb
