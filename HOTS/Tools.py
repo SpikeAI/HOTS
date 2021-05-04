@@ -257,9 +257,9 @@ def get_loader_barrel(name,
                 stream = pickle.load(file)
         elif name == 'hots':
             if train:
-                f_name = '../Records/EXP_01_LagorceKmeans/train/2020-12-01_lagorce_first_None_False_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_True_36_None_LR.pkl'
+                f_name = '../Records/EXP_01_LagorceKmeans/train/2020-12-01_lagorce_first_None_False_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_False_36_None_LR.pkl'
             else:
-                f_name = '../Records/EXP_01_LagorceKmeans/test/2020-12-01_lagorce_first_None_False_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_True_40_None_LR.pkl'
+                f_name = '../Records/EXP_01_LagorceKmeans/test/2020-12-01_lagorce_first_None_False_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_False_40_None_LR.pkl'
             with open(f_name,'rb') as file:
                 stream = pickle.load(file)
 
