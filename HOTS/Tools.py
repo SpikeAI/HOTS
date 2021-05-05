@@ -131,8 +131,9 @@ def get_loader(name,
                 sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=len(train_dataset), generator=generator)
                 loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
             else:
-                loader = tonic.datasets.DataLoader(time_dataset, num_workers=num_workers, shuffle=False)
-                for events, label in loader:
+                loader = tonic.datasets.DataLoader(train_dataset, num_workers=num_workers, shuffle=False)
+                time_loader = tonic.datasets.DataLoader(time_dataset, num_workers=num_workers, shuffle=False)
+                for events, label in time_loader:
                     time_scale.append(events[0,:,time_dataset.ordering.find("t")].numpy())
     else:
         hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)

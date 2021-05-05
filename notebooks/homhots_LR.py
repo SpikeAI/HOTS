@@ -38,24 +38,25 @@ if __name__ == '__main__':
     #num_epochs = 2 ** 9 + 1
     print(f'number of epochs: {num_epochs}')
     #______________________________________________
-
+    ds_ev_test = 1
+    tau_cla = 150000
 
     timestr = '2021-03-29'
     path = '../Records/EXP_03_NMNIST/'
 
     for name in ['homhots','hots','raw']:
-        f_name = f'{path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}.pkl'
+        f_name = f'{path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev_test}_timescale.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:
                 likelihood, true_target = pickle.load(file)
         else:
             ds_ev = 10
             print(f'LR fit for {name}...')
-            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
-            ds_ev = 1
+            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers,verbose=False)
+            ds_ev = ds_ev_test
             print(f'prediction for {name}...')
-            likelihood, true_target = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
+            likelihood, true_target, time_scale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers, verbose=False)
             with open(f_name, 'wb') as file:
-                pickle.dump([likelihood, true_target], file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump([likelihood, true_target, time_scale], file, pickle.HIGHEST_PROTOCOL)
 
-    return likelihood, true_target
+    #return likelihood, true_target, time_scale
