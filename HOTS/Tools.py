@@ -69,6 +69,14 @@ class LRtorch(torch.nn.Module):
 
     def forward(self, factors):
         return self.nl(self.linear(factors))
+    
+def getdigind(t, l):
+    newdig = [0]
+    for i in range(len(t)-1):
+        if t[i]>t[i+1] or l[i]!=l[i+1]:
+            newdig.append(i+1)
+    newdig.append(i+1)
+    return newdig
 
 def get_loader(name, 
                path, 
@@ -96,12 +104,19 @@ def get_loader(name,
                                   train=train, download=download,
                                   transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
                                  )
+            time_dataset = tonic.datasets.NMNIST(save_to='../Data/',
+                                  train=train, download=download,
+                                 )
         elif dataset == 'poker':
             train_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
                                   transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
                                  )
+            time_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
+                                  train=train, download=download,
+                                 )
         nb_pola = 2
+        time_scale = []
         if subset_size is not None:
             subset_indices = []
             for i in range(len(train_dataset.classes)):
@@ -111,9 +126,14 @@ def get_loader(name,
             subsampler = SubsetRandomSampler(subset_indices, g_cpu)
             loader = tonic.datasets.DataLoader(train_dataset, batch_size=1, shuffle=False, sampler=subsampler, num_workers=num_workers)
         else:
-            generator = torch.Generator().manual_seed(42)
-            sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=len(train_dataset), generator=generator)
-            loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+            if train:
+                generator = torch.Generator().manual_seed(42)
+                sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=len(train_dataset), generator=generator)
+                loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+            else:
+                loader = tonic.datasets.DataLoader(time_dataset, num_workers=num_workers, shuffle=False)
+                for events, label in loader:
+                    time_scale.append(events[0,:,time_dataset.ordering.find("t")].numpy())
     else:
         hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
         if not train:
@@ -121,13 +141,6 @@ def get_loader(name,
         stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, jitonic=jitonic, outstyle='LR', subset_size=subset_size, verbose = verbose)
         
         #TODO: save in event stream from network.running directly
-        def getdigind(t):
-            newdig = [0]
-            for i in range(len(t)-1):
-                if t[i]>t[i+1]:
-                    newdig.append(i+1)
-            newdig.append(i)
-            return newdig
 
         events_train = np.zeros([len(stream[2]), 4])
             
@@ -137,16 +150,22 @@ def get_loader(name,
         X_train = events_train.astype(int)
         y_train = stream[4]
 
-        digind_train = getdigind(np.array(X_train[:,2]))
+        digind_train = getdigind(np.array(X_train[:,2]), y_train)
 
         nb_pola = stream[-1]
         train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla))
         
-        generator = torch.Generator().manual_seed(42)
-        sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
-        loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+        time_scale = []
+        if train:
+            generator = torch.Generator().manual_seed(42)
+            sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
+            loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+        else:
+            loader = tonic.datasets.DataLoader(train_dataset, num_workers=num_workers, shuffle=False)
+            for i in range(len(digind_train)-1):
+                time_scale.append(np.array(X_train[digind_train[i]:digind_train[i+1],2]))
         
-    return loader, train_dataset, nb_pola
+    return loader, train_dataset, nb_pola, time_scale
 
 def get_loader_barrel(name, 
                path, 
@@ -342,7 +361,7 @@ def fit_data(name,
                tau_cla,
                verbose = True)
         else:
-            loader, train_dataset, nb_pola = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+            loader, train_dataset, nb_pola, time_scale = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
         
         torch.set_default_tensor_type("torch.DoubleTensor")
         criterion = torch.nn.BCELoss(reduction="mean")
@@ -426,7 +445,7 @@ def predict_data(model,
                tau_cla,
                verbose = True)
         else:
-            loader, test_dataset, nb_pola = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+            loader, test_dataset, nb_pola, time_scale = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
@@ -449,9 +468,49 @@ def predict_data(model,
             pbar.update(1)
         pbar.close()
 
-    return likelihood, true_target
+    return likelihood, true_target, time_scale
 
 def classification_results(likelihood, true_target, thres, nb_test, verbose=False):
+    
+    matscor = np.zeros([len(true_target),30000])
+    matscor[:] = np.nan
+    sample = 0
+    lastac = 0
+    for likelihood_, true_target_ in zip(likelihood, true_target):
+        pred_target = np.zeros(len(likelihood_))
+        pred_target[:] = np.nan
+        if not thres:
+            pred_target = np.argmax(likelihood_, axis = 1)
+        else:
+            for i in range(len(likelihood_)):
+                if np.max(likelihood_[i])>thres:
+                    pred_target[i] = np.argmax(likelihood_[i])
+        for event in range(len(pred_target)):
+            if np.isnan(pred_target[event])==False:
+                matscor[sample,event] = pred_target[event]==true_target_
+        if pred_target[-1]==true_target_:
+            lastac+=1
+        sample+=1
+        
+    meanac = np.nanmean(matscor)
+    onlinac = np.nanmean(matscor, axis=0)
+    lastac/=nb_test
+    truepos = len(np.where(matscor==1)[0])
+    falsepos = len(np.where(matscor==0)[0])
+    
+    maxevents = np.where(np.isnan(onlinac)==0)[0][-1]
+    onlinac = onlinac[:maxevents]
+        
+    if verbose:
+        print(f'{np.mean(accuracy)=:.3f}')
+        plt.plot(onlinac[:limit]/onlincount[:limit]);
+        plt.xlabel('number of events');
+        plt.ylabel('online accuracy');
+        plt.title('LR classification results evolution as a function of the number of events');
+    
+    return meanac, onlinac, lastac, truepos, falsepos
+
+def classification_timescale(likelihood, true_target, time_scale, nb_test, verbose=False):
     
     matscor = np.zeros([len(true_target),30000])
     matscor[:] = np.nan
