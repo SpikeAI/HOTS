@@ -12,12 +12,12 @@ nb_test = 10000
 ds_ev = 1
 
 
-timesteps = np.arange(500,100000,100)
+timesteps = np.arange(5000,100000,100)
 nb_classes = 10
 
 results = [timesteps]
 
-namelist = ['raw', 'hot', 'homhots']
+namelist = ['raw', 'hots', 'homhots']
 for namnum, name in enumerate(namelist):
     f_name = f'{record_path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_timescale.pkl'
     with open(f_name, 'rb') as file:
@@ -34,7 +34,7 @@ for namnum, name in enumerate(namelist):
             ind = np.where(time_scale_<step)[0][-1]
             proba = np.mean(likelihood_[previous_ind:ind,:], axis=0)
             if np.isnan(proba[0]):
-                print(step)
+                print(step, likelihood_[previous_ind:ind,:])
             proba_timestep[idx,i,:] = proba
         i+=1
     AUC = np.zeros([len(timesteps)])
