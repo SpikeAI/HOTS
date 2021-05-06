@@ -14,6 +14,8 @@ ds_ev = 1
 
 timesteps = np.arange(500,100000,100)
 
+results = [timesteps]
+
 namelist = ['raw', 'hot', 'homhots']
 for namnum, name in enumerate(namelist):
     f_name = f'{record_path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_timescale.pkl'
@@ -38,5 +40,9 @@ for namnum, name in enumerate(namelist):
     for idx, step in enumerate(timesteps):
         #print(proba_timestep[idx,:,:].shape, np.array(true_timestep[idx]))
         AUC[idx] = roc_auc_score(LabelBinarizer().fit_transform(np.array(true_target)),proba_timestep[idx,:,:], multi_class='ovr')
-    #plt.plot(timesteps,AUC, '.', label=name)
-    #plt.legend()
+    results.append(AUC)
+
+f_name = f'{path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_AUC.pkl'
+
+with open(f_name, 'wb') as file:
+    pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
