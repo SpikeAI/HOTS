@@ -12,7 +12,7 @@ nb_test = 10000
 ds_ev = 1
 
 
-timesteps = np.arange(5000,100000,100)
+timesteps = np.arange(1000,300000,100)
 nb_classes = 10
 
 results = [timesteps]
@@ -33,8 +33,9 @@ for namnum, name in enumerate(namelist):
         for idx, step in enumerate(timesteps):
             ind = np.where(time_scale_<step)[0][-1]
             proba = np.mean(likelihood_[previous_ind:ind,:], axis=0)
+            
             if np.isnan(proba[0]):
-                print(step, likelihood_[previous_ind:ind,:])
+                proba = 0.25*np.ones([nb_classes])
             proba_timestep[idx,i,:] = proba
         i+=1
     AUC = np.zeros([len(timesteps)])
