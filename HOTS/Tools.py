@@ -224,7 +224,7 @@ def get_loader_barrel(name,
     "9": 35,
 }
     
-    def getdigind(t):
+    def getdigind_barrel(t):
             newdig = [0]
             for i in range(len(t)-1):
                 if t[i]>t[i+1]:
@@ -238,6 +238,7 @@ def get_loader_barrel(name,
         nb_digit = 40
 
     if name=='raw':
+        time_scale = []
         if train:
             path = "../Data/alphabet_ExtractedStabilized.mat"
             image_list=list(np.arange(0, 36))
@@ -266,7 +267,10 @@ def get_loader_barrel(name,
             for j in range(label[i][1]+1):
                 y_train.append(class_data[label[i][0]])
         y_train = np.array(y_train)
-        digind_train = getdigind(np.array(X_train[:,2]))
+        digind_train = getdigind_barrel(np.array(X_train[:,2]))
+         
+        for i in range(len(digind_train)-1):
+            time_scale.append(np.array(X_train[digind_train[i]:digind_train[i+1],2]))
         
     else:
         if name == 'homhots':
@@ -283,6 +287,7 @@ def get_loader_barrel(name,
                 f_name = '../Records/EXP_01_LagorceKmeans/test/2020-12-01_lagorce_first_None_False_[0.25, 1]_[4, 8, 16]_[10.0, 100.0, 1000.0]_[2, 4, 8]_False_40_None_LR.pkl'
             with open(f_name,'rb') as file:
                 stream = pickle.load(file)
+        print(name)
 
         events_train = np.zeros([len(stream[2]), 4])
             
@@ -293,15 +298,26 @@ def get_loader_barrel(name,
         X_train = events_train.astype(int)
         y_train = stream[4]
 
-        digind_train = getdigind(np.array(X_train[:,2]))
+        digind_train = getdigind_barrel(np.array(X_train[:,2]))
         nb_pola = stream[-1]
         
     train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla))
+    
     generator = torch.Generator().manual_seed(42)
     sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
     loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+    
+    time_scale = []
+    if train:
+        generator = torch.Generator().manual_seed(42)
+        sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
+        loader = tonic.datasets.DataLoader(train_dataset, sampler=sampler, num_workers=num_workers, shuffle=False)
+    else:
+        loader = tonic.datasets.DataLoader(train_dataset, num_workers=num_workers, shuffle=False)
+        for i in range(len(digind_train)-1):
+            time_scale.append(np.array(X_train[digind_train[i]:digind_train[i+1],2]))
         
-    return loader, train_dataset, nb_pola
+    return loader, train_dataset, nb_pola, time_scale
 
 def fit_data(name,
              timestr,
@@ -346,7 +362,7 @@ def fit_data(name,
     else:
         
         if dataset=='barrel':
-            loader, train_dataset, nb_pola = get_loader_barrel(name, 
+            loader, train_dataset, nb_pola, time_scale = get_loader_barrel(name, 
                path, 
                True, 
                filt, 
@@ -430,7 +446,7 @@ def predict_data(model,
     
     with torch.no_grad():
         if dataset=='barrel':
-            loader, train_dataset, nb_pola = get_loader_barrel(name, 
+            loader, train_dataset, nb_pola, time_scale = get_loader_barrel(name, 
                path, 
                False, 
                filt, 

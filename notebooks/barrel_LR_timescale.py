@@ -1,15 +1,50 @@
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import LabelBinarizer
+import sys
+import os
+sys.path.append('../HOTS')
+from Tools import fit_data, predict_data, classification_results
 import pickle
 import numpy as np
 
-record_path = '../Records/EXP_03_NMNIST/'
-timestr = '2021-03-29'
+record_path = '../Records/EXP_01_LagorceKmeans/'
+timestr = '2020-12-01'
 
-nbclust = [4, 8, 16]
-nb_train = 60000
-nb_test = 10000
+num_workers = 0
+learning_rate = 0.005
+beta1, beta2 = 0.9, 0.999
+betas = (beta1, beta2)
+num_epochs = 2 ** 5 + 1
+print(f'number of epochs: {num_epochs}')
 ds_ev = 1
+nbclust = [4, 8, 16]
+filt = 2
+tau = 10
+R = 2
+sigma = None
+homeinv = None
+jitter = None
+dataset = 'barrel'
+nb_train = 36
+nb_test = 40
+jitonic = None
+tau_cla = 50000
+namelist = ['raw', 'homhots']
+
+namelist = ['raw', 'hots', 'homhots']
+
+for name in namelist:
+    f_name = f'{record_path}{timestr}_LR_results_{name}_{nbclust}_36_40_{ds_ev}.pkl'
+    if os.path.isfile(f_name):
+        with open(f_name, 'rb') as file:
+            likelihood, true_target, time_scale = pickle.load(file)
+    else:
+        print(f'LR fit for {name}...')
+        model, loss  = fit_data(name,timestr,record_path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,num_workers=num_workers,verbose=False)
+        print(f'prediction for {name}...')
+        likelihood, true_target, time_scale = predict_data(model,name,timestr,record_path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,num_workers=num_workers, verbose=False)
+        with open(f_name, 'wb') as file:
+            pickle.dump([likelihood, true_target, time_scale], file, pickle.HIGHEST_PROTOCOL)
 
 
 timesteps = np.arange(500,100000,100)
@@ -17,7 +52,6 @@ nb_classes = 10
 
 results = [timesteps]
 
-namelist = ['raw', 'hot', 'homhots']
 for namnum, name in enumerate(namelist):
     f_name = f'{record_path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_timescale.pkl'
     with open(f_name, 'rb') as file:
