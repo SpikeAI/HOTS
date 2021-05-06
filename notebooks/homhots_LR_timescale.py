@@ -40,11 +40,10 @@ for namnum, name in enumerate(namelist):
         i+=1
     AUC = np.zeros([len(timesteps)])
     for idx, step in enumerate(timesteps):
-        #print(proba_timestep[idx,:,:].shape, np.array(true_timestep[idx]))
         AUC[idx] = roc_auc_score(LabelBinarizer().fit_transform(np.array(true_target)),proba_timestep[idx,:,:], multi_class='ovr')
     results.append(AUC)
 
-f_name = f'{path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_AUC.pkl'
+f_name = f'{record_path}{timestr}_LR_results_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_AUC.pkl'
 
 with open(f_name, 'wb') as file:
     pickle.dump([results], file, pickle.HIGHEST_PROTOCOL)
