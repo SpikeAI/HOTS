@@ -33,9 +33,11 @@ for namnum, name in enumerate(namelist):
         for idx, step in enumerate(timesteps):
             ind = np.where(time_scale_<step)[0][-1]
             proba = np.mean(likelihood_[previous_ind:ind,:], axis=0)
-            
             if np.isnan(proba[0]):
-                proba = 0.25*np.ones([nb_classes])
+                if step<11000:
+                    proba = 0.25*np.ones([nb_classes])
+                else:
+                    proba = proba_timestep[idx-1,i,:]
             proba_timestep[idx,i,:] = proba
         i+=1
     AUC = np.zeros([len(timesteps)])
