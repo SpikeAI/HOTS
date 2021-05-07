@@ -53,7 +53,7 @@ if __name__ == '__main__':
     ds_ev = 10
     tau_cla = 150000
     
-    for name in ['homhots','hots','raw']:
+    for name in ['homhots']:
         f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:
@@ -78,7 +78,7 @@ if __name__ == '__main__':
                     results_s[trial,id_jit] = meanac
                     results_s_last[trial,id_jit] = lastac
 
-                for id_jit, i in enumerate(jit_t):
+                for id_jit, j in enumerate(jit_t):
                     j = round(j,0)
                     jitonic = [j,None]
                     if j==0:
