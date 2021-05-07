@@ -73,7 +73,7 @@ if __name__ == '__main__':
                     jitonic = [None,i]
                     if i==0:
                         jitonic = [None,None]
-                    likelihood, true_target = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
+                    likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
                     meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test)
                     results_s[trial,id_jit] = meanac
                     results_s_last[trial,id_jit] = lastac
@@ -83,7 +83,7 @@ if __name__ == '__main__':
                     jitonic = [j,None]
                     if j==0:
                         jitonic = [None,None]
-                    likelihood, true_target = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
+                    likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
                     meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test)
                     results_t[trial,id_jit] = meanac
                     results_t_last[trial,id_jit] = lastac

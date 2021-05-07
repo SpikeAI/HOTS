@@ -12,7 +12,7 @@ nb_test = 10000
 ds_ev = 1
 
 
-timesteps = np.arange(1000,300000,100)
+timesteps = np.arange(1000,295000,100)
 nb_classes = 10
 
 results = [timesteps]
@@ -36,8 +36,6 @@ for namnum, name in enumerate(namelist):
             if np.isnan(proba[0]):
                 if step<11000:
                     proba = 0.25*np.ones([nb_classes])
-                else:
-                    proba = proba_timestep[idx-1,i,:]
             proba_timestep[idx,i,:] = proba
         i+=1
     AUC = np.zeros([len(timesteps)])
