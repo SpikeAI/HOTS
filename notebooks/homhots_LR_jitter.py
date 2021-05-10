@@ -19,8 +19,8 @@ if __name__ == '__main__':
     nbclust = [4, 8, 16]
     filt = 2
     #_______________JITTER_________________________
-    jit_s = np.arange(0,10,0.5)
-    jit_t = np.arange(0,300,10)
+    jit_s = np.array([0])#np.arange(0,10,0.5)
+    jit_t = np.arange(10,300,10)
     jit_s, jit_t = jit_s**2, jit_t**2
     #______________________________________________
 
@@ -28,12 +28,12 @@ if __name__ == '__main__':
     dataset = 'nmnist'
     nb_test = 10000
     nb_train = 60000
-    ds = 10
+    ds = 1000
     nb_test = nb_test//ds
     #nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
-    subset_size = ds
-    nb_trials = ds
+    subset_size = nb_test
+    nb_trials = 10
     #______________________________________________
     #_______________LR_PARAMETERS__________________
     num_workers = 0
@@ -77,7 +77,8 @@ if __name__ == '__main__':
                     meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test)
                     results_s[trial,id_jit] = meanac
                     results_s_last[trial,id_jit] = lastac
-
+                    print(jitonic, meanac, lastac)
+                    
                 for id_jit, j in enumerate(jit_t):
                     j = round(j,0)
                     jitonic = [j,None]
@@ -87,6 +88,6 @@ if __name__ == '__main__':
                     meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test)
                     results_t[trial,id_jit] = meanac
                     results_t_last[trial,id_jit] = lastac
-
+                    print(jitonic, meanac, lastac)
             with open(f_name, 'wb') as file:
                 pickle.dump([results_s, results_t, results_s_last, results_t_last], file, pickle.HIGHEST_PROTOCOL)

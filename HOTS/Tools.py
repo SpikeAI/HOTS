@@ -70,11 +70,15 @@ class LRtorch(torch.nn.Module):
     def forward(self, factors):
         return self.nl(self.linear(factors))
     
-def getdigind(t, l):
+def getdigind(t, l, jitter):
     newdig = [0]
     for i in range(len(t)-1):
-        if t[i]>t[i+1] or l[i]!=l[i+1]:
-            newdig.append(i+1)
+        if jitter:
+            if np.mean(t[i-100:i])>np.mean(t[i+1:i+1+100]) and l[i]!=l[i+1]:
+                newdig.append(i+1)
+        else:
+            if t[i]>t[i+1] or l[i]!=l[i+1]:
+                newdig.append(i+1)
     newdig.append(i+1)
     return newdig
 
@@ -150,8 +154,13 @@ def get_loader(name,
 
         X_train = events_train.astype(int)
         y_train = stream[4]
+        
+        if jitonic!=[None,None]:
+            jit = True
+        else:
+            jit = False
 
-        digind_train = getdigind(np.array(X_train[:,2]), y_train)
+        digind_train = getdigind(np.array(X_train[:,2]), y_train,jit)
 
         nb_pola = stream[-1]
         train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla))
@@ -267,6 +276,7 @@ def get_loader_barrel(name,
             for j in range(label[i][1]+1):
                 y_train.append(class_data[label[i][0]])
         y_train = np.array(y_train)
+        
         digind_train = getdigind_barrel(np.array(X_train[:,2]))
          
         for i in range(len(digind_train)-1):
