@@ -12,3 +12,5 @@ B:
 	$(JN) ../notebooks/HOTS_EXP_04_jitter.ipynb
 	git commit -m 'EXP 04 results' ../notebooks/HOTS_EXP_04_jitter.ipynb
 	git push
+C:
+	python3 2021-04-30-homhots_nmnist_jitter.py
