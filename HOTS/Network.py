@@ -80,7 +80,7 @@ class network(object):
 
         if jitonic[0] is not None:
             print(f'time jitter -> var = {jitonic[0]}')
-            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(variance=jitonic[0], integer_timestamps=False, clip_negative=True)])
+            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(variance=jitonic[0], integer_timestamps=False, clip_negative=True, sort_timestamps=True)])
 
         if jitonic == [None,None]:
             print('no jitter')
@@ -828,6 +828,22 @@ class network(object):
                     axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
                     axi.set_xticks(())
                     axi.set_yticks(())
+                    
+    def plotTS(self, maxpol=None):
+        N = []
+        for i in range(len(self.TS)):
+            N.append(int(self.TS[i].spatpmat.shape[1]))
+
+        fig = plt.figure(figsize=(16,5))
+        gs = fig.add_gridspec(len(self.TS), np.max(N), wspace=0.05, hspace=0.05)
+        fig.suptitle('Global TS of the different layers', size=20, y=0.95)
+
+        for i in range(len(self.TS)):
+            for k in range(N[i]):
+                axi = fig.add_subplot(gs[i,k])
+                axi.imshow(self.TS[i].spatpmat, cmap=plt.cm.plasma, interpolation='nearest')
+                axi.set_xticks(())
+                axi.set_yticks(())
 
 
 ##________________POOLING NETWORK____________________________________________________________

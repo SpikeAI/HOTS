@@ -19,9 +19,8 @@ if __name__ == '__main__':
     nbclust = [4, 8, 16]
     filt = 2
     #_______________JITTER_________________________
-    jit_s = np.array([0])#np.arange(0,10,0.5)
-    jit_t = np.arange(10,300,10)
-    jit_s, jit_t = jit_s**2, jit_t**2
+    jit_s = np.arange(0,40,1)
+    jit_t = np.arange(0,9000,100)
     #______________________________________________
 
     #_______________NB_OF_DIGITS___________________
