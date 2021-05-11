@@ -17,7 +17,7 @@ nb_classes = 10
 
 results = [timesteps]
 
-namelist = ['raw', 'hots', 'homhots']
+namelist = ['homhots', 'raw']
 for namnum, name in enumerate(namelist):
     f_name = f'{record_path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_timescale.pkl'
     with open(f_name, 'rb') as file:
