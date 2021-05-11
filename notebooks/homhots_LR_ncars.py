@@ -23,7 +23,7 @@ if __name__ == '__main__':
     nb_learn = 50
     nb_test = 4396 + 4211
     nb_train = 7940 + 7482
-    ds = 1
+    ds = 1000
     nb_test = nb_test//ds
     nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
@@ -51,10 +51,10 @@ if __name__ == '__main__':
         else:
             ds_ev = 1
             print(f'LR fit for {name}...')
-            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers,verbose=False)
+            model, loss  = fit_data(name,timestr,record_path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers,verbose=False)
             ds_ev = ds_ev_test
             print(f'prediction for {name}...')
-            likelihood, true_target, time_scale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers, verbose=False)
+            likelihood, true_target, time_scale = predict_data(model,name,timestr,record_path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers, verbose=False)
             with open(f_name, 'wb') as file:
                 pickle.dump([likelihood, true_target, time_scale], file, pickle.HIGHEST_PROTOCOL)
 
