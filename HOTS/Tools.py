@@ -46,6 +46,9 @@ class AERtoVectDataset(Dataset):
         elif name=='poker':
             self.classes = ["cl", "he", "di", "sp"]
             self.sensor_size = (35, 35)
+        elif name=='cars':
+            self.classes = ["background", "car"]
+            self.sensor_size = (120, 100)
         elif name=='barrel':
             self.sensor_size = (32, 32)
             self.classes = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"]
@@ -115,6 +118,14 @@ def get_loader(name,
             time_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
                                  )
+        elif dataset == 'cars':
+            train_dataset = tonic.datasets.NCARS(save_to='../Data/',
+                                  train=train, download=download,
+                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
+                                 )
+            time_dataset = tonic.datasets.NCARS(save_to='../Data/',
+                                  train=train, download=download,
+                                 )
         nb_pola = 2
         time_scale = []
         if subset_size is not None:
@@ -139,6 +150,7 @@ def get_loader(name,
         hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
         if not train:
             hotshom.date = timestr
+
         stream = hotshom.running(homeotest = homeotest, nb_digit=nb_digit, train=train, dataset = dataset, jitonic=jitonic, outstyle='LR', subset_size=subset_size, verbose = verbose)
         
         #TODO: save in event stream from network.running directly

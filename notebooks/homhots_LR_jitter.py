@@ -6,7 +6,7 @@ import pickle
 from os.path import isfile
 
 if __name__ == '__main__':
-    #_________NETWORK_PARAMETERS______________________
+    #_________NETWORK_PARAMETERS___________________
     #______________________________________________
     name = 'homhots'
     sigma = None
@@ -19,8 +19,8 @@ if __name__ == '__main__':
     nbclust = [4, 8, 16]
     filt = 2
     #_______________JITTER_________________________
-    jit_s = [0]#np.arange(0,40,1)
-    jit_t = np.arange(9000,20000,1000)
+    jit_s = jit_s = np.arange(0,40,5)
+    jit_t = np.arange(0,500000,10000)
     #______________________________________________
 
     #_______________NB_OF_DIGITS___________________
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     #nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
     subset_size = nb_test
-    nb_trials = 10
+    nb_trials = 1
     #______________________________________________
     #_______________LR_PARAMETERS__________________
     num_workers = 0

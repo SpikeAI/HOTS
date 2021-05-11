@@ -38,7 +38,7 @@ if __name__ == '__main__':
     print(f'number of epochs: {num_epochs}')
     #______________________________________________
     ds_ev_test = 1
-    tau_cla = 150000
+    tau_cla = 50000
 
     timestr = '2021-03-29'
     record_path = '../Records/EXP_04_NCARS/'
@@ -51,10 +51,12 @@ if __name__ == '__main__':
         else:
             ds_ev = 1
             print(f'LR fit for {name}...')
-            model, loss  = fit_data(name,timestr,record_path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers,verbose=False)
+            subset_size = nb_train
+            model, loss  = fit_data(name,timestr,record_path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=subset_size,num_workers=num_workers,verbose=False)
             ds_ev = ds_ev_test
+            subset_size = nb_test
             print(f'prediction for {name}...')
-            likelihood, true_target, time_scale = predict_data(model,name,timestr,record_path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers, verbose=False)
+            likelihood, true_target, time_scale = predict_data(model,name,timestr,record_path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=subset_size,num_workers=num_workers, verbose=False)
             with open(f_name, 'wb') as file:
                 pickle.dump([likelihood, true_target, time_scale], file, pickle.HIGHEST_PROTOCOL)
 
