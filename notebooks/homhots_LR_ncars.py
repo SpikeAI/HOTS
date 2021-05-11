@@ -44,7 +44,7 @@ if __name__ == '__main__':
     record_path = '../Records/EXP_04_NCARS/'
 
     for name in ['homhots','raw']:
-        f_name = f'{path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev_test}_timescale.pkl'
+        f_name = f'{record_path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev_test}_timescale.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:
                 likelihood, true_target, timescale = pickle.load(file)
