@@ -19,20 +19,21 @@ if __name__ == '__main__':
     nbclust = [4, 8, 16]
     filt = 2
     #_______________JITTER_________________________
-    jit_s = jit_s = np.arange(0,40,5)
-    jit_t = np.arange(0,500000,10000)
+    jit_s = np.arange(0,10,0.5)
+    jit_t = np.arange(0,500000,5000)
+    jit_s = jit_s**2
     #______________________________________________
 
     #_______________NB_OF_DIGITS___________________
     dataset = 'nmnist'
     nb_test = 10000
     nb_train = 60000
-    ds = 1000
+    ds = 1
     nb_test = nb_test//ds
     #nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
     subset_size = nb_test
-    nb_trials = 1
+    nb_trials = 10
     #______________________________________________
     #_______________LR_PARAMETERS__________________
     num_workers = 0
