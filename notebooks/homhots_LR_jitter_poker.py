@@ -6,35 +6,27 @@ import pickle
 from os.path import isfile
 
 if __name__ == '__main__':
-    #_________NETWORK_PARAMETERS___________________
+    #_________NETWORK_PARAMETERS______________________
     #______________________________________________
-    name = 'homhots'
     sigma = None
     pooling = False
     homeinv = False
     jitonic = [None,None] #[temporal, spatial]
     jitter = False
-    tau = 5
+    tau = 0.07
     R = 2
     nbclust = [4, 8, 16]
     filt = 2
-    #_______________JITTER_________________________
-    jit_s = np.arange(0,10,0.5)
-    jit_t = np.arange(0,100000,5000)
-    jit_s = jit_s**2
-    nb_class = 10
-    #______________________________________________
 
     #_______________NB_OF_DIGITS___________________
-    dataset = 'nmnist'
-    nb_test = 10000
-    nb_train = 60000
-    ds = 1000
+    dataset = 'poker'
+    nb_test = 20
+    nb_train = 48
+    ds = 1
     nb_test = nb_test//ds
-    #nb_train = nb_train//ds
+    nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
-    subset_size = nb_test
-    nb_trials = 10
+    nb_class = 4
     #______________________________________________
     #_______________LR_PARAMETERS__________________
     num_workers = 0
@@ -45,36 +37,41 @@ if __name__ == '__main__':
     #num_epochs = 2 ** 9 + 1
     print(f'number of epochs: {num_epochs}')
     #______________________________________________
+    #_______________JITTER_________________________
+    jit_s = np.arange(0,15,0.5)
+    jit_t = np.arange(0,15000,500)
+    jit_s = jit_s**2
+    nb_trials = 10
+    #______________________________________________
 
-
-    timestr = '2021-03-29'
-    path = '../Records/EXP_03_NMNIST/'
+    timestr = '2021-03-28'
+    path = '../Records/EXP_05_POKERDVS/'
     
     thres = None
-    ds_ev = 10
-    tau_cla = 150000
+    ds_ev = 1
+    tau_cla = 10000
     
-    for name in ['homhots']:
+    for name in ['homhots', 'raw']:
         f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:
-                likelihood, true_target = pickle.load(file)
+                results_s, results_t, results_s_last, results_t_last = pickle.load(file)
         else:
             print(f'LR fit for {name}...')
-            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas, tau_cla,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
+            model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas, tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers,verbose=False)
             
             ds_ev = 1
             results_s, results_s_last = np.zeros([2, nb_trials, len(jit_s)])
             results_t, results_t_last = np.zeros([2, nb_trials, len(jit_t)])
             for trial in range(nb_trials):
-                timestr = '2021-03-29_'+str(trial)
+                timestr = '2021-03-28_'+str(trial)
                 id_jit = 0
                 for id_jit, i in enumerate(jit_s):
                     i = round(i,2)
                     jitonic = [None,i]
                     if i==0:
                         jitonic = [None,None]
-                    likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
+                    likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers, verbose=False)
                     meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
                     results_s[trial,id_jit] = meanac
                     results_s_last[trial,id_jit] = lastac
@@ -85,7 +82,7 @@ if __name__ == '__main__':
                     jitonic = [j,None]
                     if j==0:
                         jitonic = [None,None]
-                    likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
+                    likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers, verbose=False)
                     meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
                     results_t[trial,id_jit] = meanac
                     results_t_last[trial,id_jit] = lastac

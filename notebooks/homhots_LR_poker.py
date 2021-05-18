@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     timestr = '2021-03-28'
     ds_ev_output = 1
-    record_path = '../Records/EXP_05_POKERDVS/models/'
+    record_path = '../Records/EXP_05_POKERDVS/'
     results = []
 
     for name in ['homhots','hots', 'raw']:

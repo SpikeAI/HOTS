@@ -75,10 +75,12 @@ class LRtorch(torch.nn.Module):
     
 def getdigind(t, l):
     newdig = [0]
+    i = 0
     for i in range(len(t)-1):
         if t[i]>t[i+1] or l[i]!=l[i+1]:
             newdig.append(i+1)
-    newdig.append(i+1)
+    if i>0:
+        newdig.append(i+1)
     return newdig
 
 def get_loader(name, 
@@ -364,6 +366,7 @@ def fit_data(name,
         else:
             hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
             name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
+            print(name_model)
 
     if isfile(name_model):
         if verbose:
@@ -499,40 +502,51 @@ def predict_data(model,
 
     return likelihood, true_target, time_scale
 
-def classification_results(likelihood, true_target, thres, nb_test, verbose=False):
-    
-    matscor = np.zeros([len(true_target),30000])
-    matscor[:] = np.nan
-    sample = 0
-    lastac = 0
-    for likelihood_, true_target_ in zip(likelihood, true_target):
-        pred_target = np.zeros(len(likelihood_))
-        pred_target[:] = np.nan
-        if not thres:
-            pred_target = np.argmax(likelihood_, axis = 1)
-        else:
-            for i in range(len(likelihood_)):
-                if np.max(likelihood_[i])>thres:
-                    pred_target[i] = np.argmax(likelihood_[i])
-        for event in range(len(pred_target)):
-            if np.isnan(pred_target[event])==False:
-                matscor[sample,event] = pred_target[event]==true_target_
-        if pred_target[-1]==true_target_:
-            lastac+=1
-        sample+=1
-        
-    meanac = np.nanmean(matscor)
-    onlinac = np.nanmean(matscor, axis=0)
-    lastac/=nb_test
-    truepos = len(np.where(matscor==1)[0])
-    falsepos = len(np.where(matscor==0)[0])
-    
-    maxevents = np.where(np.isnan(onlinac)==0)[0][-1]
-    onlinac = onlinac[:maxevents]
+def classification_results(likelihood, true_target, thres, nb_test, chance, verbose=False):
+
+    if not true_target:
+        meanac, onlinac, lastac, truepos, falsepos = chance, chance, chance, 0, 0
+    else:
+        matscor = np.zeros([len(true_target),30000])
+        matscor[:] = np.nan
+        sample = 0
+        lastac = 0
+
+        for likelihood_, true_target_ in zip(likelihood, true_target):
+            if len(likelihood_)==0:
+                sample+=1
+            else:
+                pred_target = np.zeros(len(likelihood_))
+                pred_target[:] = np.nan
+                if not thres:
+                    pred_target = np.argmax(likelihood_, axis = 1)
+                else:
+                    for i in range(len(likelihood_)):
+                        if np.max(likelihood_[i])>thres:
+                            pred_target[i] = np.argmax(likelihood_[i])
+                for event in range(len(pred_target)):
+                    if np.isnan(pred_target[event])==False:
+                        matscor[sample,event] = pred_target[event]==true_target_
+                if pred_target[-1]==true_target_:
+                    lastac+=1
+                sample+=1
+
+        meanac = np.nanmean(matscor)
+        onlinac = np.nanmean(matscor, axis=0)
+        lastac/=nb_test
+        truepos = len(np.where(matscor==1)[0])
+        falsepos = len(np.where(matscor==0)[0])
+
+        maxevents = np.where(np.isnan(onlinac)==0)[0][-1]
+        onlinac = onlinac[:maxevents]
+
+        if len(true_target)<nb_test:
+            meanac = (len(true_target)*meanac + (nb_test-len(true_target))*chance)/nb_test
+            onlinac = (onlinac + (nb_test-len(true_target))*chance)/nb_test  
         
     if verbose:
         print(f'{np.mean(accuracy)=:.3f}')
-        plt.plot(onlinac[:limit]/onlincount[:limit]);
+        plt.plot(onlinac);
         plt.xlabel('number of events');
         plt.ylabel('online accuracy');
         plt.title('LR classification results evolution as a function of the number of events');
@@ -540,7 +554,7 @@ def classification_results(likelihood, true_target, thres, nb_test, verbose=Fals
     return meanac, onlinac, lastac, truepos, falsepos
 
 def classification_timescale(likelihood, true_target, time_scale, nb_test, verbose=False):
-    
+
     matscor = np.zeros([len(true_target),30000])
     matscor[:] = np.nan
     sample = 0

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     nb_learn = 50
     nb_test = 4396 + 4211
     nb_train = 7940 + 7482
-    ds = 1000
+    ds = 1
     nb_test = nb_test//ds
     nb_train = nb_train//ds
     print(f'training set size: {nb_train} - testing set: {nb_test}')
@@ -48,8 +48,9 @@ if __name__ == '__main__':
         if isfile(f_name):
             with open(f_name, 'rb') as file:
                 likelihood, true_target, timescale = pickle.load(file)
+        
         else:
-            ds_ev = 1
+            ds_ev = 10
             print(f'LR fit for {name}...')
             subset_size = nb_train
             model, loss  = fit_data(name,timestr,record_path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=subset_size,num_workers=num_workers,verbose=False)
@@ -60,4 +61,7 @@ if __name__ == '__main__':
             with open(f_name, 'wb') as file:
                 pickle.dump([likelihood, true_target, time_scale], file, pickle.HIGHEST_PROTOCOL)
 
+        meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test)
+        print(f'Mean accuracy for {name}:{meanac}')
+        print(f'Accuracy for {name} at the last event:{lastac}')
     #return likelihood, true_target, time_scale
