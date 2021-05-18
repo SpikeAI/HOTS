@@ -506,6 +506,8 @@ def classification_results(likelihood, true_target, thres, nb_test, chance, verb
 
     if not true_target:
         meanac, onlinac, lastac, truepos, falsepos = chance, chance, chance, 0, 0
+    elif len(true_target)>nb_test:
+        meanac, onlinac, lastac, truepos, falsepos = np.nan, np.nan, np.nan, np.nan, np.nan
     else:
         matscor = np.zeros([len(true_target),30000])
         matscor[:] = np.nan
