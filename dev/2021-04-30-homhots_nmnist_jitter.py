@@ -29,7 +29,7 @@ jit_s = jit_s**2
 dataset = 'nmnist'
 nb_test = 10000
 nb_train = 60000
-ds = 1000
+ds = 10
 nb_test = nb_test//ds
 nb_trials = 10
 #nb_train = nb_train//ds
@@ -55,7 +55,7 @@ for name in [ 'hots', 'homhots']:
     trainhistomap = hotshom.running(homeotest=homeotest, nb_digit=nb_train, outstyle='histo')
     print(f'{name} testing...')
 
-    for trial in [0]:#range(nb_trials):
+    for trial in range(nb_trials):
         hotshom.date = '2021-03-29_'+str(trial)
         id_jit = 0
         for i in jit_s:
