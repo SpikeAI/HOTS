@@ -67,7 +67,7 @@ if __name__ == '__main__':
             ds_ev = 1
             results_s, results_s_last = np.zeros([2, nb_trials, len(var_jit_s)])
             results_t, results_t_last = np.zeros([2, nb_trials, len(std_jit_t)])
-            for trial in [6:]:
+            for trial in [6,7,8,9]:
                 timestr = '2021-03-29_'+str(trial)
                 id_jit = 0
                 for id_jit, jit_s in enumerate(var_jit_s):
