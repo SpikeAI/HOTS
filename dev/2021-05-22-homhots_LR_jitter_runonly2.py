@@ -67,7 +67,7 @@ if __name__ == '__main__':
             ds_ev = 1
             results_s, results_s_last = np.zeros([2, nb_trials, len(var_jit_s)])
             results_t, results_t_last = np.zeros([2, nb_trials, len(std_jit_t)])
-            for trial in range(nb_trials):
+            for trial in [3:6]:
                 timestr = '2021-03-29_'+str(trial)
                 id_jit = 0
                 for id_jit, jit_s in enumerate(var_jit_s):
@@ -76,10 +76,10 @@ if __name__ == '__main__':
                     if jit_s==0:
                         jitonic = [None,None]
                     likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
-                    meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
-                    results_s[trial,id_jit] = meanac
-                    results_s_last[trial,id_jit] = lastac
-                    print(jitonic, meanac, lastac)
+                    #meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
+                    #results_s[trial,id_jit] = meanac
+                    #results_s_last[trial,id_jit] = lastac
+                    #print(jitonic, meanac, lastac)
                     
                 for id_jit, jit_t in enumerate(std_jit_t):
                     jit_t = round(jit_t,0)
@@ -87,10 +87,10 @@ if __name__ == '__main__':
                     if jit_t==0:
                         jitonic = [None,None]
                     likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
-                    meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
-                    results_t[trial,id_jit] = meanac
-                    results_t_last[trial,id_jit] = lastac
-                    print(jitonic, meanac, lastac)
+                    #meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
+                    #results_t[trial,id_jit] = meanac
+                    #results_t_last[trial,id_jit] = lastac
+                    #print(jitonic, meanac, lastac)
                     
-            with open(f_name, 'wb') as file:
-                pickle.dump([results_s, results_t, results_s_last, results_t_last, std_jit_s, std_jit_t], file, pickle.HIGHEST_PROTOCOL)
+            #with open(f_name, 'wb') as file:
+                #pickle.dump([results_s, results_t, results_s_last, results_t_last, std_jit_s, std_jit_t], file, pickle.HIGHEST_PROTOCOL)

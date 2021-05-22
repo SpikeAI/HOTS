@@ -20,9 +20,9 @@ kNN = 12
 #______________________________________________
 
 #_______________JITTER_________________________
-jit_s = np.arange(0,10,0.5)
-jit_t = np.arange(0,100000,5000)
-jit_s = jit_s**2
+std_jit_s = np.arange(0,10,0.5)
+std_jit_t = np.arange(0,100000,5000)
+var_jit_s = std_jit_s**2
 #______________________________________________
 
 #_______________NB_OF_DIGITS___________________
@@ -42,11 +42,10 @@ record_path = '../Records/EXP_03_NMNIST/'
 print('classic HOTS and homeoHOTS')
 for name in [ 'hots', 'homhots']:
     
-    score_s1 = np.zeros([nb_trials, len(jit_s)])
-    score_t1 = np.zeros([nb_trials, len(jit_t)])
-    score_s12 = np.zeros([nb_trials, len(jit_s)])
-    score_t12 = np.zeros([nb_trials, len(jit_t)])
-    
+    score_s1 = np.zeros([nb_trials, len(var_jit_s)])
+    score_t1 = np.zeros([nb_trials, len(std_jit_t)])
+    score_s12 = np.zeros([nb_trials, len(var_jit_s)])
+    score_t12 = np.zeros([nb_trials, len(std_jit_t)])
     
     f_name = f'{record_path}{timestr}_results_jitter_{nb_test}_histo_{name}_std.pkl'
     print(f'{name} clustering...')
@@ -57,25 +56,22 @@ for name in [ 'hots', 'homhots']:
 
     for trial in range(nb_trials):
         hotshom.date = '2021-03-29_'+str(trial)
-        id_jit = 0
-        for i in jit_s:
-            i = round(i,2)
-            jitonic = [None,i]
-            if i==0:
+        for id_jit, jit_s in enumerate(var_jit_s):
+            jit_s = round(jit_s,2)
+            jitonic = [None,jit_s]
+            if jit_s==0:
                 jitonic = [None,None]
             testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outstyle = 'histo', subset_size = nb_test)
             
-            kNN12_score = knn(trainhistomap,testhistomap, k = kNN, weights = 'distance')
-            kNN1_score = knn(trainhistomap,testhistomap, k = 1, weights = 'distance')
+            kNN12_score = knn(trainhistomap, testhistomap, k = kNN, weights = 'distance')
+            kNN1_score = knn(trainhistomap, testhistomap, k = 1, weights = 'distance')
             score_s1[trial,id_jit] = kNN1_score
             score_s12[trial,id_jit] = kNN12_score
-            id_jit+=1
             
-        id_jit = 0
-        for j in jit_t:
-            j = round(j,0)
-            jitonic = [j,None]
-            if j==0:
+        for id_jit, jit_t in enumerate(std_jit_t):
+            jit_t = round(jit_t,0)
+            jitonic = [jit_t,None]
+            if jit_t==0:
                 jitonic = [None,None]
             testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outstyle = 'histo', subset_size = nb_test)
             
@@ -83,13 +79,6 @@ for name in [ 'hots', 'homhots']:
             kNN1_score = knn(trainhistomap,testhistomap, k = 1, weights = 'distance')
             score_t1[trial,id_jit] = kNN1_score
             score_t12[trial,id_jit] = kNN12_score
-            id_jit+=1
             
     with open(f_name, 'wb') as file:
-        pickle.dump([score_t1, score_t12, jit_t, score_s1, score_s12, jit_s], file, pickle.HIGHEST_PROTOCOL)
-            
-            
-    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
-    #JS_score = histoscore(trainhistomap,testhistomap, verbose = True)
-    #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histav')
-    #JS_score = histoscore_lagorce(trainhistomap,testhistomap, verbose = True)
+        pickle.dump([score_t1, score_t12, std_jit_t, score_s1, score_s12, std_jit_s], file, pickle.HIGHEST_PROTOCOL)
