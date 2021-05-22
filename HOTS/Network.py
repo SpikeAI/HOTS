@@ -23,20 +23,19 @@ class network(object):
              .plotactiv -> plots the activation map of each layer
              """
 
-    def __init__(self,  timestr = None,
-                        # architecture of the network (default=Lagorce2017)
-                        nbclust = [4, 8, 16],
+    def __init__(self,  timestr = None, # date of creation of the network
+                        nbclust = [4, 8, 16], # architecture of the network (default=Lagorce2017)
                         # parameters of time-surfaces and datasets
-                        tau = 10, #timestamp en millisec/
-                        K_tau = 10,
+                        tau = 10, #time constant for exponential decay in millisec
+                        K_tau = 10, # multiplication factor for tau -> tau_L+1 = K_tau*tau_L
                         decay = 'exponential', # among ['exponential', 'linear']
-                        nbpolcam = 2,
-                        R = 2,
-                        K_R = 2,
-                        camsize = (34, 34),
+                        nbpolcam = 2, # number of polarities for the event stream as input of the network
+                        R = 2, # parameter defining the spatial size of the time surface
+                        K_R = 2, # multiplication factor for R -> R_L+1 = K_R*R_L
+                        camsize = (34, 34), # size of the pixel grid that recorded the event stream
                         # functional parameters of the network
-                        algo = 'lagorce', # among ['lagorce', 'maro', 'mpursuit']
-                        krnlinit = 'rdn',
+                        algo = 'lagorce', # neural computation rule - among ['lagorce', 'maro', 'mpursuit']
+                        krnlinit = 'rdn', # kernel initialization parameter - among ['rdn', 'first']
                         hout = False, #works only with mpursuit
                         homeo = False,
                         homparam = [.25, 1],
@@ -506,9 +505,102 @@ class network(object):
                 output = pickle.load(file)
             loaded = True
         return output, loaded
+    
+##___________________PLOTTING________________________________________________________________
+##___________________________________________________________________________________________
+
+    def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
+        '''
+        '''
+        N = []
+        P = [2]
+        R2 = []
+        for i in range(len(self.L)):
+            N.append(int(self.L[i].kernel.shape[1]))
+            if i>0:
+                P.append(int(self.L[i-1].kernel.shape[1]))
+            R2.append(int(self.L[i].kernel.shape[0]/P[i]))
+        if maxpol is None:
+            maxpol=P[-1]
+
+        fig = plt.figure(figsize=(16,9))
+        gs = fig.add_gridspec(np.sum(P)+hisiz, np.sum(N)+len(self.L)-1, wspace=0.05, hspace=0.05)
+        if self.L[-1].homeo:
+            fig.suptitle('Activation histograms and associated time surfaces with homeostasis', size=20, y=0.95)
+        else:
+            fig.suptitle('Activation histograms and associated time surfaces for original hots', size=20, y=0.95)
+
+        for i in range(len(self.L)):
+            ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
+            plt.bar(np.arange(N[i]), self.stats[i].histo/np.sum(self.stats[i].histo), width=1, align='edge', ec="k")
+            ax.set_xticks(())
+            #if i>0:
+                #ax.set_yticks(())
+            ax.set_title('Layer '+str(i+1), fontsize=16)
+            plt.xlim([0,N[i]])
+            yhis = 1.1*max(self.stats[i].histo/np.sum(self.stats[i].histo))
+            plt.ylim([0,yhis])
+
+        #f3_ax1.set_title('gs[0, :]')
+            for k in range(N[i]):
+                vmaxi = max(self.L[i].kernel[:,k])
+                for j in range(P[i]):
+                    if j>maxpol-1:
+                        pass
+                    else:
+                        axi = fig.add_subplot(gs[j+hisiz,k+1*i+int(np.sum(N[:i]))])
+                        krnl = self.L[i].kernel[j*R2[i]:(j+1)*R2[i],k].reshape((int(np.sqrt(R2[i])), int(np.sqrt(R2[i]))))
+
+                        axi.imshow(krnl, vmin=0, vmax=vmaxi, cmap=plt.cm.plasma, interpolation='nearest')
+                        axi.set_xticks(())
+                        axi.set_yticks(())
+        plt.show()
+        return fig
+
+    def plotconv(self):
+        fig = plt.figure(figsize=(15,5))
+        for i in range(len(self.L)):
+            ax1 = fig.add_subplot(1,len(self.stats),i+1)
+            x = np.arange(len(self.stats[i].dist))
+            ax1.plot(x, self.stats[i].dist)
+            ax1.set(ylabel='error', xlabel='events (x'+str(self.stats[i].nbqt)+')', title='Mean error (eucl. dist) on '+str(self.stats[i].nbqt)+' events - Layer '+str(i+1))
+        #ax1.title.set_color('w')
+            ax1.tick_params(axis='both')
+
+    def plotactiv(self, maxpol=None):
+        N = []
+        for i in range(len(self.L)):
+            N.append(int(self.L[i].kernel.shape[1]))
+
+        fig = plt.figure(figsize=(16,5))
+        gs = fig.add_gridspec(len(self.L), np.max(N), wspace=0.05, hspace=0.05)
+        fig.suptitle('Activation maps of the different layers', size=20, y=0.95)
+
+        for i in range(len(self.L)):
+            for k in range(N[i]):
+                    axi = fig.add_subplot(gs[i,k])
+                    axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
+                    axi.set_xticks(())
+                    axi.set_yticks(())
+                    
+    def plotTS(self, maxpol=None):
+        N = []
+        for i in range(len(self.TS)):
+            N.append(int(self.TS[i].spatpmat.shape[1]))
+
+        fig = plt.figure(figsize=(16,5))
+        gs = fig.add_gridspec(len(self.TS), np.max(N), wspace=0.05, hspace=0.05)
+        fig.suptitle('Global TS of the different layers', size=20, y=0.95)
+
+        for i in range(len(self.TS)):
+            for k in range(N[i]):
+                axi = fig.add_subplot(gs[i,k])
+                axi.imshow(self.TS[i].spatpmat, cmap=plt.cm.plasma, interpolation='nearest')
+                axi.set_xticks(())
+                axi.set_yticks(())
 
 
-##___________REPRODUCING RESULTS FROM LAGORCE 2017___________________________________________
+##___________REPRODUCING RESULTS FROM LAGORCE 2017 IN DVS_BARREL DATASET_____________________
 ##___________________________________________________________________________________________
 
     def learninglagorce(self, nb_cycle=3, diginit=True, filtering=None):
@@ -748,254 +840,7 @@ class network(object):
             self.date = '2020-12-01'
             self.save_output(eventsout, False, 'barrel', len(label), False, None, 'LR', None)
 
-        return labelmap
-
-##___________________PLOTTING________________________________________________________________
-##___________________________________________________________________________________________
-
-    def plotlayer(self, maxpol=None, hisiz=2, yhis=0.3):
-        '''
-        '''
-        N = []
-        P = [2]
-        R2 = []
-        for i in range(len(self.L)):
-            N.append(int(self.L[i].kernel.shape[1]))
-            if i>0:
-                P.append(int(self.L[i-1].kernel.shape[1]))
-            R2.append(int(self.L[i].kernel.shape[0]/P[i]))
-        if maxpol is None:
-            maxpol=P[-1]
-
-        fig = plt.figure(figsize=(16,9))
-        gs = fig.add_gridspec(np.sum(P)+hisiz, np.sum(N)+len(self.L)-1, wspace=0.05, hspace=0.05)
-        if self.L[-1].homeo:
-            fig.suptitle('Activation histograms and associated time surfaces with homeostasis', size=20, y=0.95)
-        else:
-            fig.suptitle('Activation histograms and associated time surfaces for original hots', size=20, y=0.95)
-
-        for i in range(len(self.L)):
-            ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
-            plt.bar(np.arange(N[i]), self.stats[i].histo/np.sum(self.stats[i].histo), width=1, align='edge', ec="k")
-            ax.set_xticks(())
-            #if i>0:
-                #ax.set_yticks(())
-            ax.set_title('Layer '+str(i+1), fontsize=16)
-            plt.xlim([0,N[i]])
-            yhis = 1.1*max(self.stats[i].histo/np.sum(self.stats[i].histo))
-            plt.ylim([0,yhis])
-
-        #f3_ax1.set_title('gs[0, :]')
-            for k in range(N[i]):
-                vmaxi = max(self.L[i].kernel[:,k])
-                for j in range(P[i]):
-                    if j>maxpol-1:
-                        pass
-                    else:
-                        axi = fig.add_subplot(gs[j+hisiz,k+1*i+int(np.sum(N[:i]))])
-                        krnl = self.L[i].kernel[j*R2[i]:(j+1)*R2[i],k].reshape((int(np.sqrt(R2[i])), int(np.sqrt(R2[i]))))
-
-                        axi.imshow(krnl, vmin=0, vmax=vmaxi, cmap=plt.cm.plasma, interpolation='nearest')
-                        axi.set_xticks(())
-                        axi.set_yticks(())
-        plt.show()
-        return fig
-
-    def plotconv(self):
-        fig = plt.figure(figsize=(15,5))
-        for i in range(len(self.L)):
-            ax1 = fig.add_subplot(1,len(self.stats),i+1)
-            x = np.arange(len(self.stats[i].dist))
-            ax1.plot(x, self.stats[i].dist)
-            ax1.set(ylabel='error', xlabel='events (x'+str(self.stats[i].nbqt)+')', title='Mean error (eucl. dist) on '+str(self.stats[i].nbqt)+' events - Layer '+str(i+1))
-        #ax1.title.set_color('w')
-            ax1.tick_params(axis='both')
-
-    def plotactiv(self, maxpol=None):
-        N = []
-        for i in range(len(self.L)):
-            N.append(int(self.L[i].kernel.shape[1]))
-
-        fig = plt.figure(figsize=(16,5))
-        gs = fig.add_gridspec(len(self.L), np.max(N), wspace=0.05, hspace=0.05)
-        fig.suptitle('Activation maps of the different layers', size=20, y=0.95)
-
-        for i in range(len(self.L)):
-            for k in range(N[i]):
-                    axi = fig.add_subplot(gs[i,k])
-                    axi.imshow(self.stats[i].actmap[k].T, cmap=plt.cm.plasma, interpolation='nearest')
-                    axi.set_xticks(())
-                    axi.set_yticks(())
-                    
-    def plotTS(self, maxpol=None):
-        N = []
-        for i in range(len(self.TS)):
-            N.append(int(self.TS[i].spatpmat.shape[1]))
-
-        fig = plt.figure(figsize=(16,5))
-        gs = fig.add_gridspec(len(self.TS), np.max(N), wspace=0.05, hspace=0.05)
-        fig.suptitle('Global TS of the different layers', size=20, y=0.95)
-
-        for i in range(len(self.TS)):
-            for k in range(N[i]):
-                axi = fig.add_subplot(gs[i,k])
-                axi.imshow(self.TS[i].spatpmat, cmap=plt.cm.plasma, interpolation='nearest')
-                axi.set_xticks(())
-                axi.set_yticks(())
-
-
-##________________POOLING NETWORK____________________________________________________________
-##___________________________________________________________________________________________
-
-
-class poolingnetwork(network):
-
-    def __init__(self,
-                        # architecture of the network (default=Lagorce2017)
-                        nbclust = 4,
-                        K_clust = 2, # nbclust(L+1) = K_clust*nbclust(L)
-                        nblay = 3,
-                        # parameters of time-surfaces and datasets
-                        tau = 10, #timestamp en millisec/
-                        K_tau = 10,
-                        decay = 'exponential', # among ['exponential', 'linear']
-                        nbpolcam = 2,
-                        R = 2,
-                        K_R = 2,
-                        camsize = (34, 34),
-                        # functional parameters of the network
-                        algo = 'lagorce', # among ['lagorce', 'maro', 'mpursuit']
-                        krnlinit = 'rdn',
-                        hout = False, #works only with mpursuit
-                        homeo = False,
-                        homparam = [.25, 1],
-                        pola = True,
-                        to_record = True,
-                        filt = 2,
-                        sigma = None,
-                        jitter = False,
-                        homeinv = False,
-
-                        Kstride = 2,
-                        Kevtstr = False,
-                ):
-        super().__init__(
-                        nbclust = nbclust,
-                        K_clust = K_clust,
-                        nblay = nblay,
-                        tau = tau,
-                        K_tau = K_tau,
-                        decay = decay,
-                        nbpolcam = nbpolcam,
-                        R = R,
-                        K_R = K_R,
-                        camsize = camsize,
-                        algo = algo,
-                        krnlinit = krnlinit,
-                        hout = hout,
-                        homeo = homeo,
-                        homparam = homparam,
-                        pola = pola,
-                        to_record = to_record,
-                        filt = filt,
-                        sigma = sigma,
-                        jitter = jitter,
-                        homeinv = homeinv
-                )
-
-        self.Kstride = Kstride
-        self.Kevtstr = Kevtstr
-        for lay in range(1,nblay):
-            camsize = np.array(camsize)//Kstride
-            self.TS[lay] = TimeSurface(R, tau*(K_tau**lay), camsize, nbclust*(K_clust**(lay-1)), pola, filt, sigma)
-            self.L[lay] = layer(R, 16, pola, nbclust*(K_clust**(lay-1)), homeo, homparam, homeinv, algo, hout, krnlinit, to_record)
-            self.stats[lay] = stats(nbclust*(K_clust**lay), camsize)
-
- ##____________________________________________________________________________________
-
-    def run(self, x, y, t, p, learn=False, to_record=False):
-        lay = 0
-        activout=False
-        while lay<len(self.TS):
-            timesurf, activ = self.TS[lay].addevent(x, y, t, p)
-            if activ:
-                p, dist = self.L[lay].run(timesurf, learn)
-                if to_record:
-                    self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                    self.stats[lay].actmap[int(np.argmax(p)),self.TS[lay].x,self.TS[lay].y]=1
-                if self.jitter:
-                    x,y = spatial_jitter(x,y,self.TS[0].camsize)
-                # pooling
-                if lay<len(self.TS)-1:
-                    x = min(x//self.Kstride,self.TS[lay+1].camsize[0]-1)
-                    y = min(y//self.Kstride,self.TS[lay+1].camsize[1]-1)
-                lay+=1
-                if lay==len(self.TS):
-                    activout=True
-            else:
-                lay = len(self.TS)
-        out = [x,y,t,np.argmax(p)]
-        return out, activout
-
-
-    def learning1by1(self, nb_digit=2, dataset='nmnist', diginit=True, filtering=None):
-
-        loader, ordering, classes = self.load(dataset)
-        nbclass = len(classes)
-        #eventslist = [next(iter(loader))[0] for i in range(nb_digit)]
-        eventslist = []
-        nbloadz = np.zeros([nbclass])
-        while np.sum(nbloadz)<nb_digit*nbclass:
-            loadev, loadtar = next(iter(loader))
-            if nbloadz[loadtar]<nb_digit:
-                eventslist.append(loadev)
-                nbloadz[loadtar]+=1
-
-        for n in range(len(self.L)):
-            pbar = tqdm(total=nb_digit*nbclass)
-            for idig in range(nb_digit*nbclass):
-                pbar.update(1)
-                events = eventslist[idig]
-                if diginit:
-                    for l in range(n+1):
-                        self.TS[l].spatpmat[:] = 0
-                        self.TS[l].iev = 0
-                for iev in range(events.shape[1]):
-                    x,y,t,p =   events[0,iev,ordering.find("x")].item(), \
-                                events[0,iev,ordering.find("y")].item(), \
-                                events[0,iev,ordering.find("t")].item(), \
-                                events[0,iev,ordering.find("p")].item()
-                    lay=0
-                    while lay < n+1:
-                        if lay==n:
-                            learn=True
-                        else:
-                            learn=False
-                        timesurf, activ = self.TS[lay].addevent(x, y, t, p)
-                        if lay==0 or filtering=='all':
-                            activ2=activ
-                        if activ2 and np.sum(timesurf)>0:
-                        #if activ==True:
-                            p, dist = self.L[lay].run(timesurf, learn)
-                            if learn:
-                                self.stats[lay].update(p, self.L[lay].kernel, timesurf, dist)
-                            if self.jitter:
-                                x,y = spatial_jitter(x,y,self.TS[0].camsize)
-                            # no stride for the last layer
-                            if lay<len(self.TS)-1:
-                                x = min(x//self.Kstride,self.TS[lay+1].camsize[0]-1)
-                                y = min(y//self.Kstride,self.TS[lay+1].camsize[1]-1)
-                            lay += 1
-                        else:
-                            lay = n+1
-            pbar.close()
-        for l in range(len(self.L)):
-            self.stats[l].histo = self.L[l].cumhisto.copy()
-        return loader, ordering
-
-
-#__________________OLD_CODE___________________________________________________________________________
-#_____________________________________________________________________________________________________
+        return labelmap         
 
 def LoadFromMat(path, image_number, OutOnePolarity=False, verbose=0):
     '''

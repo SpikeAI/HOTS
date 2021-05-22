@@ -63,12 +63,12 @@ for name in [ 'hots', 'homhots']:
             jitonic = [None,i]
             if i==0:
                 jitonic = [None,None]
-            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outstyle = 'LR', subset_size = nb_test)
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outstyle = 'histo', subset_size = nb_test)
             
-            #kNN12_score = knn(trainhistomap,testhistomap, k = kNN, weights = 'distance')
-            #kNN1_score = knn(trainhistomap,testhistomap, k = 1, weights = 'distance')
-            #score_s1[trial,id_jit] = kNN1_score
-            #score_s12[trial,id_jit] = kNN12_score
+            kNN12_score = knn(trainhistomap,testhistomap, k = kNN, weights = 'distance')
+            kNN1_score = knn(trainhistomap,testhistomap, k = 1, weights = 'distance')
+            score_s1[trial,id_jit] = kNN1_score
+            score_s12[trial,id_jit] = kNN12_score
             id_jit+=1
             
         id_jit = 0
@@ -77,16 +77,16 @@ for name in [ 'hots', 'homhots']:
             jitonic = [j,None]
             if j==0:
                 jitonic = [None,None]
-            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outstyle = 'LR', subset_size = nb_test)
+            testhistomap = hotshom.running(homeotest = homeotest, train=False, nb_digit=nb_test, jitonic=jitonic, outstyle = 'histo', subset_size = nb_test)
             
-            #kNN12_score = knn(trainhistomap,testhistomap, k = kNN, weights = 'distance')
-            #kNN1_score = knn(trainhistomap,testhistomap, k = 1, weights = 'distance')
-            #score_t1[trial,id_jit] = kNN1_score
-            #score_t12[trial,id_jit] = kNN12_score
+            kNN12_score = knn(trainhistomap,testhistomap, k = kNN, weights = 'distance')
+            kNN1_score = knn(trainhistomap,testhistomap, k = 1, weights = 'distance')
+            score_t1[trial,id_jit] = kNN1_score
+            score_t12[trial,id_jit] = kNN12_score
             id_jit+=1
             
-    #with open(f_name, 'wb') as file:
-            #pickle.dump([score_t1, score_t12, jit_t, score_s1, score_s12, jit_s], file, pickle.HIGHEST_PROTOCOL)
+    with open(f_name, 'wb') as file:
+        pickle.dump([score_t1, score_t12, jit_t, score_s1, score_s12, jit_s], file, pickle.HIGHEST_PROTOCOL)
             
             
     #trainhistomap = hotshom.running(homeotest=homeotest, nb_digit = nb_train, outstyle='histo')
