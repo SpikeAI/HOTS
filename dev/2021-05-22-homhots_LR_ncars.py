@@ -61,7 +61,7 @@ if __name__ == '__main__':
             with open(f_name, 'wb') as file:
                 pickle.dump([likelihood, true_target, time_scale], file, pickle.HIGHEST_PROTOCOL)
 
-        meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test)
+        meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, None, nb_test, 1/2)
         print(f'Mean accuracy for {name}:{meanac}')
         print(f'Accuracy for {name} at the last event:{lastac}')
     #return likelihood, true_target, time_scale
