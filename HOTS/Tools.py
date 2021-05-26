@@ -366,7 +366,7 @@ def fit_data(name,
         if dataset == 'barrel':
             name_model = f'{path}{name}_LR_{nb_digit}_{ds_ev}.pkl'
         else:
-            hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, verbose=verbose)
+            hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, nb_learn = nb_learn, verbose=verbose)
             name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
             print(name_model)
 
