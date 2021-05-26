@@ -53,7 +53,7 @@ if __name__ == '__main__':
             ds_ev = 10
             print(f'LR fit for {name}...')
             subset_size = nb_train
-            model, loss  = fit_data(name,timestr,record_path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=subset_size,num_workers=num_workers,verbose=False)
+            model, loss  = fit_data(name,timestr,record_path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=subset_size,num_workers=num_workers, nb_learn = nb_learn,verbose=False)
             ds_ev = ds_ev_test
             subset_size = nb_test
             print(f'prediction for {name}...')
