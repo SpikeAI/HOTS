@@ -74,12 +74,12 @@ class network(object):
     def load(self, dataset, trainset=True, jitonic=[None,None], subset_size = None, kfold = None, kfold_ind = None):
 
         if jitonic[1] is not None:
-            print(f'spatial jitter -> var = {jitonic[1]}')
+            print(f'spatial jitter -> std = {np.sqrt(jitonic[1])}')
             transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True)])
 
         if jitonic[0] is not None:
-            print(f'time jitter -> var = {jitonic[0]}')
-            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(variance=jitonic[0], integer_timestamps=False, clip_negative=True, sort_timestamps=True)])
+            print(f'time jitter -> std = {jitonic[0]}')
+            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(std=jitonic[0], integer_jitter=False, clip_negative=True, sort_timestamps=True)])
 
         if jitonic == [None,None]:
             print('no jitter')

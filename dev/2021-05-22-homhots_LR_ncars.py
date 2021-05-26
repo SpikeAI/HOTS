@@ -16,7 +16,7 @@ if __name__ == '__main__':
     tau = 5
     R = 2
     filt = 2
-    nbclust = [4,8,16]
+    nbclust = [16,8,16]
 
     #_______________NB_OF_DIGITS___________________
     dataset = 'cars'
