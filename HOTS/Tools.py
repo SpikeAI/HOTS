@@ -354,6 +354,7 @@ def fit_data(name,
              jitonic = [None, None],
              subset_size = None,
              num_workers = 0,
+             nb_learn = 10,
              verbose=False, #**kwargs
         ):
     
