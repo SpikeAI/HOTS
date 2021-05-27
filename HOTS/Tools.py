@@ -543,10 +543,10 @@ def classification_results(likelihood, true_target, thres, nb_test, chance, verb
 
         maxevents = np.where(np.isnan(onlinac)==0)[0][-1]
         onlinac = onlinac[:maxevents]
-
+        
         if len(true_target)<nb_test:
             meanac = (len(true_target)*meanac + (nb_test-len(true_target))*chance)/nb_test
-            onlinac = (onlinac + (nb_test-len(true_target))*chance)/nb_test  
+            onlinac = (len(true_target)*onlinac + (nb_test-len(true_target))*chance)/nb_test
         
     if verbose:
         print(f'{np.mean(accuracy)=:.3f}')
@@ -699,10 +699,10 @@ def plotjitter(fig, ax, jit, score, param = [0.8, 22, 4, 0.1], color='red', labe
         x_fit = np.arange(jit[0],jit[-1],(jit[-1]-jit[0])/100)
         ax.plot(x_fit, fit.detach().numpy()*100, color=color, lw=1)
 
-    ax.plot(jit, score_stat[1,:]*100, '.',color=color, label=label)
+    ax.semilogx(jit, score_stat[1,:]*100, '.',color=color, label=label)
     ax.fill_between(jit, score_stat[2,:]*100, score_stat[0,:]*100, facecolor=color, edgecolor=None, alpha=.3)
         
-    y = []
+    x = []
     if fitting:
         # semi-saturation levels
         chance = 1/nb_class
@@ -711,10 +711,10 @@ def plotjitter(fig, ax, jit, score, param = [0.8, 22, 4, 0.1], color='red', labe
         y = 1
         x = 0
         while y>semisat:
-            x += 0.1
+            x += 0.01
             y = logistic_model(x)
 
-    return fig, ax, y
+    return fig, ax, x
 
 #___________________________FIT_____________________________________________________________
 #___________________________________________________________________________________________

@@ -38,3 +38,5 @@ D1:
 	python3 2021-05-22-homhots_LR_jitter_runonly.py
 D2:
 	python3 2021-05-22-homhots_LR_jitter_runonly2.py
+D12:
+	python3 2021-05-22-homhots_LR_jitter_logscale.py
