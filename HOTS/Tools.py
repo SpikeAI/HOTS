@@ -105,10 +105,23 @@ def get_loader(name,
 
     if name=='raw':
         download = False
+        if jitonic[1] is not None:
+            print(f'spatial jitter -> std = {np.sqrt(jitonic[1])}')
+            transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True), tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)])
+
+        if jitonic[0] is not None:
+            print(f'time jitter -> std = {jitonic[0]}')
+            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(std=jitonic[0], integer_jitter=False, clip_negative=True, sort_timestamps=True), tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)])
+
+        if jitonic == [None,None]:
+            print('no jitter')
+            transform = tonic.transforms.Compose([tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)])
+        
+        
         if dataset == 'nmnist':
             train_dataset = tonic.datasets.NMNIST(save_to='../Data/',
                                   train=train, download=download,
-                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
+                                  transform=transform
                                  )
             time_dataset = tonic.datasets.NMNIST(save_to='../Data/',
                                   train=train, download=download,
@@ -116,7 +129,7 @@ def get_loader(name,
         elif dataset == 'poker':
             train_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
-                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
+                                  transform=transform
                                  )
             time_dataset = tonic.datasets.POKERDVS(save_to='../Data/',
                                   train=train, download=download,
@@ -124,7 +137,7 @@ def get_loader(name,
         elif dataset == 'cars':
             train_dataset = tonic.datasets.NCARS(save_to='../Data/',
                                   train=train, download=download,
-                                  transform=tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)
+                                  transform=transform
                                  )
             time_dataset = tonic.datasets.NCARS(save_to='../Data/',
                                   train=train, download=download,
