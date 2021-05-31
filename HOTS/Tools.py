@@ -692,7 +692,7 @@ def runjit(timestr, name, path, filt, tau, nbclust, sigma, homeinv, jitter, jit_
 #___________________________________________________________________________________________
 #___________________________________________________________________________________________
 
-def plotjitter(fig, ax, jit, score, param = [0.8, 22, 4, 0.1], color='red', label='name', nb_class=10, n_epo = 33, fitting = True):
+def plotjitter(fig, ax, jit, score, param = [0.8, 22, 4, 0.1], color='red', label='name', nb_class=10, n_epo = 33, fitting = True, logscale = False):
     score_stat = np.zeros([3,len(jit)])
     q = [0.05,0.95]
     for i in range(score.shape[1]):
@@ -712,7 +712,7 @@ def plotjitter(fig, ax, jit, score, param = [0.8, 22, 4, 0.1], color='red', labe
         x_fit = np.arange(jit[0],jit[-1],(jit[-1]-jit[0])/100)
         ax.plot(x_fit, fit.detach().numpy()*100, color=color, lw=1)
 
-    ax.semilogx(jit, score_stat[1,:]*100, '.',color=color, label=label)
+    ax.plot(jit, score_stat[1,:]*100, '.',color=color, label=label)
     ax.fill_between(jit, score_stat[2,:]*100, score_stat[0,:]*100, facecolor=color, edgecolor=None, alpha=.3)
         
     x = []
