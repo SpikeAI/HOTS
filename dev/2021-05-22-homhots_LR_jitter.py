@@ -20,8 +20,8 @@ if __name__ == '__main__':
     #______________________________________________
     
     #_______________JITTER_________________________
-    std_jit_s = np.array([0])#np.arange(0,10,0.5)
-    std_jit_t = np.arange(1e5,15e5,1e5)
+    std_jit_s = np.arange(0,10,0.5)
+    std_jit_t = np.logspace(3,7,20)
     var_jit_s = std_jit_s**2
     nb_class = 10
     #______________________________________________

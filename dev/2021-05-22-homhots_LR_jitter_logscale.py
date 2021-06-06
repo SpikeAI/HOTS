@@ -49,7 +49,7 @@ timestr = '2021-03-29'
 thres = None
 tau_cla = 150000
 
-for name in ['homhots', 'hots']:
+for name in ['homhots']:
     jitonic = [None, None]
     ds_ev = 10
     model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas, tau_cla, jitonic=jitonic, subset_size=nb_train, num_workers=num_workers, verbose=False)
@@ -61,7 +61,7 @@ for name in ['homhots', 'hots']:
     ds_ev = 1
     results_t, results_t_last, score_t12 = np.zeros([3, nb_trials, len(std_jit_t)])
     for trial in range(nb_trials):
-        timestr_trial = '2021-03-29_'+str(trial)
+        timestr_trial = '2021-03-29_'+str(trial)+'_shifted'
         hotshom.date = timestr_trial
         for id_jit, jit_t in enumerate(std_jit_t):
             jit_t = int(round(jit_t,0))
@@ -77,9 +77,9 @@ for name in ['homhots', 'hots']:
             score_t12[trial,id_jit] = kNN12_score
             print(f'jitter: {jitonic[0]} - LR scores: {np.round(meanac, 2)}, {np.round(lastac, 2)} - histo scores: {np.round(kNN12_score,2)}')
             
-    f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}_logscale.pkl'
+    f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}_logscale_shifted.pkl'
     with open(f_name, 'wb') as file:
         pickle.dump([results_t, results_t_last, std_jit_t], file, pickle.HIGHEST_PROTOCOL)
-    f_name = f'{path}{timestr}_histo_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}_logscale.pkl'
+    f_name = f'{path}{timestr}_histo_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}_logscale_shifted.pkl'
     with open(f_name, 'wb') as file:
         pickle.dump([score_t12, std_jit_t], file, pickle.HIGHEST_PROTOCOL)

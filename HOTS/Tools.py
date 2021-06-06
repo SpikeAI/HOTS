@@ -530,6 +530,7 @@ def classification_results(likelihood, true_target, thres, nb_test, chance, verb
         lastac = 0
 
         for likelihood_, true_target_ in zip(likelihood, true_target):
+    
             if len(likelihood_)==0:
                 sample+=1
             else:
@@ -708,10 +709,17 @@ def plotjitter(fig, ax, jit, score, param = [0.8, 22, 4, 0.1], color='red', labe
             score_stat[1,i] = np.mean(score[:,i])
 
     if fitting:
-        logistic_model, loss, fit = fit_jitter(param, jit, np.array(score_stat[1,:]), num_epochs=n_epo, verbose=False) 
-        x_fit = np.arange(jit[0],jit[-1],(jit[-1]-jit[0])/100)
-        ax.plot(x_fit, fit.detach().numpy()*100, color=color, lw=1)
+        if logscale:
+            jit_fit = np.log10(jit)
+        else:
+            jit_fit = jit
+        logistic_model, loss, fit = fit_jitter(param, jit_fit, np.array(score_stat[1,:]), num_epochs=n_epo, verbose=False) 
+        x_fit = np.arange(jit_fit[0],jit_fit[-1],(jit_fit[-1]-jit_fit[0])/100)
 
+    if logscale:
+        ax.semilogx(10**x_fit, fit.detach().numpy()*100, color=color, lw=1)
+    else:
+        ax.plot(x_fit, fit.detach().numpy()*100, color=color, lw=1)
     ax.plot(jit, score_stat[1,:]*100, '.',color=color, label=label)
     ax.fill_between(jit, score_stat[2,:]*100, score_stat[0,:]*100, facecolor=color, edgecolor=None, alpha=.3)
         

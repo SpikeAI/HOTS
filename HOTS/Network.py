@@ -79,7 +79,7 @@ class network(object):
 
         if jitonic[0] is not None:
             print(f'time jitter -> std = {jitonic[0]}')
-            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(std=jitonic[0], integer_jitter=False, clip_negative=True, sort_timestamps=True)])
+            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(std=jitonic[0], integer_jitter=False, shift_first_as_zero=True, sort_timestamps=True)])
 
         if jitonic == [None,None]:
             print('no jitter')

@@ -48,7 +48,7 @@ class layer(object):
             gain = np.log(histo)/np.log(mu/self.kernel.shape[1])
         #__________________________________________
         else:
-            gain = np.exp(self.homparam[0]*(self.kernel.shape[1]**self.homparam[1])*(histo-1/self.kernel.shape[1]))
+            gain = np.exp(self.homparam[0]*(self.kernel.shape[1]**self.homparam[1]*histo-1/self.kernel.shape[1]))
         return gain
     
     def inversehomeo(self): # rule for translation invariance of the features
