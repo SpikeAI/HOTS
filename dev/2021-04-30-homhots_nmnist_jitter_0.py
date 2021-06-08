@@ -21,7 +21,7 @@ kNN = 12
 
 #_______________JITTER_________________________
 std_jit_s = np.arange(0,10,0.5)
-std_jit_t = np.arange(0,100000,5000)
+std_jit_t = np.logspace(3,7,20)
 var_jit_s = std_jit_s**2
 #______________________________________________
 

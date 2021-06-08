@@ -55,7 +55,7 @@ if __name__ == '__main__':
     ds_ev = 10
     tau_cla = 150000
     
-    for name in ['homhots']:
+    for name in ['homhots', 'hots']:
         f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}_extend.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:

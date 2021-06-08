@@ -38,6 +38,7 @@ if __name__ == '__main__':
     #num_epochs = 2 ** 9 + 1
     print(f'number of epochs: {num_epochs}')
     #______________________________________________
+    ds_ev_train = 1
     ds_ev_test = 1
     tau_cla = 150000
 
@@ -48,9 +49,9 @@ if __name__ == '__main__':
         f_name = f'{path}{timestr}_LR_results_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev_test}_timescale.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:
-                likelihood, true_target = pickle.load(file)
+                likelihood, true_target, time_scale = pickle.load(file)
         else:
-            ds_ev = 10
+            ds_ev = ds_ev_train
             print(f'LR fit for {name}...')
             model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas,tau_cla,jitonic=jitonic,subset_size=None,num_workers=num_workers,verbose=False)
             ds_ev = ds_ev_test
