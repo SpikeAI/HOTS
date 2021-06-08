@@ -35,7 +35,7 @@ for namnum, name in enumerate(namelist):
             proba = likelihood_[ind,:]
             if np.isnan(proba[0]):
                 if step<11000:
-                    proba = 0.25*np.ones([nb_classes])
+                    proba = 0.1*np.ones([nb_classes])
             proba_timestep[idx,i,:] = proba
         i+=1
     AUC = np.zeros([len(timesteps)])

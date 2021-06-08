@@ -43,15 +43,15 @@ class AERtoVectDataset(Dataset):
                                 "8 - eight",
                                 "9 - nine",
                             ]
-            self.sensor_size = (34, 34)
+            self.sensor_size = [34, 34]
         elif name=='poker':
             self.classes = ["cl", "he", "di", "sp"]
-            self.sensor_size = (35, 35)
+            self.sensor_size = [35, 35]
         elif name=='cars':
             self.classes = ["background", "car"]
-            self.sensor_size = (120, 100)
+            self.sensor_size = [120, 100]
         elif name=='barrel':
-            self.sensor_size = (32, 32)
+            self.sensor_size = [32, 32]
             self.classes = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"]
 
     def __getitem__(self, index):
