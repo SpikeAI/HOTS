@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #num_epochs = 2 ** 9 + 1
     print(f'number of epochs: {num_epochs}')
     #______________________________________________
-    ds_ev_train = 1
+    ds_ev_train = 10
     ds_ev_test = 1
     tau_cla = 150000
 
