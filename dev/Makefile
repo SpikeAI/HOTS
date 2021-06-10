@@ -46,3 +46,7 @@ D14:
 	python3 2021-05-22-homhots_LR_jitter_logscale_raw.py
 E:
 	python3 2021-05-22-homhots_LR_initial_jitter.py
+S:
+	python3 2021-06-09-homhots_LR_downsampled.py
+T:
+	python3 2021-05-22-homhots_LR.py
