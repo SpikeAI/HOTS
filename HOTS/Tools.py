@@ -101,21 +101,22 @@ def get_loader(name,
                subset_size = None, 
                jitonic=[None,None], 
                ds_ev = None, 
+               sample_space = 1,
                verbose = True):
 
     if name=='raw':
         download = False
         if jitonic[1] is not None:
             print(f'spatial jitter -> std = {np.sqrt(jitonic[1])}')
-            transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True), tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)])
+            transform = tonic.transforms.Compose([tonic.transforms.SpatialJitter(variance_x=jitonic[1], variance_y=jitonic[1], sigma_x_y=0, integer_coordinates=True, clip_outliers=True), tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla, sample_space=sample_space)])
 
         if jitonic[0] is not None:
             print(f'time jitter -> std = {jitonic[0]}')
-            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(std=jitonic[0], integer_jitter=False, clip_negative=True, sort_timestamps=True), tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)])
+            transform = tonic.transforms.Compose([tonic.transforms.TimeJitter(std=jitonic[0], integer_jitter=False, clip_negative=True, sort_timestamps=True), tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla, sample_space=sample_space)])
 
         if jitonic == [None,None]:
             print('no jitter')
-            transform = tonic.transforms.Compose([tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla)])
+            transform = tonic.transforms.Compose([tonic.transforms.AERtoVector(sample_event=ds_ev, tau = tau_cla, sample_space=sample_space)])
         
         
         if dataset == 'nmnist':
@@ -182,7 +183,7 @@ def get_loader(name,
         digind_train = getdigind(np.array(X_train[:,2]), y_train)
 
         nb_pola = stream[-1]
-        train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.Compose([tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla)]))
+        train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.Compose([tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla, sample_space=sample_space)]))
         
         time_scale = []
         if train:
@@ -211,6 +212,7 @@ def get_loader_barrel(name,
                num_workers,
                tau_cla,
                ds_ev = 1,
+               sample_space = 1,
                verbose = True):
     
     class_data = {
@@ -329,7 +331,7 @@ def get_loader_barrel(name,
         digind_train = getdigind_barrel(np.array(X_train[:,2]))
         nb_pola = stream[-1]
         
-    train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla))
+    train_dataset = AERtoVectDataset(tensors=(X_train, y_train), digind=digind_train, name = dataset,transform=tonic.transforms.AERtoVector(nb_pola = nb_pola, sample_event= ds_ev, tau = tau_cla, sample_space=sample_space))
     
     generator = torch.Generator().manual_seed(42)
     sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=nb_digit, generator=generator)
@@ -368,19 +370,20 @@ def fit_data(name,
              subset_size = None,
              num_workers = 0,
              nb_learn = 10,
+             sample_space=1,
              verbose=False, #**kwargs
         ):
     
     path = path+'models/'
     
     if name=='raw':
-        name_model = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}.pkl'
+        name_model = f'{path}{timestr}_{name}_LR_{nb_digit}_{ds_ev}_{sample_space}.pkl'
     else:
         if dataset == 'barrel':
-            name_model = f'{path}{name}_LR_{nb_digit}_{ds_ev}.pkl'
+            name_model = f'{path}{name}_LR_{nb_digit}_{ds_ev}_{sample_space}.pkl'
         else:
             hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, nb_learn = nb_learn, verbose=verbose)
-            name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}.pkl'
+            name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}_{sample_space}.pkl'
             print(name_model)
 
     if isfile(name_model):
@@ -406,10 +409,11 @@ def fit_data(name,
                R, 
                num_workers,
                tau_cla,
+               sample_space = sample_space,
                verbose = True)
         else:
-            loader, train_dataset, nb_pola, time_scale = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
-        
+            loader, train_dataset, nb_pola, time_scale = get_loader(name, path, nb_digit, True, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, sample_space=sample_space, verbose = verbose)
+
         torch.set_default_tensor_type("torch.DoubleTensor")
         criterion = torch.nn.BCELoss(reduction="mean")
         amsgrad = True #or False gives similar results
@@ -417,8 +421,10 @@ def fit_data(name,
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
             print(f'device -> {device} - num workers -> {num_workers}')
+            
+        c_int = lambda n, d : ((n - 1) // d) + 1
 
-        N = train_dataset.sensor_size[0]*train_dataset.sensor_size[1]*nb_pola
+        N = c_int(train_dataset.sensor_size[0],sample_space)*c_int(train_dataset.sensor_size[1],sample_space)*nb_pola
         n_classes = len(train_dataset.classes)
         logistic_model = LRtorch(N, n_classes)
         logistic_model = logistic_model.to(device)
@@ -471,6 +477,7 @@ def predict_data(model,
                  jitonic = [None, None],
                  subset_size = None,
                  num_workers = 0,
+                 sample_space=1,
                  verbose=False
         ):
     
@@ -490,9 +497,10 @@ def predict_data(model,
                R, 
                num_workers,
                tau_cla,
+               sample_space=sample_space,
                verbose = True)
         else:
-            loader, test_dataset, nb_pola, time_scale = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, verbose = verbose)
+            loader, test_dataset, nb_pola, time_scale = get_loader(name, path, nb_digit, False, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R, num_workers, tau_cla, subset_size = subset_size, jitonic = jitonic, ds_ev = ds_ev, sample_space=sample_space, verbose = verbose)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
