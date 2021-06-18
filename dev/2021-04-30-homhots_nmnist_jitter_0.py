@@ -47,7 +47,7 @@ for name in [ 'hots', 'homhots']:
     score_s12 = np.zeros([nb_trials, len(var_jit_s)])
     score_t12 = np.zeros([nb_trials, len(std_jit_t)])
     
-    f_name = f'{record_path}{timestr}_results_jitter_{nb_test}_histo_{name}_std.pkl'
+    f_name = f'{record_path}{timestr}_results_jitter_{nb_test}_histo_{name}_{nb_trials}.pkl'
     print(f'{name} clustering...')
     hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr, dataset, R)
     print(f'{name} training...')

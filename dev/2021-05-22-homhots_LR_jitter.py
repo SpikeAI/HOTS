@@ -55,11 +55,11 @@ if __name__ == '__main__':
     ds_ev = 10
     tau_cla = 150000
     
-    for name in ['homhots', 'hots']:
-        f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}_extend.pkl'
+    for name in ['homhots']:
+        f_name = f'{path}{timestr}_LR_results_jitter_{name}_{nbclust}_{nb_train}_{nb_test}_{ds_ev}_{thres}_.pkl'
         if isfile(f_name):
             with open(f_name, 'rb') as file:
-                likelihood, true_target = pickle.load(file)
+                results_s, results_t, results_s_last, results_t_last, std_jit_s, std_jit_t = pickle.load(file)
         else:
             print(f'LR fit for {name}...')
             model, loss  = fit_data(name,timestr,path,filt,tau,R,nbclust,sigma,homeinv,jitter,dataset,nb_train, ds_ev,learning_rate,num_epochs,betas, tau_cla,jitonic=jitonic,subset_size=nb_train,num_workers=num_workers,verbose=False)
@@ -76,9 +76,8 @@ if __name__ == '__main__':
                     if jit_s==0:
                         jitonic = [None,None]
                     likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
-                    meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
-                    results_s[trial,id_jit] = meanac
-                    results_s_last[trial,id_jit] = lastac
+                    meanac, onlinac, lastac, maxprobac, maxevac, maxevac_end, truepos, falsepos, lastev = classification_numbevents(likelihood, true_target, thres, nb_test, 1/nb_class)
+                    results_s[trial,id_jit] = maxevac
                     print(jitonic, meanac, lastac)
                     
                 for id_jit, jit_t in enumerate(std_jit_t):
@@ -87,10 +86,9 @@ if __name__ == '__main__':
                     if jit_t==0:
                         jitonic = [None,None]
                     likelihood, true_target, timescale = predict_data(model,name,timestr,path,filt,tau,R,nbclust,sigma, homeinv, jitter,dataset,nb_test,ds_ev,tau_cla,jitonic=jitonic,subset_size=nb_test,num_workers=num_workers, verbose=False)
-                    meanac, onlinac, lastac, truepos, falsepos = classification_results(likelihood, true_target, thres, nb_test, 1/nb_class)
-                    results_t[trial,id_jit] = meanac
-                    results_t_last[trial,id_jit] = lastac
+                    meanac, onlinac, lastac, maxprobac, maxevac, maxevac_end, truepos, falsepos, lastev = classification_numbevents(likelihood, true_target, thres, nb_test, 1/nb_class)
+                    results_t[trial,id_jit] = maxevac
                     print(jitonic, meanac, lastac)
                     
             with open(f_name, 'wb') as file:
-                pickle.dump([results_s, results_t, results_s_last, results_t_last, std_jit_s, std_jit_t], file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump([results_s, results_t, std_jit_s, std_jit_t], file, pickle.HIGHEST_PROTOCOL)
