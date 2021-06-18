@@ -533,6 +533,7 @@ def classification_numbevents(likelihood, true_target, thres, nb_test, chance, l
     lastac = 0
     maxprobac = 0
     maxevac = 0
+    maxevac_end = 0
     number_events = []
     for likelihood_, true_target_ in zip(likelihood, true_target):
         if len(likelihood_)==0:
@@ -557,12 +558,16 @@ def classification_numbevents(likelihood, true_target, thres, nb_test, chance, l
             digits, counts = np.unique(pred_target, return_counts=True)
             if digits[np.argmax(counts)]==true_target_:
                 maxevac+=1
+            digits_end, counts_end = np.unique(pred_target[int(2/3*len(pred_target)):], return_counts=True)
+            if digits_end[np.argmax(counts_end)]==true_target_:
+                maxevac_end+=1
             sample+=1
 
     meanac = np.nanmean(matscor)
     onlinac = np.nanmean(matscor, axis=0)
     lastac/=nb_test
     maxevac/=nb_test
+    maxevac_end/=nb_test
     maxprobac/=nb_test
     truepos = len(np.where(matscor==1)[0])
     falsepos = len(np.where(matscor==0)[0])
@@ -580,7 +585,7 @@ def classification_numbevents(likelihood, true_target, thres, nb_test, chance, l
         plt.ylabel('online accuracy');
         plt.title('LR classification results evolution as a function of the number of events');
     
-    return meanac, onlinac, lastac, maxprobac, maxevac, truepos, falsepos, lastev
+    return meanac, onlinac, lastac, maxprobac, maxevac, maxevac_end, truepos, falsepos, lastev
 
 def classification_timescale(likelihood, true_target, time_scale, timestep, thres, nb_test, chance, maximumtime = 1e6, verbose=False):
     matscor = np.zeros([nb_test,int(maximumtime//timestep)])
