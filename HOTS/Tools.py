@@ -384,12 +384,11 @@ def fit_data(name,
         else:
             hotshom, homeotest = netparam(name, filt, tau, nbclust, sigma, homeinv, jitter, timestr[:10], dataset, R, nb_learn = nb_learn, verbose=verbose)
             name_model = f'{path}{hotshom.get_fname()}_LR_{nb_digit}_{ds_ev}_{sample_space}.pkl'
-            print(name_model)
-
+            
+    print(name_model)
     if isfile(name_model):
         if verbose:
             print('loading existing model')
-            print(name_model)
         with open(name_model, 'rb') as file:
             logistic_model, losses = pickle.load(file)
     else:
@@ -417,7 +416,6 @@ def fit_data(name,
         torch.set_default_tensor_type("torch.DoubleTensor")
         criterion = torch.nn.BCELoss(reduction="mean")
         amsgrad = True #or False gives similar results
-
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if verbose:
             print(f'device -> {device} - num workers -> {num_workers}')
