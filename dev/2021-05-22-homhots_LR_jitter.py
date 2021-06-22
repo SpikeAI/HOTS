@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 sys.path.append('../HOTS')
-from Tools import tic, toc, get_loader, fit_data, predict_data, classification_results, netparam
+from Tools import tic, toc, get_loader, fit_data, predict_data, classification_numbevents, netparam
 import pickle
 from os.path import isfile
 
