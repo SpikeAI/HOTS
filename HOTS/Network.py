@@ -541,7 +541,6 @@ class network(object):
             yhis = 1.1*max(self.stats[i].histo/np.sum(self.stats[i].histo))
             plt.ylim([0,yhis])
 
-        #f3_ax1.set_title('gs[0, :]')
             for k in range(N[i]):
                 vmaxi = max(self.L[i].kernel[:,k])
                 for j in range(P[i]):
