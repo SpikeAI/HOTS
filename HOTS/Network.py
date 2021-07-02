@@ -528,7 +528,7 @@ class network(object):
         if self.L[-1].homeo:
             fig.suptitle('Activation histograms and associated time surfaces with homeostasis', size=20, y=0.95)
         else:
-            fig.suptitle('Activation histograms and associated time surfaces for original hots', size=20, y=0.95)
+            fig.suptitle('Activation histograms and associated time surfaces for original HOTS', size=20, y=0.95)
 
         for i in range(len(self.L)):
             ax = fig.add_subplot(gs[:hisiz, int(np.sum(N[:i]))+1*i:int(np.sum(N[:i+1]))+i*1])
